@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Fibonacci Benchmark Results",
+  "description": "Schema for Fibonacci benchmark result files",
+  "type": "object",
+  "required": ["timestamp", "benchmarks"],
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of benchmark execution"
+    },
+    "benchmarks": {
+      "type": "array",
+      "description": "Array of benchmark results for each language",
+      "items": {
+        "type": "object",
+        "required": ["language", "variants", "system_info"],
+        "properties": {
+          "language": {
+            "type": "string",
+            "enum": ["rust", "go", "python", "javascript", "c"],
+            "description": "Programming language"
+          },
+          "version": {
+            "type": "string",
+            "description": "Language version"
+          },
+          "variants": {
+            "type": "object",
+            "description": "Results for each implementation variant",
+            "properties": {
+              "recursive": {"$ref": "#/definitions/variant_result"},
+              "iterative": {"$ref": "#/definitions/variant_result"},
+              "memoized": {"$ref": "#/definitions/variant_result"},
+              "matrix": {"$ref": "#/definitions/variant_result"}
+            }
+          },
+          "system_info": {
+            "type": "object",
+            "properties": {
+              "cpu": {"type": "string"},
+              "memory_gb": {"type": "number"},
+              "os": {"type": "string"},
+              "arch": {"type": "string"}
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "variant_result": {
+      "type": "object",
+      "required": ["test_cases"],
+      "properties": {
+        "test_cases": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["input", "output", "correct", "time_ns"],
+            "properties": {
+              "input": {"type": "integer"},
+              "output": {"type": ["integer", "string"]},
+              "expected": {"type": ["integer", "string"]},
+              "correct": {"type": "boolean"},
+              "time_ns": {"type": "integer"},
+              "memory_bytes": {"type": "integer"},
+              "iterations": {"type": "integer"},
+              "statistics": {
+                "type": "object",
+                "properties": {
+                  "mean": {"type": "number"},
+                  "median": {"type": "number"},
+                  "std_dev": {"type": "number"},
+                  "min": {"type": "number"},
+                  "max": {"type": "number"},
+                  "p95": {"type": "number"},
+                  "p99": {"type": "number"}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

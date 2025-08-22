@@ -34,8 +34,8 @@
 ### ROSETTA-004: Fibonacci Algorithm Framework
 - [x] Create examples/algorithms/001-fibonacci/ structure
 - [x] Implement spec.toml with test cases and benchmark config
-- [ ] Create example-level Makefile with language orchestration
-- [ ] Set up results/ directory with JSON output format
+- [x] Create example-level Makefile with language orchestration
+- [x] Set up results/ directory with JSON output format
 
 ### ROSETTA-005: Tier 1 Language Implementations
 - [ ] Implement Rust fibonacci (performance baseline)
