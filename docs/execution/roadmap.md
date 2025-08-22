@@ -10,12 +10,12 @@
 - [x] Create GitHub Actions CI/CD pipeline
 - [x] Establish canonical release system with version management
 - [x] **NEXT: Create core Cargo workspace structure**
-- [ ] Initialize benchmark harness infrastructure
-- [ ] Set up Docker build environment
-- [ ] Implement project README.md architecture documentation
+- [x] Initialize benchmark harness infrastructure
+- [x] Set up Docker build environment
+- [x] Implement project README.md architecture documentation
 
 ### ROSETTA-002: Benchmark Harness Core
-- [ ] Implement harness/runner/src/main.rs with statistical analysis
+- [x] Implement harness/runner/src/main.rs with statistical analysis
 - [ ] Create environment isolation (CPU affinity, governor control)
 - [ ] Build JSON/Markdown report generation
 - [ ] Implement performance regression detection (5% threshold)
