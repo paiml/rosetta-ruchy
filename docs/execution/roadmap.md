@@ -33,7 +33,7 @@
 
 ### ROSETTA-004: Fibonacci Algorithm Framework
 - [x] Create examples/algorithms/001-fibonacci/ structure
-- [ ] Implement spec.toml with test cases and benchmark config
+- [x] Implement spec.toml with test cases and benchmark config
 - [ ] Create example-level Makefile with language orchestration
 - [ ] Set up results/ directory with JSON output format
 
