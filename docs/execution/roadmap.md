@@ -23,7 +23,7 @@
 - [x] Create binary size analysis tools
 
 ### ROSETTA-003: Docker Infrastructure
-- [ ] Create harness/docker/base.dockerfile with common dependencies
+- [x] Create harness/docker/base.dockerfile with common dependencies
 - [ ] Implement language-specific Dockerfiles (Tier 1)
 - [ ] Set up docker-compose for benchmark environment
 - [ ] Create isolated benchmark runner containers
