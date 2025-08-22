@@ -16,19 +16,21 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 
 mod statistics;
 mod isolation;
 mod reporting;
 mod regression;
 mod memory_profiler;
+mod binary_analyzer;
 
 use statistics::{StatisticalAnalyzer, StatisticalAnalysis, PerformanceComparator};
 use isolation::{EnvironmentController, IsolationResult};
 use reporting::{ReportGenerator, BenchmarkConfiguration, EnvironmentReport, LanguageResults};
 use regression::{RegressionDetector, BaselineConfiguration, RegressionStatus};
 use memory_profiler::{MemoryProfiler, MemoryProfilerConfig, MemoryProfile};
+use binary_analyzer::{BinaryAnalyzer, BinarySizeAnalysis};
 
 /// Statistical benchmark runner for polyglot performance comparison
 #[derive(Parser)]
@@ -117,6 +119,8 @@ struct BenchmarkResult {
     config: BenchmarkConfig,
     /// Comprehensive memory profiling data
     memory_profile: Option<MemoryProfile>,
+    /// Binary size analysis data
+    binary_analysis: Option<BinarySizeAnalysis>,
 }
 
 /// Statistical performance measurements
@@ -358,6 +362,39 @@ impl BenchmarkRunner {
                 None
             };
             
+            // Perform binary size analysis
+            let binary_analysis = if let Some(binary_path) = self.get_language_binary_path(language) {
+                info!("📦 Analyzing binary size for {}", language);
+                match BinaryAnalyzer::new(&binary_path).analyze().await {
+                    Ok(analysis) => {
+                        info!("📦 {} binary analysis: total={:.2}MB, stripped={:.2}MB, debug={:.1}%",
+                              language,
+                              analysis.total_size_bytes as f64 / 1_048_576.0,
+                              analysis.stripped_size_bytes as f64 / 1_048_576.0,
+                              analysis.debug_percentage);
+                        
+                        // Generate binary analysis report if significant
+                        if analysis.total_size_bytes > 100_000 { // > 100KB
+                            let binary_report = BinaryAnalyzer::generate_report(&analysis);
+                            if let Err(e) = std::fs::write(format!("results/{}_binary_analysis.md", language), binary_report) {
+                                warn!("Failed to write binary analysis report for {}: {}", language, e);
+                            } else {
+                                info!("📊 Binary analysis report: results/{}_binary_analysis.md", language);
+                            }
+                        }
+                        
+                        Some(analysis)
+                    }
+                    Err(e) => {
+                        warn!("Failed to analyze binary for {}: {}", language, e);
+                        None
+                    }
+                }
+            } else {
+                debug!("No binary path available for {}", language);
+                None
+            };
+            
             let result = BenchmarkResult {
                 language: language.clone(),
                 example: example_path.to_string_lossy().to_string(),
@@ -373,6 +410,7 @@ impl BenchmarkRunner {
                 system_info: self.get_system_info()?,
                 config: self.config.clone(),
                 memory_profile,
+                binary_analysis,
             };
 
             results.push(result);
@@ -657,6 +695,42 @@ impl BenchmarkRunner {
             }
         }
         Ok(())
+    }
+
+    /// Get binary path for a language implementation
+    fn get_language_binary_path(&self, language: &str) -> Option<PathBuf> {
+        // This would normally look up actual binary paths from the build system
+        // For now, simulate with standard paths
+        match language {
+            "rust" => {
+                // Check common Rust binary locations
+                let paths = vec![
+                    PathBuf::from("target/release/benchmark"),
+                    PathBuf::from("target/debug/benchmark"),
+                    PathBuf::from(format!("examples/{}/target/release/main", language)),
+                ];
+                paths.into_iter().find(|p| p.exists())
+            }
+            "go" => {
+                let path = PathBuf::from(format!("examples/{}/main", language));
+                if path.exists() { Some(path) } else { None }
+            }
+            "python" => {
+                // Python doesn't have binaries, but we could analyze the bytecode
+                None
+            }
+            "javascript" => {
+                // JavaScript could have bundled output
+                let path = PathBuf::from(format!("examples/{}/dist/bundle.js", language));
+                if path.exists() { Some(path) } else { None }
+            }
+            "ruchy" => {
+                // Ruchy compiled binary
+                let path = PathBuf::from(format!("examples/{}/main", language));
+                if path.exists() { Some(path) } else { None }
+            }
+            _ => None,
+        }
     }
 }
 

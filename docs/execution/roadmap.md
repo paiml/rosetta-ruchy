@@ -17,10 +17,10 @@
 ### ROSETTA-002: Benchmark Harness Core
 - [x] Implement harness/runner/src/main.rs with statistical analysis
 - [x] Create environment isolation (CPU affinity, governor control)
-- [ ] Build JSON/Markdown report generation
-- [ ] Implement performance regression detection (5% threshold)
-- [ ] Add memory usage profiling
-- [ ] Create binary size analysis tools
+- [x] Build JSON/Markdown report generation
+- [x] Implement performance regression detection (5% threshold)
+- [x] Add memory usage profiling
+- [x] Create binary size analysis tools
 
 ### ROSETTA-003: Docker Infrastructure
 - [ ] Create harness/docker/base.dockerfile with common dependencies

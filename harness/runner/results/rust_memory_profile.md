@@ -2,20 +2,20 @@
 
 ## Executive Summary
 
-- **Peak Memory Usage**: 37.57 MB
-- **Average Memory Usage**: 37.48 MB
-- **Memory Overhead**: 0.2%
+- **Peak Memory Usage**: 29.43 MB
+- **Average Memory Usage**: 29.34 MB
+- **Memory Overhead**: 0.3%
 - **✅ No Memory Leaks**: Clean memory management
 
 ## Detailed Metrics
 
 | Metric | Value |
 |--------|-------|
-| Initial Usage | 37.40 MB |
-| Final Usage | 37.57 MB |
-| Peak Usage | 37.57 MB |
-| System Utilization | 0.12% |
-| Cache Efficiency | 85.0% |
+| Initial Usage | 29.26 MB |
+| Final Usage | 29.43 MB |
+| Peak Usage | 29.43 MB |
+| System Utilization | 0.10% |
+| Cache Efficiency | 95.0% |
 | Fragmentation Score | 0.0 |
 
 ## Recommendations
