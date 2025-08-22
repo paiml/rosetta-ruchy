@@ -22,11 +22,13 @@ mod statistics;
 mod isolation;
 mod reporting;
 mod regression;
+mod memory_profiler;
 
 use statistics::{StatisticalAnalyzer, StatisticalAnalysis, PerformanceComparator};
 use isolation::{EnvironmentController, IsolationResult};
 use reporting::{ReportGenerator, BenchmarkConfiguration, EnvironmentReport, LanguageResults};
 use regression::{RegressionDetector, BaselineConfiguration, RegressionStatus};
+use memory_profiler::{MemoryProfiler, MemoryProfilerConfig, MemoryProfile};
 
 /// Statistical benchmark runner for polyglot performance comparison
 #[derive(Parser)]
@@ -113,6 +115,8 @@ struct BenchmarkResult {
     system_info: SystemInfo,
     /// Benchmark configuration
     config: BenchmarkConfig,
+    /// Comprehensive memory profiling data
+    memory_profile: Option<MemoryProfile>,
 }
 
 /// Statistical performance measurements
@@ -270,6 +274,27 @@ impl BenchmarkRunner {
         for language in languages {
             info!("📊 Benchmarking {} implementation", language);
             
+            // Start memory profiling for this language
+            let memory_profiler = if self.config.memory_profiling {
+                let mut profiler = MemoryProfiler::with_config(MemoryProfilerConfig {
+                    sampling_interval_ms: 50, // Faster sampling for benchmarks
+                    detailed_allocation_tracking: false,
+                    max_duration_seconds: 300,
+                    leak_detection_threshold_bytes: 512 * 1024, // 512KB threshold
+                    monitor_swap: true,
+                });
+                
+                if profiler.start_profiling().await.is_ok() {
+                    info!("🧠 Memory profiling started for {}", language);
+                    Some(profiler)
+                } else {
+                    warn!("Failed to start memory profiling for {}", language);
+                    None
+                }
+            } else {
+                None
+            };
+            
             // Simulate realistic benchmark measurements
             let raw_measurements = self.simulate_benchmark_measurements(language)?;
             
@@ -299,6 +324,40 @@ impl BenchmarkRunner {
                 sample_count: statistical_analysis.sample_stats.count,
             };
             
+            // Stop memory profiling and collect comprehensive profile
+            let memory_profile = if let Some(mut profiler) = memory_profiler {
+                // Allow some time for memory sampling during simulation
+                tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+                
+                match profiler.stop_profiling().await {
+                    Ok(profile) => {
+                        info!("🧠 {} memory profile: peak={:.2}MB, avg={:.2}MB, leak={}KB",
+                              language,
+                              profile.peak_usage_bytes as f64 / 1_048_576.0,
+                              profile.average_usage_bytes as f64 / 1_048_576.0,
+                              profile.memory_leak_bytes / 1024);
+                        
+                        // Generate memory report if significant usage
+                        if profile.peak_usage_bytes > 10 * 1024 * 1024 { // > 10MB
+                            let memory_report = MemoryProfiler::generate_memory_report(&profile);
+                            if let Err(e) = std::fs::write(format!("results/{}_memory_profile.md", language), memory_report) {
+                                warn!("Failed to write memory profile report for {}: {}", language, e);
+                            } else {
+                                info!("📊 Memory profile report: results/{}_memory_profile.md", language);
+                            }
+                        }
+                        
+                        Some(profile)
+                    }
+                    Err(e) => {
+                        warn!("Failed to complete memory profiling for {}: {}", language, e);
+                        None
+                    }
+                }
+            } else {
+                None
+            };
+            
             let result = BenchmarkResult {
                 language: language.clone(),
                 example: example_path.to_string_lossy().to_string(),
@@ -313,6 +372,7 @@ impl BenchmarkRunner {
                 isolation: isolation_result.clone(),
                 system_info: self.get_system_info()?,
                 config: self.config.clone(),
+                memory_profile,
             };
 
             results.push(result);
