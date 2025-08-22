@@ -1,12 +1,12 @@
 # Benchmark Report
 
-Generated: 2025-08-22 11:23:37 UTC
+Generated: 2025-08-22 11:30:26 UTC
 Generator: Rosetta Ruchy Benchmark Harness
 Suite Version: 0.1.0
 
 ## Executive Summary
 
-- **Fastest Implementation**: rust,python
+- **Fastest Implementation**: rust
 - **Implementations Tested**: 1
 - **Statistical Significance**: 0 comparisons performed
 
@@ -22,7 +22,7 @@ Suite Version: 0.1.0
 
 | Implementation | Mean (ns) | Std Dev (ns) | 95% CI | Outliers |
 |---|---|---|---|---|
-| rust,python | 1000845 | 88531 | (983279, 1018412) | 0.0% |
+| rust | 498348 | 23101 | (491783, 504913) | 10.0% |
 
 ## Recommendations
 
@@ -33,7 +33,7 @@ Suite Version: 0.1.0
 
 ## Configuration
 
-- **Iterations**: 100
-- **Warmup Iterations**: 10
+- **Iterations**: 50
+- **Warmup Iterations**: 5
 - **Confidence Level**: 95%
 - **Min Sample Size**: 30

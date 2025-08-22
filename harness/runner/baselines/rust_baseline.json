@@ -1,0 +1,64 @@
+{
+  "implementation": "rust",
+  "example": "examples/fibonacci",
+  "statistics": {
+    "sample_stats": {
+      "count": 50,
+      "mean": 498348.08476235496,
+      "median": 499563.37919844117,
+      "std_dev": 23100.677187008707,
+      "std_error": 3266.929097787047,
+      "min": 443218.8765241315,
+      "max": 553093.5046638143
+    },
+    "confidence_intervals": {
+      "ci_95": [
+        491782.9449459867,
+        504913.22457872325
+      ],
+      "ci_99": [
+        489592.87167902646,
+        507103.29784568347
+      ]
+    },
+    "outliers": {
+      "outlier_count": 5,
+      "outlier_percentage": 10.0,
+      "outlier_values": [
+        443218.8765241315,
+        451235.1866720355,
+        542283.3633152142,
+        547821.8044649574,
+        553093.5046638143
+      ],
+      "quartiles": {
+        "q1": 484870.5242541013,
+        "q3": 507290.54493983486,
+        "iqr": 22420.02068573353,
+        "lower_fence": 451240.49322550104,
+        "upper_fence": 540920.5759684352
+      }
+    },
+    "distribution": {
+      "skewness": 0.051252048950613485,
+      "kurtosis": 0.4683488561937108,
+      "coefficient_of_variation": 0.046354501789697106,
+      "percentiles": {
+        "p5": 460615.18989584106,
+        "p25": 484870.5242541013,
+        "p50": 499563.37919844117,
+        "p75": 507290.54493983486,
+        "p95": 540493.9833285834,
+        "p99": 550510.3715663744
+      }
+    }
+  },
+  "timestamp": "2025-08-22T11:30:00.098506610Z",
+  "configuration": {
+    "iterations": 50,
+    "warmup_iterations": 5,
+    "confidence_level": 0.95
+  },
+  "git_commit": "d866d11f83c5d2b1392c66b2f7672c6cb46f1c3e",
+  "environment_fingerprint": "linux-x86_64-202508"
+}

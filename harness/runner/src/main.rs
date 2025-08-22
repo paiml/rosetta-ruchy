@@ -21,10 +21,12 @@ use tracing::{info, warn};
 mod statistics;
 mod isolation;
 mod reporting;
+mod regression;
 
 use statistics::{StatisticalAnalyzer, StatisticalAnalysis, PerformanceComparator};
 use isolation::{EnvironmentController, IsolationResult};
 use reporting::{ReportGenerator, BenchmarkConfiguration, EnvironmentReport, LanguageResults};
+use regression::{RegressionDetector, BaselineConfiguration, RegressionStatus};
 
 /// Statistical benchmark runner for polyglot performance comparison
 #[derive(Parser)]
@@ -338,6 +340,52 @@ impl BenchmarkRunner {
             }
         }
 
+        // Step 5: Perform regression detection (Toyota Way Jidoka)
+        if !results.is_empty() {
+            info!("🔍 Performing regression analysis with 5% threshold");
+            let regression_detector = self.create_regression_detector();
+            let current_stats = self.extract_statistical_analysis(&results);
+            
+            match regression_detector.detect_regressions(&current_stats, example_path.to_str().unwrap_or("unknown")).await {
+                Ok(analysis) => {
+                    match analysis.overall_status {
+                        RegressionStatus::Critical => {
+                            warn!("🚨 CRITICAL REGRESSION DETECTED - Toyota Way quality gate violated!");
+                            for rec in &analysis.recommendations {
+                                warn!("   Action required: {}", rec);
+                            }
+                        }
+                        RegressionStatus::Warning => {
+                            warn!("⚠️ Performance degradation detected");
+                            for rec in &analysis.recommendations {
+                                info!("   Recommendation: {}", rec);
+                            }
+                        }
+                        RegressionStatus::Healthy => {
+                            info!("✅ No performance regressions detected");
+                        }
+                        RegressionStatus::Inconclusive => {
+                            info!("❓ Insufficient baseline data for regression analysis");
+                            // Establish baselines for future comparisons
+                            self.establish_baselines(&results, example_path.to_str().unwrap_or("unknown"), &regression_detector).await?;
+                        }
+                    }
+
+                    // Generate regression report
+                    if let Ok(report) = regression_detector.generate_regression_report(&analysis).await {
+                        if let Err(e) = std::fs::write("results/regression_report.md", report) {
+                            warn!("Failed to write regression report: {}", e);
+                        } else {
+                            info!("📊 Regression analysis report: results/regression_report.md");
+                        }
+                    }
+                }
+                Err(e) => {
+                    warn!("Failed to perform regression analysis: {}", e);
+                }
+            }
+        }
+
         info!("✅ Benchmark run completed for {} languages", results.len());
         Ok(results)
     }
@@ -509,6 +557,46 @@ impl BenchmarkRunner {
             outlier_removal: false,
             min_sample_size: if self.config.iterations >= 1000 { 1000 } else { 30 },
         }
+    }
+
+    /// Create regression detector with Toyota Way 5% threshold
+    fn create_regression_detector(&self) -> RegressionDetector {
+        RegressionDetector::new()
+            .with_threshold(5.0) // 5% regression threshold
+            .with_baselines_dir(std::path::PathBuf::from("baselines"))
+            .with_history_retention_days(90)
+    }
+
+    /// Extract statistical analysis from benchmark results
+    fn extract_statistical_analysis(&self, results: &[BenchmarkResult]) -> std::collections::HashMap<String, StatisticalAnalysis> {
+        let mut stats = std::collections::HashMap::new();
+        
+        for result in results {
+            stats.insert(result.language.clone(), result.statistics.clone());
+        }
+        
+        stats
+    }
+
+    /// Establish baselines for future regression detection
+    async fn establish_baselines(&self, results: &[BenchmarkResult], example: &str, detector: &RegressionDetector) -> Result<()> {
+        for result in results {
+            let config = BaselineConfiguration {
+                iterations: self.config.iterations,
+                warmup_iterations: self.config.warmup_iterations,
+                confidence_level: 0.95,
+            };
+
+            if let Err(e) = detector.establish_baseline(
+                &result.language,
+                example,
+                result.statistics.clone(),
+                config,
+            ).await {
+                warn!("Failed to establish baseline for {}: {}", result.language, e);
+            }
+        }
+        Ok(())
     }
 }
 

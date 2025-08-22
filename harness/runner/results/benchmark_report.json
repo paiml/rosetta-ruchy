@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2025-08-22T11:23:37.046928893Z",
+    "generated_at": "2025-08-22T11:30:26.748722370Z",
     "format_version": "1.0.0",
     "generator": "Rosetta Ruchy Benchmark Harness",
     "suite_version": "0.1.0",
@@ -28,7 +28,7 @@
       "applied_governor": null,
       "warnings": [
         "Frequency lock failed for core 0: Failed to lock frequency",
-        "High system load: 7.63"
+        "High system load: 3.05"
       ],
       "errors": []
     },
@@ -83,110 +83,116 @@
       ],
       "cpu_frequencies": [
         4500,
-        1501,
-        4613,
-        4729,
+        1200,
+        4757,
         400,
+        4800,
         4500,
-        2000,
+        2904,
+        2195,
+        2628,
         400,
-        3534,
-        4511,
-        1904,
+        1439,
         400,
-        1079,
-        1130,
-        1069,
-        1020,
-        2272,
-        1687,
-        1159,
-        1319,
+        976,
+        1630,
+        1851,
+        1702,
+        1000,
+        778,
+        1000,
+        1000,
         400,
         400
       ],
       "load_average": [
-        7.63,
-        6.04,
-        6.62
+        3.05,
+        3.87,
+        5.41
       ],
       "memory_info": {
         "total_bytes": 34035313147904,
-        "available_bytes": 16955331313664,
-        "usage_percent": 50.18311939724826,
-        "swap_used_bytes": 9189887836160
+        "available_bytes": 18124367724544,
+        "usage_percent": 46.74834444512771,
+        "swap_used_bytes": 9215389204480
       },
       "irq_balance_active": false
     }
   },
   "configuration": {
-    "iterations": 100,
-    "warmup_iterations": 10,
+    "iterations": 50,
+    "warmup_iterations": 5,
     "confidence_level": 0.95,
     "outlier_removal": false,
     "min_sample_size": 30
   },
   "results": {
-    "rust,python": {
-      "language": "rust,python",
+    "rust": {
+      "language": "rust",
       "version": "Unknown",
       "statistics": {
         "sample_stats": {
-          "count": 100,
-          "mean": 1000845.3409640767,
-          "median": 997479.6535885127,
-          "std_dev": 88530.86499899015,
-          "std_error": 8853.086499899015,
-          "min": 785771.8900292539,
-          "max": 1223649.699605202
+          "count": 50,
+          "mean": 498348.08476235496,
+          "median": 499563.37919844117,
+          "std_dev": 23100.677187008707,
+          "std_error": 3266.929097787047,
+          "min": 443218.8765241315,
+          "max": 553093.5046638143
         },
         "confidence_intervals": {
           "ci_95": [
-            983278.8966571207,
-            1018411.7852710327
+            491782.9449459867,
+            504913.22457872325
           ],
           "ci_99": [
-            977593.546266963,
-            1024097.1356611904
+            489592.87167902646,
+            507103.29784568347
           ]
         },
         "outliers": {
-          "outlier_count": 0,
-          "outlier_percentage": 0.0,
-          "outlier_values": [],
+          "outlier_count": 5,
+          "outlier_percentage": 10.0,
+          "outlier_values": [
+            443218.8765241315,
+            451235.1866720355,
+            542283.3633152142,
+            547821.8044649574,
+            553093.5046638143
+          ],
           "quartiles": {
-            "q1": 938949.6549287911,
-            "q3": 1054883.0570968983,
-            "iqr": 115933.40216810722,
-            "lower_fence": 765049.5516766303,
-            "upper_fence": 1228783.1603490592
+            "q1": 484870.5242541013,
+            "q3": 507290.54493983486,
+            "iqr": 22420.02068573353,
+            "lower_fence": 451240.49322550104,
+            "upper_fence": 540920.5759684352
           }
         },
         "distribution": {
-          "skewness": 0.2877237620826347,
-          "kurtosis": 0.0812049824708243,
-          "coefficient_of_variation": 0.0884560894430619,
+          "skewness": 0.051252048950613485,
+          "kurtosis": 0.4683488561937108,
+          "coefficient_of_variation": 0.046354501789697106,
           "percentiles": {
-            "p5": 871336.1418812862,
-            "p25": 938949.6549287911,
-            "p50": 997479.6535885127,
-            "p75": 1054883.0570968983,
-            "p95": 1176365.698074798,
-            "p99": 1207962.3290600607
+            "p5": 460615.18989584106,
+            "p25": 484870.5242541013,
+            "p50": 499563.37919844117,
+            "p75": 507290.54493983486,
+            "p95": 540493.9833285834,
+            "p99": 550510.3715663744
           }
         }
       },
       "raw_times_ns": null,
       "memory_usage": {
-        "peak_usage_bytes": 1500000,
-        "average_usage_bytes": 1000000,
-        "allocations": 1000,
-        "deallocations": 1000
+        "peak_usage_bytes": 614400,
+        "average_usage_bytes": 512000,
+        "allocations": 512,
+        "deallocations": 512
       },
       "binary_size": {
-        "total_size_bytes": 0,
+        "total_size_bytes": 2500000,
         "debug_size_bytes": 0,
-        "stripped_size_bytes": 0,
+        "stripped_size_bytes": 2500000,
         "compression_ratio": null
       },
       "compilation": null
@@ -194,15 +200,15 @@
   },
   "comparisons": [],
   "summary": {
-    "fastest_implementation": "rust,python",
-    "most_memory_efficient": "rust,python",
-    "smallest_binary": "rust,python",
-    "fastest_compilation": "rust,python",
+    "fastest_implementation": "rust",
+    "most_memory_efficient": "rust",
+    "smallest_binary": "rust",
+    "fastest_compilation": "rust",
     "performance_ranking": [
       {
         "rank": 1,
-        "implementation": "rust,python",
-        "score": 1000845.3409640767,
+        "implementation": "rust",
+        "score": 498348.08476235496,
         "score_type": "execution_time_ns"
       }
     ],
