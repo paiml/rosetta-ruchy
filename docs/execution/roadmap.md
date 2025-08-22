@@ -24,7 +24,7 @@
 
 ### ROSETTA-003: Docker Infrastructure
 - [x] Create harness/docker/base.dockerfile with common dependencies
-- [ ] Implement language-specific Dockerfiles (Tier 1)
+- [x] Implement language-specific Dockerfiles (Tier 1)
 - [ ] Set up docker-compose for benchmark environment
 - [ ] Create isolated benchmark runner containers
 - [ ] Implement container orchestration scripts
