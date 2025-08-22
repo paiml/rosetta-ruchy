@@ -20,9 +20,11 @@ use tracing::{info, warn};
 
 mod statistics;
 mod isolation;
+mod reporting;
 
 use statistics::{StatisticalAnalyzer, StatisticalAnalysis, PerformanceComparator};
 use isolation::{EnvironmentController, IsolationResult};
+use reporting::{ReportGenerator, BenchmarkConfiguration, EnvironmentReport, LanguageResults};
 
 /// Statistical benchmark runner for polyglot performance comparison
 #[derive(Parser)]
@@ -319,6 +321,23 @@ impl BenchmarkRunner {
             warn!("Failed to restore environment: {}", e);
         }
 
+        // Step 4: Generate comprehensive reports
+        if !results.is_empty() {
+            info!("📊 Generating comprehensive benchmark reports");
+            let report_generator = self.create_report_generator();
+            let report_results = self.convert_to_report_format(&results)?;
+            let environment_report = self.create_environment_report(&env_controller, &isolation_result)?;
+            let config = self.create_benchmark_config();
+
+            if let Err(e) = report_generator.generate_report(
+                report_results,
+                environment_report,
+                config,
+            ).await {
+                warn!("Failed to generate reports: {}", e);
+            }
+        }
+
         info!("✅ Benchmark run completed for {} languages", results.len());
         Ok(results)
     }
@@ -426,6 +445,70 @@ impl BenchmarkRunner {
             cpu_governor: "performance".to_string(),  // TODO: Read actual governor
             timestamp: chrono::Utc::now().to_rfc3339(),
         })
+    }
+
+    /// Create report generator with default settings
+    fn create_report_generator(&self) -> ReportGenerator {
+        ReportGenerator::new()
+            .with_output_dir("results")
+            .with_raw_data(false)
+    }
+
+    /// Convert benchmark results to report format
+    fn convert_to_report_format(&self, results: &[BenchmarkResult]) -> Result<std::collections::HashMap<String, LanguageResults>> {
+        let mut report_results = std::collections::HashMap::new();
+
+        for result in results {
+            let language_result = LanguageResults {
+                language: result.language.clone(),
+                version: "Unknown".to_string(), // TODO: Extract from system info
+                statistics: result.statistics.clone(),
+                raw_times_ns: None, // Not storing raw data by default
+                memory_usage: Some(reporting::MemoryUsageReport {
+                    peak_usage_bytes: result.metrics.memory_usage.peak_memory_bytes,
+                    average_usage_bytes: result.metrics.memory_usage.avg_memory_bytes,
+                    allocations: result.metrics.memory_usage.allocations,
+                    deallocations: result.metrics.memory_usage.deallocations,
+                }),
+                binary_size: Some(reporting::BinarySizeReport {
+                    total_size_bytes: result.metrics.binary_size.unwrap_or(0),
+                    debug_size_bytes: 0, // TODO: Extract debug size
+                    stripped_size_bytes: result.metrics.binary_size.unwrap_or(0), // Simplified
+                    compression_ratio: None,
+                }),
+                compilation: None, // TODO: Add compilation metrics
+            };
+
+            report_results.insert(result.language.clone(), language_result);
+        }
+
+        Ok(report_results)
+    }
+
+    /// Create environment report from controller state
+    fn create_environment_report(&self, env_controller: &EnvironmentController, isolation_result: &IsolationResult) -> Result<EnvironmentReport> {
+        Ok(EnvironmentReport {
+            system: reporting::SystemInfo {
+                os: std::env::consts::OS.to_string(),
+                arch: std::env::consts::ARCH.to_string(),
+                cpu_model: "Unknown CPU".to_string(), // TODO: Detect CPU model
+                total_memory_gb: 16.0, // TODO: Detect actual memory
+                rust_version: env!("CARGO_PKG_RUST_VERSION").to_string(),
+            },
+            isolation: Some(isolation_result.clone()),
+            state: env_controller.current_state.clone(),
+        })
+    }
+
+    /// Create benchmark configuration for reporting
+    fn create_benchmark_config(&self) -> BenchmarkConfiguration {
+        BenchmarkConfiguration {
+            iterations: self.config.iterations,
+            warmup_iterations: self.config.warmup_iterations,
+            confidence_level: 0.95,
+            outlier_removal: false,
+            min_sample_size: if self.config.iterations >= 1000 { 1000 } else { 30 },
+        }
     }
 }
 
