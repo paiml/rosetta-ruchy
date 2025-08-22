@@ -19,7 +19,10 @@ use std::path::PathBuf;
 use tracing::{info, warn};
 
 mod statistics;
+mod isolation;
+
 use statistics::{StatisticalAnalyzer, StatisticalAnalysis, PerformanceComparator};
+use isolation::{EnvironmentController, IsolationResult};
 
 /// Statistical benchmark runner for polyglot performance comparison
 #[derive(Parser)]
@@ -100,6 +103,8 @@ struct BenchmarkResult {
     metrics: PerformanceMetrics,
     /// Statistical analysis of performance data
     statistics: StatisticalAnalysis,
+    /// Environment isolation results
+    isolation: IsolationResult,
     /// System information during benchmark
     system_info: SystemInfo,
     /// Benchmark configuration
@@ -230,6 +235,29 @@ impl BenchmarkRunner {
         info!("Languages: {:?}", languages);
         info!("Iterations: {} (minimum for statistical significance)", self.config.iterations);
 
+        // Step 1: Set up environment isolation
+        let mut env_controller = EnvironmentController::new()
+            .with_isolated_cores(self.config.cpu_affinity.clone())
+            .with_governor("performance")
+            .with_freq_scaling_control(true);
+
+        env_controller.detect_environment().await
+            .context("Failed to detect system environment")?;
+
+        let isolation_result = env_controller.apply_isolation().await
+            .context("Failed to apply environment isolation")?;
+
+        if !isolation_result.success {
+            warn!("⚠️ Environment isolation partially failed - benchmark quality may be reduced");
+            for error in &isolation_result.errors {
+                warn!("  Error: {}", error);
+            }
+        }
+
+        for warning in &isolation_result.warnings {
+            warn!("  Warning: {}", warning);
+        }
+
         let mut results = Vec::new();
         let analyzer = StatisticalAnalyzer::new()
             .with_min_sample_size(if self.config.iterations >= 1000 { 1000 } else { 30 })
@@ -278,11 +306,17 @@ impl BenchmarkRunner {
                     complexity: self.estimate_complexity_metrics(language),
                 },
                 statistics: statistical_analysis,
+                isolation: isolation_result.clone(),
                 system_info: self.get_system_info()?,
                 config: self.config.clone(),
             };
 
             results.push(result);
+        }
+
+        // Step 3: Cleanup environment isolation
+        if let Err(e) = env_controller.restore_environment().await {
+            warn!("Failed to restore environment: {}", e);
         }
 
         info!("✅ Benchmark run completed for {} languages", results.len());
@@ -476,8 +510,78 @@ async fn main() -> Result<()> {
         }
         Commands::Validate => {
             info!("🔍 Validating benchmark environment");
-            // TODO: Implement environment validation
-            println!("✅ Environment validation passed (placeholder)");
+            
+            let mut env_controller = EnvironmentController::new();
+            
+            match env_controller.detect_environment().await {
+                Ok(()) => {
+                    // Clone state to avoid borrowing issues
+                    let state = env_controller.current_state.clone();
+                    println!("## 🖥️  System Environment Report");
+                    println!();
+                    println!("**CPU Cores**: {} available", state.available_cores.len());
+                    println!("**CPU Governors**: {:?}", state.cpu_governors.iter().collect::<std::collections::HashSet<_>>());
+                    println!("**CPU Frequencies**: {:?} MHz", state.cpu_frequencies);
+                    println!("**Load Average**: {:.2}, {:.2}, {:.2}", 
+                             state.load_average.0, state.load_average.1, state.load_average.2);
+                    println!("**Memory**: {:.1} GB total, {:.1}% used", 
+                             state.memory_info.total_bytes as f64 / 1e9,
+                             state.memory_info.usage_percent);
+                    println!("**IRQ Balance**: {}", if state.irq_balance_active { "active" } else { "inactive" });
+                    println!();
+                    
+                    // Test isolation capabilities
+                    match env_controller.apply_isolation().await {
+                        Ok(isolation) => {
+                            if isolation.success {
+                                println!("✅ **Environment isolation**: Fully supported");
+                                println!("   - CPU affinity: ✅ Applied to cores {:?}", isolation.isolated_cores);
+                                if let Some(governor) = &isolation.applied_governor {
+                                    println!("   - CPU governor: ✅ Set to '{}'", governor);
+                                } else {
+                                    println!("   - CPU governor: ⚠️ Could not set (requires root)");
+                                }
+                            } else {
+                                println!("⚠️ **Environment isolation**: Partially supported");
+                                for error in &isolation.errors {
+                                    println!("   - ❌ {}", error);
+                                }
+                            }
+                            
+                            for warning in &isolation.warnings {
+                                println!("   - ⚠️ {}", warning);
+                            }
+                        }
+                        Err(e) => {
+                            println!("❌ **Environment isolation**: Failed - {}", e);
+                        }
+                    }
+                    
+                    println!();
+                    println!("**Recommendations**:");
+                    
+                    if state.load_average.0 > 0.5 {
+                        println!("- ⚠️ High system load ({:.2}) may affect benchmark reliability", state.load_average.0);
+                    }
+                    
+                    if state.memory_info.usage_percent > 80.0 {
+                        println!("- ⚠️ High memory usage ({:.1}%) may cause swapping", state.memory_info.usage_percent);
+                    }
+                    
+                    if state.irq_balance_active {
+                        println!("- 💡 Consider disabling IRQ balancing: `sudo systemctl stop irqbalance`");
+                    }
+                    
+                    if !state.cpu_governors.iter().any(|g| g == "performance") {
+                        println!("- 💡 Consider performance governor: `sudo cpupower frequency-set -g performance`");
+                    }
+                    
+                    println!("- 💡 Run benchmarks with elevated privileges for full isolation control");
+                }
+                Err(e) => {
+                    println!("❌ Environment validation failed: {}", e);
+                }
+            }
         }
         Commands::Regression { baseline: _, current: _, threshold } => {
             info!("🚨 Checking for performance regressions (threshold: {}%)", threshold);

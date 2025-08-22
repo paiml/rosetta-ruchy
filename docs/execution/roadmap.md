@@ -16,7 +16,7 @@
 
 ### ROSETTA-002: Benchmark Harness Core
 - [x] Implement harness/runner/src/main.rs with statistical analysis
-- [ ] Create environment isolation (CPU affinity, governor control)
+- [x] Create environment isolation (CPU affinity, governor control)
 - [ ] Build JSON/Markdown report generation
 - [ ] Implement performance regression detection (5% threshold)
 - [ ] Add memory usage profiling
