@@ -1,0 +1,121 @@
+[workspace]
+members = [
+    "harness/runner",
+    "scripts/validation-tools",
+]
+default-members = ["harness/runner"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+authors = ["Pragmatic AI Labs <hello@pragmatic.ai>"]
+license = "MIT"
+repository = "https://github.com/pragmatic-ai-labs/rosetta-ruchy"
+homepage = "https://github.com/pragmatic-ai-labs/rosetta-ruchy"
+documentation = "https://docs.rs/rosetta-ruchy"
+description = "A polyglot benchmark suite demonstrating Ruchy's performance parity with Rust"
+keywords = ["benchmark", "performance", "ruchy", "polyglot", "comparison"]
+categories = ["development-tools", "algorithms", "science"]
+edition = "2021"
+rust-version = "1.70"
+
+[workspace.dependencies]
+# Core dependencies for benchmarking and analysis
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+clap = { version = "4.4", features = ["derive", "env"] }
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Performance and profiling
+criterion = { version = "0.5", features = ["html_reports"] }
+pprof = { version = "0.13", features = ["criterion", "flamegraph"] }
+iai-callgrind = "0.10"
+
+# Statistical analysis
+statrs = "0.16"
+approx = "0.5"
+
+# System interaction
+nix = { version = "0.27", features = ["process", "sched"] }
+sysinfo = "0.30"
+
+# Docker and containerization
+bollard = "0.15"
+
+# Logging and monitoring
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Development and testing
+tempfile = "3.8"
+assert_cmd = "2.0"
+predicates = "3.0"
+
+# Date/time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# YAML support
+serde_yaml = "0.9"
+
+# File system operations
+walkdir = "2.4"
+regex = "1.10"
+
+# Quality assurance will be added per-crate as needed
+# pmat integration is optional and added individually
+
+[workspace.metadata.release]
+# Canonical version management to prevent regression
+allow-branch = ["main"]
+pre-release-replacements = [
+    { file = "README.md", search = "rosetta-ruchy = \"[^\"]*\"", replace = "rosetta-ruchy = \"{{version}}\"" },
+    { file = "CHANGELOG.md", search = "## \\[Unreleased\\]", replace = "## [Unreleased]\n\n## [{{version}}] - {{date}}" },
+]
+pre-release-commit-message = "chore(release): {{version}}"
+tag-message = "Release v{{version}} with Toyota Way quality gates"
+tag-name = "v{{version}}"
+publish = false  # We don't publish the workspace root
+
+# Quality enforcement metadata
+[workspace.metadata.pmat]
+complexity_threshold = 20
+coverage_threshold = 80
+satd_tolerance = 0
+lint_mode = "strict"  # -D warnings
+mutation_score_threshold = 85
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+
+[workspace.lints.clippy]
+# Toyota Way: Zero tolerance for warnings
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+
+# Specific lints for benchmark accuracy
+float_cmp = "deny"
+lossy_float_literal = "deny"
+imprecise_flops = "deny"
+suboptimal_flops = "deny"
+
+# Performance-critical lints
+large_stack_arrays = "warn"
+large_types_passed_by_value = "warn"
+redundant_allocation = "deny"
+unnecessary_box = "deny"
+
+# Correctness lints
+panic = "deny"
+unwrap_used = "deny"
+expect_used = "warn"
+indexing_slicing = "warn"
+
+# Style consistency
+module_name_repetitions = "allow"  # Common in benchmarking code
+similar_names = "allow"           # Algorithm variants may have similar names

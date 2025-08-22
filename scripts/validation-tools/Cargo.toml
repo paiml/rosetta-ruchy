@@ -1,0 +1,47 @@
+[package]
+name = "validation-tools"
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description = "Quality validation tools for Rosetta Ruchy Toyota Way methodology"
+keywords.workspace = true
+categories.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "validate-example"
+path = "src/validate_example.rs"
+
+[[bin]]
+name = "check-complexity"
+path = "src/complexity_check.rs"
+
+[dependencies]
+# Core functionality
+serde.workspace = true
+serde_json.workspace = true
+clap.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+
+# File system operations
+walkdir.workspace = true
+regex.workspace = true
+
+# Quality analysis integration (optional)
+pmat = { git = "https://github.com/paiml/paiml-mcp-agent-toolkit.git", optional = true }
+
+# Logging
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+assert_cmd.workspace = true
+
+[features]
+default = ["pmat-integration"]
+pmat-integration = ["pmat"]
