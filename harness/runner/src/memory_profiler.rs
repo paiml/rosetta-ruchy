@@ -102,12 +102,15 @@ pub struct MemoryProfilerConfig {
     /// Sampling interval for memory snapshots
     pub sampling_interval_ms: u64,
     /// Enable detailed allocation tracking
+    #[allow(dead_code)]
     pub detailed_allocation_tracking: bool,
     /// Maximum profiling duration
+    #[allow(dead_code)]
     pub max_duration_seconds: u64,
     /// Memory leak detection threshold (bytes)
     pub leak_detection_threshold_bytes: i64,
     /// Enable swap monitoring
+    #[allow(dead_code)]
     pub monitor_swap: bool,
 }
 
@@ -203,6 +206,7 @@ impl MemoryProfiler {
     }
 
     /// Continuously sample memory usage in background
+    #[allow(dead_code)]
     pub async fn sample_continuously(&mut self) -> Result<()> {
         let start_time = self.start_time
             .ok_or_else(|| anyhow::anyhow!("Profiling not started"))?;
@@ -318,7 +322,7 @@ impl MemoryProfiler {
         // In a real implementation, this would integrate with malloc hooks,
         // valgrind, or other memory instrumentation tools
         
-        let duration_seconds = if let Some(start_time) = self.start_time {
+        let _duration_seconds = if let Some(start_time) = self.start_time {
             start_time.elapsed().as_secs_f64()
         } else {
             1.0
@@ -389,8 +393,8 @@ impl MemoryProfiler {
     /// Monitor swap usage during profiling
     async fn monitor_swap_usage(&self) -> SwapUsage {
         // Read system swap information
-        let mut initial_swap = 0;
-        let mut peak_swap = 0;
+        let initial_swap = 0;
+        let peak_swap = 0;
         let mut final_swap = 0;
 
         if let Ok(meminfo) = fs::read_to_string("/proc/meminfo") {

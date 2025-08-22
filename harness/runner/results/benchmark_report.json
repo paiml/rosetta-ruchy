@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2025-08-22T14:41:04.362516888Z",
+    "generated_at": "2025-08-22T21:23:24.432859783Z",
     "format_version": "1.0.0",
     "generator": "Rosetta Ruchy Benchmark Harness",
     "suite_version": "0.1.0",
@@ -28,7 +28,7 @@
       "applied_governor": null,
       "warnings": [
         "Frequency lock failed for core 0: Failed to lock frequency",
-        "High system load: 17.20"
+        "High system load: 4.59"
       ],
       "errors": []
     },
@@ -82,39 +82,39 @@
         "powersave"
       ],
       "cpu_frequencies": [
-        2275,
-        2299,
-        2299,
-        2300,
-        2300,
-        2274,
-        2300,
-        2300,
-        2300,
-        2299,
-        2299,
-        2300,
-        1800,
-        1800,
-        1800,
-        1800,
-        1799,
-        1800,
-        1800,
-        1799,
-        1100,
-        1099
+        4200,
+        4301,
+        4300,
+        1125,
+        1391,
+        4200,
+        4000,
+        4009,
+        2356,
+        2342,
+        400,
+        400,
+        2220,
+        2915,
+        1002,
+        2582,
+        2343,
+        2099,
+        1122,
+        997,
+        400,
+        400
       ],
       "load_average": [
-        17.2,
-        10.76,
-        8.05
+        4.59,
+        5.28,
+        6.05
       ],
       "memory_info": {
         "total_bytes": 34035313147904,
-        "available_bytes": 16435434749952,
-        "usage_percent": 51.71064042064163,
-        "swap_used_bytes": 16742587826176
+        "available_bytes": 20964016390144,
+        "usage_percent": 38.40510208017572,
+        "swap_used_bytes": 15995263516672
       },
       "irq_balance_active": false
     }
