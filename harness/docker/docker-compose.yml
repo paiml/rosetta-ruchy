@@ -1,0 +1,232 @@
+version: '3.9'
+
+# Rosetta Ruchy Benchmark Environment
+# Orchestrates isolated containers for reliable benchmarking
+#
+# Usage:
+#   docker-compose build          # Build all images
+#   docker-compose up rust        # Run Rust benchmarks
+#   docker-compose up             # Run all benchmarks
+#   docker-compose run --rm rust bash  # Interactive shell
+
+services:
+  # Base image builder
+  base:
+    build:
+      context: .
+      dockerfile: base.dockerfile
+    image: rosetta-ruchy/base:latest
+    networks:
+      - benchmark-net
+
+  # Rust benchmark container
+  rust:
+    build:
+      context: .
+      dockerfile: rust.dockerfile
+      args:
+        BASE_IMAGE: rosetta-ruchy/base:latest
+    image: rosetta-ruchy/rust:latest
+    container_name: rosetta-rust
+    depends_on:
+      - base
+    volumes:
+      - ../../examples:/benchmark/examples:ro
+      - rust-results:/benchmark/results
+      - rust-cache:/opt/cargo/registry
+    environment:
+      - RUST_BACKTRACE=1
+      - RUSTFLAGS=-C target-cpu=native
+      - BENCHMARK_ITERATIONS=100
+    networks:
+      - benchmark-net
+    cpuset: "0-3"  # Pin to specific CPU cores
+    mem_limit: 4g
+    memswap_limit: 4g
+    privileged: true  # Required for performance governor
+    security_opt:
+      - seccomp:unconfined  # Allow perf tools
+
+  # Go benchmark container
+  go:
+    build:
+      context: .
+      dockerfile: go.dockerfile
+      args:
+        BASE_IMAGE: rosetta-ruchy/base:latest
+    image: rosetta-ruchy/go:latest
+    container_name: rosetta-go
+    depends_on:
+      - base
+    volumes:
+      - ../../examples:/benchmark/examples:ro
+      - go-results:/benchmark/results
+      - go-cache:/opt/go-cache
+    environment:
+      - GOMAXPROCS=4
+      - GOGC=100
+      - BENCHMARK_ITERATIONS=100
+    networks:
+      - benchmark-net
+    cpuset: "0-3"
+    mem_limit: 4g
+    memswap_limit: 4g
+    privileged: true
+    security_opt:
+      - seccomp:unconfined
+
+  # Python benchmark container
+  python:
+    build:
+      context: .
+      dockerfile: python.dockerfile
+      args:
+        BASE_IMAGE: rosetta-ruchy/base:latest
+    image: rosetta-ruchy/python:latest
+    container_name: rosetta-python
+    depends_on:
+      - base
+    volumes:
+      - ../../examples:/benchmark/examples:ro
+      - python-results:/benchmark/results
+      - python-cache:/home/benchmark/.cache
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - BENCHMARK_ITERATIONS=100
+    networks:
+      - benchmark-net
+    cpuset: "0-3"
+    mem_limit: 4g
+    memswap_limit: 4g
+    privileged: true
+    security_opt:
+      - seccomp:unconfined
+
+  # JavaScript benchmark container
+  javascript:
+    build:
+      context: .
+      dockerfile: javascript.dockerfile
+      args:
+        BASE_IMAGE: rosetta-ruchy/base:latest
+    image: rosetta-ruchy/javascript:latest
+    container_name: rosetta-javascript
+    depends_on:
+      - base
+    volumes:
+      - ../../examples:/benchmark/examples:ro
+      - js-results:/benchmark/results
+      - js-cache:/home/benchmark/.npm
+    environment:
+      - NODE_ENV=production
+      - NODE_OPTIONS=--max-old-space-size=4096
+      - BENCHMARK_ITERATIONS=100
+    networks:
+      - benchmark-net
+    cpuset: "0-3"
+    mem_limit: 4g
+    memswap_limit: 4g
+    privileged: true
+    security_opt:
+      - seccomp:unconfined
+
+  # C benchmark container
+  c:
+    build:
+      context: .
+      dockerfile: c.dockerfile
+      args:
+        BASE_IMAGE: rosetta-ruchy/base:latest
+    image: rosetta-ruchy/c:latest
+    container_name: rosetta-c
+    depends_on:
+      - base
+    volumes:
+      - ../../examples:/benchmark/examples:ro
+      - c-results:/benchmark/results
+      - c-cache:/home/benchmark/.ccache
+    environment:
+      - CC=gcc
+      - CFLAGS=-O3 -march=native -mtune=native
+      - BENCHMARK_ITERATIONS=100
+    networks:
+      - benchmark-net
+    cpuset: "0-3"
+    mem_limit: 4g
+    memswap_limit: 4g
+    privileged: true
+    security_opt:
+      - seccomp:unconfined
+
+  # Results aggregator service
+  aggregator:
+    build:
+      context: .
+      dockerfile: base.dockerfile
+    image: rosetta-ruchy/base:latest
+    container_name: rosetta-aggregator
+    depends_on:
+      - rust
+      - go
+      - python
+      - javascript
+      - c
+    volumes:
+      - rust-results:/results/rust:ro
+      - go-results:/results/go:ro
+      - python-results:/results/python:ro
+      - js-results:/results/javascript:ro
+      - c-results:/results/c:ro
+      - ./results:/output
+    command: |
+      bash -c "
+      echo '📊 Aggregating benchmark results...'
+      python3 /benchmark/harness/aggregate_results.py /results /output/aggregated.json
+      echo '✅ Results aggregated to /output/aggregated.json'
+      "
+    networks:
+      - benchmark-net
+
+  # Monitoring sidecar for resource tracking
+  monitor:
+    build:
+      context: .
+      dockerfile: base.dockerfile
+    image: rosetta-ruchy/base:latest
+    container_name: rosetta-monitor
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - monitor-data:/data
+    environment:
+      - MONITOR_INTERVAL=1
+    command: |
+      bash -c "
+      while true; do
+        docker stats --no-stream --format 'json' >> /data/stats.jsonl
+        sleep \$${MONITOR_INTERVAL}
+      done
+      "
+    networks:
+      - benchmark-net
+    privileged: true
+
+networks:
+  benchmark-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  rust-results:
+  rust-cache:
+  go-results:
+  go-cache:
+  python-results:
+  python-cache:
+  js-results:
+  js-cache:
+  c-results:
+  c-cache:
+  monitor-data:
