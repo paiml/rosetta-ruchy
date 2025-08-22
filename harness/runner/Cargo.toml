@@ -1,0 +1,74 @@
+[package]
+name = "rosetta-runner"
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+description = "Statistical benchmark runner for Rosetta Ruchy polyglot comparisons"
+keywords.workspace = true
+categories.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "rosetta-runner"
+path = "src/main.rs"
+
+[dependencies]
+# Core functionality
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+clap.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+
+# Performance measurement
+criterion.workspace = true
+pprof = { workspace = true, optional = true }
+iai-callgrind = { workspace = true, optional = true }
+
+# Statistical analysis
+statrs.workspace = true
+approx.workspace = true
+
+# System control for isolated benchmarks
+nix.workspace = true
+sysinfo.workspace = true
+
+# Container orchestration
+bollard = { workspace = true, optional = true }
+
+# Logging
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+# Date/time handling
+chrono.workspace = true
+
+# YAML support  
+serde_yaml.workspace = true
+
+# Development
+tempfile.workspace = true
+
+[dev-dependencies]
+assert_cmd.workspace = true
+predicates.workspace = true
+
+[features]
+default = ["profiling", "containers"]
+
+# Feature flags for different benchmark modes
+profiling = ["pprof", "iai-callgrind"]
+containers = ["bollard"]
+gpu-benchmarks = []  # Future GPU benchmark support
+
+# Quality integration (future)
+pmat-integration = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
