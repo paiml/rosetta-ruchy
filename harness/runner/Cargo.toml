@@ -51,6 +51,10 @@ chrono.workspace = true
 # YAML support  
 serde_yaml.workspace = true
 
+# Random number generation for simulation
+rand = "0.8"
+rand_distr = "0.4"
+
 # Development
 tempfile.workspace = true
 

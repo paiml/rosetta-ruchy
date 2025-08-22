@@ -3655,6 +3655,8 @@ dependencies = [
  "nix 0.27.1",
  "pprof",
  "predicates",
+ "rand 0.8.5",
+ "rand_distr",
  "serde",
  "serde_json",
  "serde_yaml",
