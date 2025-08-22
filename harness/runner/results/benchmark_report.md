@@ -1,6 +1,6 @@
 # Benchmark Report
 
-Generated: 2025-08-22 11:30:26 UTC
+Generated: 2025-08-22 14:41:04 UTC
 Generator: Rosetta Ruchy Benchmark Harness
 Suite Version: 0.1.0
 
@@ -22,7 +22,7 @@ Suite Version: 0.1.0
 
 | Implementation | Mean (ns) | Std Dev (ns) | 95% CI | Outliers |
 |---|---|---|---|---|
-| rust | 498348 | 23101 | (491783, 504913) | 10.0% |
+| rust | 495819 | 21399 | (487829, 503810) | 13.3% |
 
 ## Recommendations
 
@@ -33,7 +33,7 @@ Suite Version: 0.1.0
 
 ## Configuration
 
-- **Iterations**: 50
-- **Warmup Iterations**: 5
+- **Iterations**: 30
+- **Warmup Iterations**: 3
 - **Confidence Level**: 95%
 - **Min Sample Size**: 30
