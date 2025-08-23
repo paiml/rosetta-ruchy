@@ -1,0 +1,263 @@
+[metadata]
+name = "matrix-chain-multiplication"
+category = "dynamic-programming"
+difficulty = "medium"
+tags = ["dp", "optimization", "matrices", "interval-dp", "memoization", "combinatorics"]
+
+[complexity]
+time_standard = "O(n^3)"
+time_memoized = "O(n^3)"
+time_naive_recursive = "O(2^n)"
+space_standard = "O(n^2)"
+space_memoized = "O(n^2)"
+space_recursive = "O(n)"
+preprocessing = "O(n)"
+
+[test_cases.basic]
+single_matrix = {
+    dimensions = [5, 4],
+    expected_cost = 0,
+    expected_operations = 0,
+    note = "No multiplication needed for single matrix"
+}
+
+two_matrices = {
+    dimensions = [2, 3, 6],
+    expected_cost = 36,
+    expected_operations = 1,
+    optimal_parenthesization = "((A1)(A2))"
+}
+
+three_matrices_case1 = {
+    dimensions = [1, 2, 3, 4],
+    expected_cost = 18,
+    optimal_parenthesization = "((A1 A2) A3)",
+    alternative_cost = 20,
+    alternative_parenthesization = "(A1 (A2 A3))"
+}
+
+three_matrices_case2 = {
+    dimensions = [40, 20, 30, 10],
+    expected_cost = 26000,
+    optimal_parenthesization = "((A1 A2) A3)",
+    suboptimal_cost = 30000,
+    suboptimal_parenthesization = "(A1 (A2 A3))"
+}
+
+empty_chain = {
+    dimensions = [],
+    expected_cost = 0,
+    expected_operations = 0,
+    error_case = true
+}
+
+[test_cases.standard]
+classic_example = {
+    dimensions = [1, 2, 3, 4, 5],
+    expected_cost = 38,
+    optimal_parenthesization = "(((A1 A2) A3) A4)",
+    all_costs = {
+        "((A1 A2) (A3 A4))" = 58,
+        "((A1 (A2 A3)) A4)" = 64,
+        "(A1 ((A2 A3) A4))" = 58,
+        "(A1 (A2 (A3 A4)))" = 48
+    }
+}
+
+textbook_example = {
+    dimensions = [5, 4, 6, 2, 7],
+    expected_cost = 158,
+    optimal_parenthesization = "((A1 (A2 A3)) A4)",
+    matrix_sizes = ["5×4", "4×6", "6×2", "2×7"],
+    explanation = "Classic textbook example demonstrating optimal substructure"
+}
+
+large_matrices = {
+    dimensions = [100, 50, 75, 25, 80, 60],
+    expected_cost = 1025000,
+    measure_performance = true,
+    note = "Tests performance with larger matrix dimensions"
+}
+
+identical_dimensions = {
+    dimensions = [10, 10, 10, 10, 10],
+    expected_cost = 3000,
+    optimal_parenthesization = "((((A1 A2) A3) A4)",
+    note = "All matrices are square and same size"
+}
+
+increasing_dimensions = {
+    dimensions = [1, 2, 4, 8, 16, 32],
+    expected_cost = 770,
+    pattern = "geometric_progression",
+    optimal_strategy = "left_associative"
+}
+
+decreasing_dimensions = {
+    dimensions = [32, 16, 8, 4, 2, 1],
+    expected_cost = 770,
+    pattern = "reverse_geometric_progression", 
+    optimal_strategy = "right_associative"
+}
+
+[test_cases.edge_cases]
+very_long_chain = {
+    dimensions = [2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2],
+    expected_cost = 46,
+    chain_length = 10,
+    measure_time = true
+}
+
+pathological_case = {
+    dimensions = [1, 1000, 1, 1000, 1, 1000, 1],
+    expected_cost = 3000,
+    note = "Alternating small and large dimensions"
+}
+
+fibonacci_dimensions = {
+    dimensions = [1, 1, 2, 3, 5, 8, 13],
+    expected_cost = 193,
+    pattern = "fibonacci_sequence",
+    mathematical_interest = true
+}
+
+powers_of_two = {
+    dimensions = [1, 2, 4, 8, 16, 32, 64],
+    expected_cost = 1302,
+    pattern = "powers_of_two",
+    binary_structure = true
+}
+
+single_large_matrix = {
+    dimensions = [1, 1, 1000000, 1, 1],
+    expected_cost = 1000001,
+    note = "One extremely large dimension in the middle"
+}
+
+[test_cases.performance]
+moderate_chain = {
+    dimensions = { generate = "random", count = 15, range = [1, 100], seed = 42 },
+    measure_time = true,
+    memoization_required = true
+}
+
+long_chain = {
+    dimensions = { generate = "random", count = 50, range = [10, 500], seed = 123 },
+    exponential_blowup_naive = true,
+    dp_required = true
+}
+
+stress_test = {
+    dimensions = { generate = "random", count = 100, range = [1, 1000], seed = 789 },
+    memory_intensive = true,
+    validate_optimality = true
+}
+
+worst_case_naive = {
+    dimensions = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+    chain_length = 19,
+    naive_operations = "2^19 = 524288",
+    dp_operations = "19^3 = 6859",
+    speedup_expected = 76
+}
+
+[test_cases.mathematical]
+catalan_verification = {
+    dimensions = [1, 1, 1, 1, 1, 1, 1],
+    chain_length = 6,
+    catalan_number = 132,
+    note = "Number of ways to parenthesize = Catalan number C_5 = 42"
+}
+
+optimal_substructure_demo = {
+    dimensions = [2, 10, 3, 12, 5],
+    subproblems = {
+        "(0,2)" = 60,  # A1 * A2
+        "(1,3)" = 360, # A2 * A3  
+        "(2,4)" = 180, # A3 * A4
+        "(0,3)" = 156, # (A1 A2) A3
+        "(1,4)" = 540  # A2 (A3 A4)
+    }
+}
+
+[algorithms.variants]
+standard_dp = {
+    implemented = true,
+    time = "O(n^3)",
+    space = "O(n^2)",
+    optimal = true
+}
+
+memoized_recursive = {
+    implemented = true,
+    time = "O(n^3)",
+    space = "O(n^2 + recursion_depth)",
+    optimal = true
+}
+
+naive_recursive = {
+    implemented = true,
+    time = "O(2^n)",
+    space = "O(n)",
+    optimal = true,
+    educational_only = true
+}
+
+space_optimized = {
+    implemented = false,
+    time = "O(n^3)",
+    space = "O(n)",
+    optimal = true,
+    complex_implementation = true
+}
+
+parallel_dp = {
+    implemented = false,
+    time = "O(n^3 / p)",
+    space = "O(n^2)",
+    optimal = true,
+    parallelization_challenges = true
+}
+
+[benchmark]
+iterations = 1000
+warmup = 100
+chain_lengths = [3, 5, 10, 15, 20, 25, 30]
+dimension_ranges = [[1, 10], [10, 100], [100, 1000]]
+distribution_types = ["uniform", "geometric", "fibonacci"]
+
+[performance_targets]
+"20_matrices" = 0.001  # seconds
+"dp_vs_naive_speedup" = 1000.0
+"memory_efficiency" = 0.95
+"cache_hit_rate" = 0.90
+
+[visualization]
+show_dp_table = true
+show_parenthesization = true
+animate_construction = true
+show_cost_matrix = true
+export_formats = ["ascii", "html", "svg"]
+
+[validation]
+property_tests = 8000
+verify_optimality = true
+cross_validate_variants = true
+benchmark_consistency = true
+
+[applications]
+computer_graphics = true
+scientific_computing = true
+database_query_optimization = true
+compiler_optimization = true
+neural_networks = true
+
+[ruchy_features]
+# v1.5.0 specific features this example demonstrates  
+self_hosting_dp_generation = true       # Generate DP recurrence code at runtime
+memoization_code_synthesis = true       # Synthesize memoization logic
+algorithm_w_recursive_inference = true  # Complex recursive type inference
+pattern_matching_dp_states = true       # Exhaustive DP state matching
+concurrent_matrix_optimization = true   # Parallel matrix chain optimization
+formal_correctness_verification = true  # Prove DP correctness with SMT
+numerical_stability_analysis = true     # Analyze floating-point precision
