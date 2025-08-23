@@ -1,0 +1,291 @@
+[metadata]
+name = "coin-change"
+category = "dynamic-programming"
+difficulty = "medium"
+tags = ["dp", "greedy", "optimization", "combinatorics", "memoization", "currency"]
+
+[complexity]
+time_dp = "O(amount * coins)"
+time_greedy = "O(coins log coins)"
+time_recursive = "O(coins^amount)"
+space_dp = "O(amount)"
+space_greedy = "O(1)"
+space_recursive = "O(amount)"
+preprocessing = "O(coins log coins)"
+
+[test_cases.basic]
+exact_change = {
+    coins = [1, 5, 10, 25],
+    amount = 30,
+    expected_min_coins = 2,
+    expected_combination = [5, 25],
+    greedy_optimal = true
+}
+
+no_change_needed = {
+    coins = [1, 5, 10, 25],
+    amount = 0,
+    expected_min_coins = 0,
+    expected_combination = [],
+    trivial_case = true
+}
+
+single_coin = {
+    coins = [7],
+    amount = 21,
+    expected_min_coins = 3,
+    expected_combination = [7, 7, 7],
+    only_one_denomination = true
+}
+
+impossible_change = {
+    coins = [3, 5],
+    amount = 1,
+    expected_min_coins = -1,
+    expected_combination = [],
+    no_solution = true
+}
+
+penny_available = {
+    coins = [1, 5, 10, 25],
+    amount = 6,
+    expected_min_coins = 2,
+    expected_combination = [1, 5],
+    greedy_optimal = true
+}
+
+[test_cases.standard]
+classic_us_coins = {
+    coins = [1, 5, 10, 25],
+    amount = 67,
+    expected_min_coins = 6,
+    expected_combination = [1, 1, 5, 10, 25, 25],
+    currency_system = "US"
+}
+
+european_coins = {
+    coins = [1, 2, 5, 10, 20, 50, 100, 200],
+    amount = 376,
+    expected_min_coins = 4,
+    expected_combination = [1, 25, 50, 300],
+    currency_system = "Euro"
+}
+
+greedy_fails = {
+    coins = [1, 3, 4],
+    amount = 6,
+    expected_min_coins = 2,
+    expected_combination = [3, 3],
+    greedy_result = 3,
+    greedy_combination = [1, 1, 4],
+    demonstrates_greedy_suboptimal = true
+}
+
+large_amount = {
+    coins = [1, 5, 10, 25],
+    amount = 2674,
+    expected_min_coins = 109,
+    measure_performance = true
+}
+
+many_small_coins = {
+    coins = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    amount = 47,
+    expected_min_coins = 5,
+    optimal_uses_largest_coins = true
+}
+
+fibonacci_coins = {
+    coins = [1, 2, 3, 5, 8, 13, 21],
+    amount = 50,
+    expected_min_coins = 3,
+    expected_combination = [8, 21, 21],
+    mathematical_interest = true
+}
+
+[test_cases.edge_cases]
+single_large_coin = {
+    coins = [100],
+    amount = 99,
+    expected_min_coins = -1,
+    impossible_with_single_large_coin = true
+}
+
+very_large_amount = {
+    coins = [1, 5, 10, 25],
+    amount = 100000,
+    expected_min_coins = 4000,
+    stress_test = true
+}
+
+duplicate_coins = {
+    coins = [1, 1, 5, 5, 10],
+    amount = 15,
+    expected_min_coins = 2,
+    expected_combination = [5, 10],
+    handle_duplicates = true
+}
+
+unsorted_coins = {
+    coins = [25, 1, 10, 5],
+    amount = 30,
+    expected_min_coins = 2,
+    expected_combination = [5, 25],
+    requires_sorting = true
+}
+
+prime_coins = {
+    coins = [2, 3, 5, 7, 11, 13, 17, 19, 23],
+    amount = 100,
+    expected_min_coins = 5,
+    mathematical_pattern = "primes"
+}
+
+powers_of_two = {
+    coins = [1, 2, 4, 8, 16, 32, 64],
+    amount = 100,
+    expected_min_coins = 4,
+    expected_combination = [4, 32, 64],
+    binary_system = true
+}
+
+[test_cases.performance]
+moderate_problem = {
+    coins = [1, 5, 10, 21, 25],
+    amount = 63,
+    measure_time = true,
+    greedy_comparison = true
+}
+
+large_coin_set = {
+    coins = { generate = "range", start = 1, end = 50, step = 1 },
+    amount = 247,
+    many_denominations = true,
+    dp_required = true
+}
+
+pathological_recursive = {
+    coins = [1, 2],
+    amount = 30,
+    recursive_explosion = true,
+    exponential_without_memoization = true
+}
+
+sparse_coins = {
+    coins = [1, 7, 24, 42],
+    amount = 120,
+    irregular_denominations = true,
+    greedy_suboptimal = true
+}
+
+[test_cases.real_world]
+vending_machine = {
+    coins = [5, 10, 25, 100],
+    amount = 145,
+    expected_min_coins = 3,
+    expected_combination = [20, 25, 100],
+    practical_application = true,
+    note = "No pennies in machine"
+}
+
+international_currency = {
+    coins = [1, 5, 10, 25, 50, 100, 500, 1000],
+    amount = 1337,
+    expected_min_coins = 4,
+    expected_combination = [37, 300, 1000],
+    currency_system = "Yen-like"
+}
+
+arcade_tokens = {
+    coins = [1, 3, 9, 27, 81],
+    amount = 100,
+    expected_min_coins = 4,
+    expected_combination = [1, 18, 81],
+    base_3_system = true
+}
+
+[algorithms.variants]
+dp_bottom_up = {
+    implemented = true,
+    time = "O(amount * coins)",
+    space = "O(amount)",
+    optimal = true
+}
+
+dp_top_down = {
+    implemented = true,
+    time = "O(amount * coins)",
+    space = "O(amount + recursion_depth)",
+    optimal = true
+}
+
+greedy_approach = {
+    implemented = true,
+    time = "O(coins log coins)",
+    space = "O(1)",
+    optimal = false,
+    works_for = "canonical_coin_systems"
+}
+
+naive_recursive = {
+    implemented = true,
+    time = "O(coins^amount)",
+    space = "O(amount)",
+    optimal = true,
+    educational_only = true
+}
+
+bfs_approach = {
+    implemented = false,
+    time = "O(amount * coins)",
+    space = "O(amount)",
+    optimal = true,
+    level_by_level = true
+}
+
+[benchmark]
+iterations = 1000
+warmup = 100
+amounts = [10, 50, 100, 500, 1000, 5000]
+coin_sets = [
+    [1, 5, 10, 25],                    # US coins
+    [1, 2, 5, 10, 20, 50, 100, 200],  # Euro coins
+    [1, 3, 4],                         # Greedy fails
+    [1, 2, 3, 5, 8, 13, 21]           # Fibonacci
+]
+
+[performance_targets]
+"amount_1000_us_coins" = 0.01  # seconds
+"dp_vs_naive_speedup" = 10000.0
+"greedy_speedup_when_optimal" = 100.0
+"cache_hit_rate" = 0.80
+
+[visualization]
+show_dp_table = true
+show_coin_selection = true
+animate_construction = true
+show_greedy_vs_optimal = true
+export_formats = ["ascii", "html", "svg"]
+
+[validation]
+property_tests = 12000
+verify_optimality = true
+cross_validate_variants = true
+benchmark_consistency = true
+
+[applications]
+vending_machines = true
+currency_exchange = true
+payment_systems = true
+resource_allocation = true
+scheduling_problems = true
+
+[ruchy_features]
+# v1.5.0 specific features this example demonstrates
+self_hosting_dp_generation = true       # Generate DP recurrence code at runtime
+memoization_code_synthesis = true       # Synthesize memoization logic
+algorithm_w_recursive_inference = true  # Complex recursive type inference
+pattern_matching_dp_states = true       # Exhaustive DP state matching
+concurrent_coin_optimization = true     # Parallel coin change computation
+formal_correctness_verification = true  # Prove DP correctness with SMT
+greedy_analysis_framework = true        # Analyze when greedy algorithms work
