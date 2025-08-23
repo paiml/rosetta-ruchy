@@ -1,0 +1,114 @@
+[metadata]
+name = "hash-table"
+category = "data-structures" 
+difficulty = "medium"
+tags = ["hashing", "open-addressing", "chaining", "load-factor", "collision-resolution"]
+
+[complexity]
+time_insert = "O(1) average, O(n) worst"
+time_lookup = "O(1) average, O(n) worst" 
+time_delete = "O(1) average, O(n) worst"
+space = "O(n)"
+load_factor = "α ≤ 0.75 for good performance"
+
+[test_cases.basic]
+empty_table = { operations = [], expected_size = 0 }
+single_insert = { operations = [["insert", "key1", "value1"]], expected = [["key1", "value1"]] }
+single_delete = { operations = [["insert", "key1", "value1"], ["delete", "key1"]], expected_size = 0 }
+lookup_missing = { operations = [["insert", "key1", "value1"], ["lookup", "key2"]], expected = "None" }
+lookup_existing = { operations = [["insert", "key1", "value1"], ["lookup", "key1"]], expected = "Some(value1)" }
+
+[test_cases.collisions]
+hash_collision_linear = { 
+    hash_function = "simple_mod",
+    operations = [
+        ["insert", "key0", "val0"],
+        ["insert", "key7", "val7"],   # Assumes table_size=7, both hash to 0
+        ["insert", "key14", "val14"], # Also hashes to 0
+        ["lookup", "key7"],
+        ["lookup", "key14"]
+    ],
+    expected = ["Some(val7)", "Some(val14)"]
+}
+
+chain_collision = {
+    strategy = "separate_chaining",
+    operations = [
+        ["insert", "collision1", "value1"],
+        ["insert", "collision2", "value2"], # Same hash bucket
+        ["lookup", "collision1"],
+        ["lookup", "collision2"]
+    ],
+    expected = ["Some(value1)", "Some(value2)"]
+}
+
+[test_cases.load_factor]
+resize_trigger = {
+    initial_capacity = 8,
+    load_factor_threshold = 0.75,
+    operations = [
+        ["insert", "k1", "v1"], ["insert", "k2", "v2"], ["insert", "k3", "v3"],
+        ["insert", "k4", "v4"], ["insert", "k5", "v5"], ["insert", "k6", "v6"],
+        ["insert", "k7", "v7"]  # This should trigger resize (7/8 > 0.75)
+    ],
+    expected_capacity_after = 16
+}
+
+dynamic_shrinking = {
+    operations = [
+        # Fill then empty
+        ["insert", "k1", "v1"], ["insert", "k2", "v2"], ["insert", "k3", "v3"], ["insert", "k4", "v4"],
+        ["delete", "k1"], ["delete", "k2"], ["delete", "k3"], ["delete", "k4"]
+    ],
+    expected_behavior = "maintain_capacity_or_shrink"
+}
+
+[test_cases.stress]
+large_dataset = { generate = "random_strings", count = 100000, seed = 42 }
+sequential_keys = { generate = "sequential", start = 1, count = 50000 }
+duplicate_handling = { generate = "duplicates_heavy", unique_ratio = 0.3, count = 10000 }
+
+[test_cases.hash_functions]
+string_hashing = {
+    hash_functions = ["djb2", "fnv1a", "sdbm", "murmur3"],
+    test_data = ["hello", "world", "hash", "table", "collision", "test"],
+    measure_distribution = true
+}
+
+integer_hashing = {
+    hash_functions = ["multiplicative", "division", "universal"],
+    test_data = [1, 42, 100, 999, 1024, 65536, 1000000],
+    measure_distribution = true
+}
+
+[benchmark]
+iterations = 50000
+warmup = 5000
+operations = ["insert", "lookup", "delete", "iterate"]
+data_sizes = [1000, 10000, 100000, 1000000]
+load_factors = [0.25, 0.5, 0.75, 0.9]
+
+[performance_targets]
+"100k_insertions_per_sec" = 500000
+"100k_lookups_per_sec" = 1000000  
+"memory_overhead_percent" = 25.0
+"cache_miss_ratio" = 0.05
+
+[collision_strategies]
+open_addressing = ["linear_probing", "quadratic_probing", "double_hashing"]
+separate_chaining = ["linked_list", "dynamic_array", "red_black_tree"]
+
+[validation]
+property_tests = 25000
+hash_quality_tests = 1000
+memory_leak_detection = true
+concurrent_access_safety = true
+
+[ruchy_features]
+# v1.5.0 specific features this example demonstrates
+self_hosting_hash_generation = true    # Generate hash functions using self-hosting compiler
+algorithm_w_generic_constraints = true # Complex trait bounds with Algorithm W
+minimal_codegen_optimization = true    # Demonstrate minimal codegen for hash operations
+advanced_type_inference = true         # Automatic type inference for key-value pairs
+runtime_hash_analysis = true           # Performance analysis of hash quality
+formal_verification_proofs = true      # SMT solver verification of hash properties
