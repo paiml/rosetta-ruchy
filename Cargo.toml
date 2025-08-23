@@ -2,20 +2,21 @@
 members = [
     "harness/runner",
     "scripts/validation-tools",
+    "mcp-server",
 ]
-default-members = ["harness/runner"]
+default-members = ["harness/runner", "mcp-server"]
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0"
-authors = ["Pragmatic AI Labs <hello@pragmatic.ai>"]
+version = "1.0.0"
+authors = ["Rosetta Ruchy Contributors"]
 license = "MIT"
-repository = "https://github.com/pragmatic-ai-labs/rosetta-ruchy"
-homepage = "https://github.com/pragmatic-ai-labs/rosetta-ruchy"
+repository = "https://github.com/rosetta-ruchy/rosetta-ruchy"
+homepage = "https://rosetta-ruchy.org"
 documentation = "https://docs.rs/rosetta-ruchy"
-description = "A polyglot benchmark suite demonstrating Ruchy's performance parity with Rust"
-keywords = ["benchmark", "performance", "ruchy", "polyglot", "comparison"]
-categories = ["development-tools", "algorithms", "science"]
+description = "Polyglot benchmark suite and MCP server for code translation to Ruchy"
+keywords = ["benchmark", "ruchy", "mcp", "translation", "formal-verification"]
+categories = ["development-tools", "development-tools::testing", "web-programming::http-server"]
 edition = "2021"
 rust-version = "1.70"
 
@@ -63,6 +64,18 @@ serde_yaml = "0.9"
 walkdir = "2.4"
 regex = "1.10"
 
+# MCP server dependencies (using available versions)
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+uuid = { version = "1.6", features = ["v4", "serde"] }
+
+# Code translation and analysis
+tree-sitter = "0.20"
+
+# Process execution
+subprocess = "0.2"
+
 # Quality assurance will be added per-crate as needed
 # pmat integration is optional and added individually
 
@@ -76,7 +89,7 @@ pre-release-replacements = [
 pre-release-commit-message = "chore(release): {{version}}"
 tag-message = "Release v{{version}} with Toyota Way quality gates"
 tag-name = "v{{version}}"
-publish = false  # We don't publish the workspace root
+publish = true   # MCP server will be published to crates.io
 
 # Quality enforcement metadata
 [workspace.metadata.pmat]

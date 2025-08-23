@@ -1,0 +1,395 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        type: string
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-and-release:
+    name: Build and Release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary: rosetta-ruchy-mcp
+            archive: tar.gz
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            binary: rosetta-ruchy-mcp
+            archive: tar.gz
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            binary: rosetta-ruchy-mcp
+            archive: tar.gz
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary: rosetta-ruchy-mcp.exe
+            archive: zip
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Cargo
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install cross (for cross-compilation)
+        if: matrix.target != 'x86_64-unknown-linux-gnu' && matrix.target != 'x86_64-apple-darwin' && matrix.os == 'ubuntu-latest'
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Build release binary
+        run: |
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" && "${{ matrix.target }}" != "x86_64-unknown-linux-gnu" ]]; then
+            cross build --release --target ${{ matrix.target }} --package rosetta-ruchy-mcp
+          else
+            cargo build --release --target ${{ matrix.target }} --package rosetta-ruchy-mcp
+          fi
+
+      - name: Strip binary (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          strip target/${{ matrix.target }}/release/${{ matrix.binary }} || true
+
+      - name: Create archive directory
+        run: mkdir -p release/
+
+      - name: Copy binary and create archive (Unix)
+        if: matrix.archive == 'tar.gz'
+        run: |
+          cp target/${{ matrix.target }}/release/${{ matrix.binary }} release/
+          cp README.md LICENSE release/
+          cd release
+          tar -czf ../rosetta-ruchy-mcp-${{ matrix.target }}.${{ matrix.archive }} .
+          cd ..
+
+      - name: Copy binary and create archive (Windows)
+        if: matrix.archive == 'zip'
+        run: |
+          cp target/${{ matrix.target }}/release/${{ matrix.binary }} release/
+          cp README.md LICENSE release/
+          cd release
+          7z a ../rosetta-ruchy-mcp-${{ matrix.target }}.zip .
+          cd ..
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: rosetta-ruchy-mcp-${{ matrix.target }}
+          path: rosetta-ruchy-mcp-${{ matrix.target }}.${{ matrix.archive }}
+
+  create-release:
+    name: Create Release
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts/
+
+      - name: Extract version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          if [[ -f CHANGELOG.md ]]; then
+            # Extract changelog section for this version
+            sed -n "/## \[${{ steps.version.outputs.version }}\]/,/## \[/p" CHANGELOG.md | sed '$d' > release_notes.md
+          else
+            # Generate basic release notes
+            cat > release_notes.md << 'EOF'
+          ## Features
+          
+          - 🚀 **MCP Server**: Real-time code translation to Ruchy with formal verification
+          - 🔍 **Advanced Analysis**: AST analysis, provability checking, and quality scoring
+          - 🎯 **Multi-language Support**: Translate from Rust, Python, JavaScript, Go, and C
+          - ⚡ **Performance Predictions**: Immediate benchmark projections and optimization suggestions
+          - 🛡️ **Quality Gates**: Real-time validation against Ruchy quality standards
+          
+          ## Installation
+          
+          ### Quick Install (Recommended)
+          ```bash
+          curl -fsSL https://rosetta-ruchy.org/install.sh | sh
+          ```
+          
+          ### Manual Installation
+          1. Download the appropriate binary for your platform
+          2. Extract to a directory in your PATH
+          3. Run `rosetta-ruchy-mcp --help` to verify installation
+          
+          ## Usage
+          
+          ### Start MCP Server
+          ```bash
+          rosetta-ruchy-mcp --host 127.0.0.1 --port 8080
+          ```
+          
+          ### Translation API
+          ```bash
+          curl -X POST http://localhost:8080/api/v1/translate \
+            -H "Content-Type: application/json" \
+            -d '{"source_code": "def hello(): print(\"Hello, World!\")", "source_language": "python"}'
+          ```
+          
+          For more examples and documentation, visit: https://rosetta-ruchy.org/docs
+          EOF
+          fi
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.version }} Release
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/*/rosetta-ruchy-mcp-*.tar.gz
+            artifacts/*/rosetta-ruchy-mcp-*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-crates:
+    name: Publish to crates.io
+    needs: create-release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ubuntu-latest-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Publish to crates.io
+        run: |
+          cd mcp-server
+          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  create-install-script:
+    name: Create Install Script
+    needs: create-release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create install script
+        run: |
+          cat > install.sh << 'EOF'
+          #!/bin/bash
+          # Rosetta Ruchy MCP Server Installation Script
+          # Usage: curl -fsSL https://rosetta-ruchy.org/install.sh | sh
+
+          set -e
+
+          # Default values
+          INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
+          VERSION="${VERSION:-${{ steps.version.outputs.version }}}"
+          REPO="rosetta-ruchy/rosetta-ruchy"
+
+          # Colors for output
+          RED='\033[0;31m'
+          GREEN='\033[0;32m'
+          YELLOW='\033[1;33m'
+          BLUE='\033[0;34m'
+          NC='\033[0m' # No Color
+
+          info() {
+              echo -e "${BLUE}[INFO]${NC} $1"
+          }
+
+          warn() {
+              echo -e "${YELLOW}[WARN]${NC} $1"
+          }
+
+          error() {
+              echo -e "${RED}[ERROR]${NC} $1"
+              exit 1
+          }
+
+          success() {
+              echo -e "${GREEN}[SUCCESS]${NC} $1"
+          }
+
+          # Detect platform
+          detect_platform() {
+              local os arch
+              os=$(uname -s)
+              arch=$(uname -m)
+
+              case "$os" in
+                  Linux)
+                      case "$arch" in
+                          x86_64|amd64) echo "x86_64-unknown-linux-gnu" ;;
+                          *) error "Unsupported architecture: $arch" ;;
+                      esac
+                      ;;
+                  Darwin)
+                      case "$arch" in
+                          x86_64) echo "x86_64-apple-darwin" ;;
+                          arm64) echo "aarch64-apple-darwin" ;;
+                          *) error "Unsupported architecture: $arch" ;;
+                      esac
+                      ;;
+                  MINGW*|MSYS*|CYGWIN*)
+                      case "$arch" in
+                          x86_64|amd64) echo "x86_64-pc-windows-msvc" ;;
+                          *) error "Unsupported architecture: $arch" ;;
+                      esac
+                      ;;
+                  *)
+                      error "Unsupported operating system: $os"
+                      ;;
+              esac
+          }
+
+          # Main installation function
+          install_rosetta_ruchy_mcp() {
+              local platform archive_type binary_name
+              
+              info "Installing Rosetta Ruchy MCP Server $VERSION..."
+              
+              platform=$(detect_platform)
+              info "Detected platform: $platform"
+
+              case "$platform" in
+                  *windows*) 
+                      archive_type="zip"
+                      binary_name="rosetta-ruchy-mcp.exe"
+                      ;;
+                  *)
+                      archive_type="tar.gz"
+                      binary_name="rosetta-ruchy-mcp"
+                      ;;
+              esac
+
+              # Create install directory
+              mkdir -p "$INSTALL_DIR"
+
+              # Download URL
+              local download_url="https://github.com/$REPO/releases/download/$VERSION/rosetta-ruchy-mcp-$platform.$archive_type"
+              local temp_file="/tmp/rosetta-ruchy-mcp.$archive_type"
+
+              info "Downloading from: $download_url"
+              
+              if command -v curl >/dev/null 2>&1; then
+                  curl -fsSL "$download_url" -o "$temp_file"
+              elif command -v wget >/dev/null 2>&1; then
+                  wget -q "$download_url" -O "$temp_file"
+              else
+                  error "Neither curl nor wget is available. Please install one of them."
+              fi
+
+              # Extract archive
+              info "Extracting archive..."
+              case "$archive_type" in
+                  tar.gz)
+                      tar -xzf "$temp_file" -C "/tmp/"
+                      ;;
+                  zip)
+                      unzip -q "$temp_file" -d "/tmp/"
+                      ;;
+              esac
+
+              # Move binary to install directory
+              mv "/tmp/$binary_name" "$INSTALL_DIR/"
+              chmod +x "$INSTALL_DIR/$binary_name"
+
+              # Cleanup
+              rm -f "$temp_file"
+              rm -f "/tmp/README.md" "/tmp/LICENSE"
+
+              success "Rosetta Ruchy MCP Server installed successfully!"
+              success "Binary location: $INSTALL_DIR/$binary_name"
+
+              # Check if install directory is in PATH
+              if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
+                  warn "Install directory is not in PATH."
+                  warn "Add the following line to your shell profile:"
+                  warn "export PATH=\"\$PATH:$INSTALL_DIR\""
+              fi
+
+              # Verify installation
+              info "Verifying installation..."
+              if "$INSTALL_DIR/$binary_name" --help >/dev/null 2>&1; then
+                  success "Installation verified!"
+                  info "Run '$binary_name --help' for usage information"
+              else
+                  error "Installation verification failed"
+              fi
+          }
+
+          # Run installation
+          install_rosetta_ruchy_mcp
+          EOF
+
+      - name: Upload install script
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          files: install.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

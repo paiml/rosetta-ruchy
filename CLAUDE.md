@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is rosetta-ruchy, a polyglot benchmark suite designed to demonstrate Ruchy's performance parity with Rust while maintaining Python-like ergonomics. The repository provides empirical evidence of zero-cost abstractions through systematic comparison across production workloads.
 
+**NEW: MCP Server Integration** - This repository also functions as an MCP (Model Context Protocol) server that provides real-time code translation capabilities to Claude Code agents, allowing seamless conversion from any language to Ruchy with immediate formal verification and performance analysis.
+
 **CRITICAL P0 REQUIREMENTS**: 
 1. Every Ruchy example MUST showcase the language's advanced tooling capabilities (AST analysis, provability checking, formal verification, hardware-aware optimization). This is Ruchy's defining trait and primary competitive advantage.
 2. **ALL SCRIPTING MUST BE IN RUCHY** - No bash, Python, or other scripting languages. Use `.ruchy` files for all automation, benchmarking, and tooling. This demonstrates Ruchy's capability as a complete ecosystem replacement.
@@ -95,6 +97,116 @@ ruchy doc fibonacci.ruchy --include-proofs   # Documentation with formal proofs
 - CI/CD scripts: `ci.ruchy` instead of .github/workflows
 - Data processing: `process.ruchy` instead of process.py
 - System administration: `admin.ruchy` instead of admin.sh
+- **MCP Server**: `mcp_server.ruchy` for code translation services
+
+## MCP Server Integration
+
+This repository provides a comprehensive MCP (Model Context Protocol) server implementation that enables real-time code translation and analysis services.
+
+### MCP Server Capabilities
+
+#### Core Translation Services
+The MCP server provides endpoints for:
+- **Code Translation**: Convert any supported language to idiomatic Ruchy
+- **Performance Analysis**: Predict performance characteristics before translation
+- **Formal Verification**: Immediate provability analysis during translation
+- **Quality Assessment**: Real-time code quality scoring and improvement suggestions
+- **Benchmark Comparison**: Live performance comparisons against existing implementations
+
+#### PMCP Integration
+Supports **PMCP (Protocol for MCP)** for enhanced capabilities:
+- **Interactive Translation**: Step-by-step guided translation with user feedback
+- **Real-time Verification**: Live formal verification as code is translated
+- **Performance Insights**: Immediate benchmark projections and optimization suggestions
+- **Quality Gates**: Real-time validation against Ruchy quality standards
+
+### MCP Server Implementation
+
+#### Server Architecture
+```ruchy
+#!/usr/bin/env ruchy
+// mcp_server.ruchy - Main MCP server implementation
+
+use std::net::TcpListener;
+use std::json::{Json, JsonValue};
+use rosetta_analysis::{translate, verify, benchmark};
+
+struct RosettaMCPServer {
+    host: String,
+    port: u16,
+    capabilities: MCPCapabilities,
+}
+
+impl RosettaMCPServer {
+    fun new() -> Self {
+        Self {
+            host: "127.0.0.1".to_string(),
+            port: 8080,
+            capabilities: MCPCapabilities::new()
+        }
+    }
+    
+    fun start(&self) {
+        let listener = TcpListener::bind(format!("{}:{}", self.host, self.port))?;
+        
+        for stream in listener.incoming() {
+            let stream = stream?;
+            self.handle_client(stream);
+        }
+    }
+    
+    fun handle_translation_request(&self, request: TranslationRequest) -> TranslationResponse {
+        // Step 1: Parse source code and detect language
+        let source_lang = detect_language(&request.source_code);
+        
+        // Step 2: Translate to Ruchy
+        let ruchy_code = translate::to_ruchy(&request.source_code, source_lang)?;
+        
+        // Step 3: Run Ruchy advanced tooling
+        let ast_analysis = ruchy::ast(&ruchy_code)?;
+        let provability = ruchy::provability(&ruchy_code)?;
+        let quality_score = ruchy::score(&ruchy_code)?;
+        
+        // Step 4: Generate performance predictions
+        let performance_prediction = benchmark::predict(&ruchy_code, source_lang)?;
+        
+        TranslationResponse {
+            ruchy_code,
+            ast_analysis,
+            provability_score: provability.score,
+            quality_score,
+            performance_prediction,
+            verification_status: provability.verified,
+            optimization_suggestions: ruchy::optimize::suggest(&ruchy_code)?
+        }
+    }
+}
+```
+
+#### Translation Endpoints
+- `POST /api/v1/translate` - Translate code to Ruchy
+- `POST /api/v1/analyze` - Analyze existing code without translation  
+- `POST /api/v1/benchmark` - Compare performance across languages
+- `POST /api/v1/verify` - Run formal verification on Ruchy code
+- `GET /api/v1/capabilities` - Get server capabilities and supported languages
+
+#### Integration with Claude Code
+```json
+{
+  "mcp_servers": {
+    "rosetta-ruchy-translator": {
+      "command": "ruchy",
+      "args": ["mcp_server.ruchy", "--host", "127.0.0.1", "--port", "8080"],
+      "capabilities": [
+        "code_translation",
+        "performance_analysis",
+        "formal_verification", 
+        "quality_assessment"
+      ]
+    }
+  }
+}
+```
 
 Example Ruchy script structure:
 ```ruchy
