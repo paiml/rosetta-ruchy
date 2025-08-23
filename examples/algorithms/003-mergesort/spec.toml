@@ -1,0 +1,69 @@
+[metadata]
+name = "mergesort"
+category = "sorting"
+difficulty = "medium-hard"
+tags = ["divide-conquer", "stable-sort", "guaranteed-performance", "comparison-sort"]
+
+[complexity]
+time_best = "O(n log n)"
+time_average = "O(n log n)"
+time_worst = "O(n log n)"
+space = "O(n)"
+stable = true
+adaptive = true
+
+[test_cases.basic]
+empty = { input = [], expected = [] }
+single = { input = [42], expected = [42] }
+sorted = { input = [1, 2, 3, 4, 5], expected = [1, 2, 3, 4, 5] }
+reverse = { input = [5, 4, 3, 2, 1], expected = [1, 2, 3, 4, 5] }
+random = { input = [3, 1, 4, 1, 5, 9, 2, 6], expected = [1, 1, 2, 3, 4, 5, 6, 9] }
+duplicates = { input = [5, 5, 5, 5, 5], expected = [5, 5, 5, 5, 5] }
+mixed = { input = [3, -1, 4, -1, 5, 9, -2, 6], expected = [-2, -1, -1, 3, 4, 5, 6, 9] }
+
+[test_cases.stability]
+# Test that equal elements maintain their relative order
+pairs = { 
+    input = [[1, "a"], [2, "b"], [1, "c"], [3, "d"], [2, "e"]], 
+    expected = [[1, "a"], [1, "c"], [2, "b"], [2, "e"], [3, "d"]]
+}
+
+[test_cases.adaptive]
+# Nearly sorted arrays should perform better
+nearly_sorted = { generate = "nearly_sorted", size = 10000, inversions = 100 }
+sorted_runs = { generate = "sorted_runs", size = 10000, runs = 10 }
+
+[test_cases.stress]
+large_random = { generate = "random", size = 100000, seed = 42 }
+large_sorted = { generate = "sorted", size = 100000 }
+large_reverse = { generate = "reverse", size = 100000 }
+large_duplicates = { generate = "duplicates", size = 100000, distinct = 100 }
+
+[benchmark]
+iterations = 500
+warmup = 50
+sizes = [1000, 10000, 100000, 1000000]
+patterns = ["random", "sorted", "reverse", "nearly_sorted", "duplicates", "sorted_runs"]
+
+[performance_targets]
+"100000_elements_ms" = 15.0
+"1000000_elements_ms" = 150.0
+"10000000_elements_ms" = 1800.0
+memory_overhead_percent = 100.0
+stability_maintained_percent = 100.0
+
+[validation]
+property_tests = 15000
+mutation_score = 0.90
+coverage_percent = 98.0
+
+[ruchy_features]
+# v1.4.0 specific features this example demonstrates
+hashmap_integration = true
+f_string_interpolation = true
+method_chaining = true
+result_error_handling = true
+async_parallel = true
+iterator_adaptors = true
+generic_traits = true
+performance_analytics = true

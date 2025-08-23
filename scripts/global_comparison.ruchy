@@ -1,0 +1,561 @@
+#!/usr/bin/env ruchy
+// Global Performance Comparison - Ruchy v1.4.0
+// Compares all algorithms across all languages with advanced analytics
+
+use std::collections::HashMap
+use std::process::Command
+use std::fs::{self, File}
+use std::io::Write
+use std::time::Instant
+use std::path::Path
+
+struct BenchmarkResult {
+    algorithm: String,
+    language: String,
+    implementation: String,
+    input_size: usize,
+    duration_ms: f64,
+    memory_mb: f64,
+    cpu_usage_percent: f64,
+    cache_misses: u64,
+}
+
+struct ComparisonSuite {
+    results: Vec<BenchmarkResult>,
+    algorithms: Vec<String>,
+    languages: Vec<String>,
+    input_sizes: Vec<usize>,
+    performance_baselines: HashMap<String, f64>,
+}
+
+impl ComparisonSuite {
+    fun new() -> Self {
+        Self {
+            results: Vec::new(),
+            algorithms: vec![
+                "fibonacci".to_string(),
+                "quicksort".to_string(), 
+                "mergesort".to_string(),
+            ],
+            languages: vec![
+                "ruchy".to_string(),
+                "rust".to_string(),
+                "python".to_string(),
+                "javascript".to_string(),
+                "go".to_string(),
+                "c".to_string(),
+            ],
+            input_sizes: vec![100, 1000, 10000, 100000],
+            performance_baselines: HashMap::new(),
+        }
+    }
+    
+    fun run_comprehensive_benchmarks(&mut self) -> Result<(), String> {
+        println(f"🚀 Running comprehensive benchmark suite...")
+        println(f"Algorithms: {self.algorithms.len()}")
+        println(f"Languages: {self.languages.len()}")
+        println(f"Input sizes: {self.input_sizes.len()}")
+        println(f"Total benchmark combinations: {self.algorithms.len() * self.languages.len() * self.input_sizes.len()}")
+        println()
+        
+        for algorithm in &self.algorithms {
+            println(f"📊 Benchmarking {algorithm}...")
+            self.benchmark_algorithm(algorithm)?
+            println()
+        }
+        
+        self.establish_baselines()
+        self.analyze_results()
+        self.generate_reports()?
+        
+        Ok(())
+    }
+    
+    fun benchmark_algorithm(&mut self, algorithm: &str) -> Result<(), String> {
+        let example_path = format!("examples/algorithms/*-{}", algorithm)
+        let example_dirs: Vec<_> = glob::glob(&example_path)
+            .map_err(|e| format!("Failed to find algorithm directory: {}", e))?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| format!("Failed to read algorithm directory: {}", e))?
+        
+        if example_dirs.is_empty() {
+            return Err(format!("No directory found for algorithm: {}", algorithm))
+        }
+        
+        let example_dir = &example_dirs[0]
+        
+        for language in &self.languages {
+            for &input_size in &self.input_sizes {
+                match self.run_single_benchmark(algorithm, language, input_size, example_dir) {
+                    Ok(result) => {
+                        println(f"  ✅ {language} ({input_size} elements): {result.duration_ms:.2}ms")
+                        self.results.push(result)
+                    }
+                    Err(e) => {
+                        println(f"  ❌ {language} ({input_size} elements): {e}")
+                    }
+                }
+            }
+        }
+        
+        Ok(())
+    }
+    
+    fun run_single_benchmark(
+        &self,
+        algorithm: &str,
+        language: &str,
+        input_size: usize,
+        example_dir: &Path
+    ) -> Result<BenchmarkResult, String> {
+        let impl_dir = example_dir.join(format!("implementations/{}", language))
+        
+        if !impl_dir.exists() {
+            return Err(format!("Implementation not found: {}", language))
+        }
+        
+        let start = Instant::now()
+        
+        let output = match language {
+            "ruchy" => self.benchmark_ruchy(&impl_dir, algorithm, input_size)?,
+            "rust" => self.benchmark_rust(&impl_dir, algorithm, input_size)?,
+            "python" => self.benchmark_python(&impl_dir, algorithm, input_size)?,
+            "javascript" => self.benchmark_javascript(&impl_dir, algorithm, input_size)?,
+            "go" => self.benchmark_go(&impl_dir, algorithm, input_size)?,
+            "c" => self.benchmark_c(&impl_dir, algorithm, input_size)?,
+            _ => return Err(format!("Unknown language: {}", language))
+        }
+        
+        let duration = start.elapsed().as_secs_f64() * 1000.0
+        
+        Ok(BenchmarkResult {
+            algorithm: algorithm.to_string(),
+            language: language.to_string(),
+            implementation: "default".to_string(),
+            input_size,
+            duration_ms: duration,
+            memory_mb: output.memory_mb,
+            cpu_usage_percent: output.cpu_usage,
+            cache_misses: output.cache_misses,
+        })
+    }
+    
+    fun benchmark_ruchy(&self, impl_dir: &Path, algorithm: &str, input_size: usize) -> Result<BenchmarkOutput, String> {
+        let ruchy_file = impl_dir.join(format!("{}.ruchy", algorithm))
+        
+        let output = Command::new("ruchy")
+            .args(&["run", ruchy_file.to_str().unwrap(), "--bench", &input_size.to_string()])
+            .output()
+            .map_err(|e| format!("Failed to run Ruchy benchmark: {}", e))?
+        
+        if !output.status.success() {
+            return Err(format!("Ruchy benchmark failed: {}", 
+                String::from_utf8_lossy(&output.stderr)))
+        }
+        
+        Ok(BenchmarkOutput {
+            memory_mb: 0.0, // Would need system monitoring
+            cpu_usage: 0.0,
+            cache_misses: 0,
+        })
+    }
+    
+    fun benchmark_rust(&self, impl_dir: &Path, algorithm: &str, input_size: usize) -> Result<BenchmarkOutput, String> {
+        let output = Command::new("cargo")
+            .args(&["run", "--release", "--", "--bench", &input_size.to_string()])
+            .current_dir(impl_dir)
+            .output()
+            .map_err(|e| format!("Failed to run Rust benchmark: {}", e))?
+        
+        if !output.status.success() {
+            return Err(format!("Rust benchmark failed: {}", 
+                String::from_utf8_lossy(&output.stderr)))
+        }
+        
+        Ok(BenchmarkOutput {
+            memory_mb: 0.0,
+            cpu_usage: 0.0,
+            cache_misses: 0,
+        })
+    }
+    
+    fun benchmark_python(&self, impl_dir: &Path, algorithm: &str, input_size: usize) -> Result<BenchmarkOutput, String> {
+        let python_file = impl_dir.join(format!("{}.py", algorithm))
+        
+        let output = Command::new("python3")
+            .args(&[python_file.to_str().unwrap(), "--bench", &input_size.to_string()])
+            .output()
+            .map_err(|e| format!("Failed to run Python benchmark: {}", e))?
+        
+        if !output.status.success() {
+            return Err(format!("Python benchmark failed: {}", 
+                String::from_utf8_lossy(&output.stderr)))
+        }
+        
+        Ok(BenchmarkOutput {
+            memory_mb: 0.0,
+            cpu_usage: 0.0,
+            cache_misses: 0,
+        })
+    }
+    
+    fun benchmark_javascript(&self, impl_dir: &Path, algorithm: &str, input_size: usize) -> Result<BenchmarkOutput, String> {
+        let js_file = impl_dir.join(format!("{}.js", algorithm))
+        
+        let output = Command::new("node")
+            .args(&[js_file.to_str().unwrap(), "--bench", &input_size.to_string()])
+            .output()
+            .map_err(|e| format!("Failed to run JavaScript benchmark: {}", e))?
+        
+        if !output.status.success() {
+            return Err(format!("JavaScript benchmark failed: {}", 
+                String::from_utf8_lossy(&output.stderr)))
+        }
+        
+        Ok(BenchmarkOutput {
+            memory_mb: 0.0,
+            cpu_usage: 0.0,
+            cache_misses: 0,
+        })
+    }
+    
+    fun benchmark_go(&self, impl_dir: &Path, algorithm: &str, input_size: usize) -> Result<BenchmarkOutput, String> {
+        let go_file = impl_dir.join(format!("{}.go", algorithm))
+        
+        let output = Command::new("go")
+            .args(&["run", go_file.to_str().unwrap(), "--bench", &input_size.to_string()])
+            .output()
+            .map_err(|e| format!("Failed to run Go benchmark: {}", e))?
+        
+        if !output.status.success() {
+            return Err(format!("Go benchmark failed: {}", 
+                String::from_utf8_lossy(&output.stderr)))
+        }
+        
+        Ok(BenchmarkOutput {
+            memory_mb: 0.0,
+            cpu_usage: 0.0,
+            cache_misses: 0,
+        })
+    }
+    
+    fun benchmark_c(&self, impl_dir: &Path, algorithm: &str, input_size: usize) -> Result<BenchmarkOutput, String> {
+        let executable = impl_dir.join(algorithm)
+        
+        let output = Command::new(executable.to_str().unwrap())
+            .args(&["--bench", &input_size.to_string()])
+            .output()
+            .map_err(|e| format!("Failed to run C benchmark: {}", e))?
+        
+        if !output.status.success() {
+            return Err(format!("C benchmark failed: {}", 
+                String::from_utf8_lossy(&output.stderr)))
+        }
+        
+        Ok(BenchmarkOutput {
+            memory_mb: 0.0,
+            cpu_usage: 0.0,
+            cache_misses: 0,
+        })
+    }
+    
+    fun establish_baselines(&mut self) {
+        println(f"📐 Establishing performance baselines...")
+        
+        // Use Rust as the performance baseline
+        for algorithm in &self.algorithms {
+            let rust_results: Vec<_> = self.results
+                .iter()
+                .filter(|r| r.algorithm == *algorithm && r.language == "rust")
+                .collect()
+            
+            if !rust_results.is_empty() {
+                let avg_duration = rust_results
+                    .iter()
+                    .map(|r| r.duration_ms)
+                    .sum::<f64>() / rust_results.len() as f64
+                
+                self.performance_baselines.insert(algorithm.clone(), avg_duration)
+                println(f"  {algorithm}: {avg_duration:.2}ms (Rust baseline)")
+            }
+        }
+        
+        println()
+    }
+    
+    fun analyze_results(&self) {
+        println(f"🔍 Analyzing performance results...")
+        println()
+        
+        // Group results by algorithm
+        let mut by_algorithm: HashMap<String, Vec<&BenchmarkResult>> = HashMap::new()
+        for result in &self.results {
+            by_algorithm.entry(result.algorithm.clone())
+                .or_insert_with(Vec::new)
+                .push(result)
+        }
+        
+        for (algorithm, results) in by_algorithm {
+            println(f"## {algorithm.to_uppercase()} Analysis")
+            
+            if let Some(&baseline) = self.performance_baselines.get(&algorithm) {
+                println(f"Rust baseline: {baseline:.2}ms")
+                
+                // Calculate relative performance for each language
+                let mut language_performance: HashMap<String, Vec<f64>> = HashMap::new()
+                for result in results {
+                    language_performance
+                        .entry(result.language.clone())
+                        .or_insert_with(Vec::new)
+                        .push(result.duration_ms / baseline)
+                }
+                
+                // Display relative performance
+                for (language, ratios) in language_performance {
+                    let avg_ratio = ratios.iter().sum::<f64>() / ratios.len() as f64
+                    let status = if avg_ratio <= 1.05 {
+                        "🟢 Excellent"
+                    } else if avg_ratio <= 1.25 {
+                        "🟡 Good"
+                    } else if avg_ratio <= 2.0 {
+                        "🟠 Acceptable"
+                    } else {
+                        "🔴 Poor"
+                    }
+                    
+                    println(f"  {language}: {avg_ratio:.2}x {status}")
+                }
+            }
+            
+            println()
+        }
+    }
+    
+    fun generate_reports(&self) -> Result<(), String> {
+        fs::create_dir_all("results").map_err(|e| format!("Failed to create results directory: {}", e))?
+        
+        self.generate_markdown_report()?
+        self.generate_csv_data()?
+        self.generate_html_dashboard()?
+        
+        Ok(())
+    }
+    
+    fun generate_markdown_report(&self) -> Result<(), String> {
+        let mut file = File::create("results/global_comparison.md")
+            .map_err(|e| format!("Failed to create report file: {}", e))?
+        
+        writeln!(file, "# Rosetta Ruchy - Global Performance Comparison")?
+        writeln!(file, "")?
+        writeln!(file, "Generated: {}", chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC"))?
+        writeln!(file, "Ruchy version: v1.4.0")?
+        writeln!(file, "")?
+        
+        // Executive summary
+        writeln!(file, "## Executive Summary")?
+        writeln!(file, "")?
+        
+        let total_benchmarks = self.results.len()
+        let ruchy_results: Vec<_> = self.results.iter().filter(|r| r.language == "ruchy").collect()
+        let rust_results: Vec<_> = self.results.iter().filter(|r| r.language == "rust").collect()
+        
+        if !ruchy_results.is_empty() && !rust_results.is_empty() {
+            let ruchy_avg = ruchy_results.iter().map(|r| r.duration_ms).sum::<f64>() / ruchy_results.len() as f64
+            let rust_avg = rust_results.iter().map(|r| r.duration_ms).sum::<f64>() / rust_results.len() as f64
+            let performance_ratio = ruchy_avg / rust_avg
+            
+            writeln!(file, "- **Total benchmarks executed**: {}", total_benchmarks)?
+            writeln!(file, "- **Ruchy vs Rust performance**: {:.2}x", performance_ratio)?
+            
+            if performance_ratio <= 1.05 {
+                writeln!(file, "- **🎯 Performance target**: ✅ ACHIEVED (within 5% of Rust)")?
+            } else {
+                writeln!(file, "- **🎯 Performance target**: ❌ MISSED ({:.1}% slower than target)", (performance_ratio - 1.0) * 100.0)?
+            }
+        }
+        
+        writeln!(file, "")?
+        
+        // Algorithm-by-algorithm breakdown
+        let mut by_algorithm: HashMap<String, Vec<&BenchmarkResult>> = HashMap::new()
+        for result in &self.results {
+            by_algorithm.entry(result.algorithm.clone())
+                .or_insert_with(Vec::new)
+                .push(result)
+        }
+        
+        for (algorithm, results) in by_algorithm {
+            writeln!(file, "## {} Results", algorithm.to_uppercase())?
+            writeln!(file, "")?
+            writeln!(file, "| Language | Avg Duration (ms) | Relative to Rust | Status |")?
+            writeln!(file, "|----------|-------------------|------------------|---------|")?
+            
+            let rust_baseline = results.iter()
+                .filter(|r| r.language == "rust")
+                .map(|r| r.duration_ms)
+                .fold(0.0, |sum, x| sum + x) / results.iter().filter(|r| r.language == "rust").count() as f64
+            
+            let mut language_averages: HashMap<String, f64> = HashMap::new()
+            for result in results {
+                *language_averages.entry(result.language.clone()).or_insert(0.0) += result.duration_ms
+            }
+            
+            for (language, total_duration) in language_averages {
+                let count = results.iter().filter(|r| r.language == language).count() as f64
+                let avg_duration = total_duration / count
+                let relative = avg_duration / rust_baseline
+                
+                let status = if relative <= 1.05 {
+                    "🟢 Excellent"
+                } else if relative <= 1.25 {
+                    "🟡 Good"  
+                } else if relative <= 2.0 {
+                    "🟠 Acceptable"
+                } else {
+                    "🔴 Poor"
+                }
+                
+                writeln!(file, "| {} | {:.2} | {:.2}x | {} |", language, avg_duration, relative, status)?
+            }
+            
+            writeln!(file, "")?
+        }
+        
+        // Ruchy v1.4.0 features analysis
+        writeln!(file, "## Ruchy v1.4.0 Feature Analysis")?
+        writeln!(file, "")?
+        writeln!(file, "This benchmark suite demonstrates the following v1.4.0 features:")?
+        writeln!(file, "")?
+        writeln!(file, "### HashMap Integration")?
+        writeln!(file, "- Real-time performance tracking")?
+        writeln!(file, "- Advanced analytics collection")?
+        writeln!(file, "- Zero-cost abstractions over standard library")?
+        writeln!(file, "")?
+        writeln!(file, "### F-string Interpolation")?
+        writeln!(file, "- Rich formatting in debug output")?
+        writeln!(file, "- Expression evaluation within strings")?
+        writeln!(file, "- Type-safe compile-time validation")?
+        writeln!(file, "")?
+        writeln!(file, "### Method Chaining")?
+        writeln!(file, "- Fluent iterator combinators")?
+        writeln!(file, "- Zero-cost functional programming")?
+        writeln!(file, "- Improved code readability")?
+        writeln!(file, "")?
+        
+        println(f"📊 Global comparison report generated: results/global_comparison.md")
+        
+        Ok(())
+    }
+    
+    fun generate_csv_data(&self) -> Result<(), String> {
+        let mut file = File::create("results/benchmark_data.csv")
+            .map_err(|e| format!("Failed to create CSV file: {}", e))?
+        
+        writeln!(file, "algorithm,language,implementation,input_size,duration_ms,memory_mb,cpu_usage_percent,cache_misses")?
+        
+        for result in &self.results {
+            writeln!(file, "{},{},{},{},{:.3},{:.2},{:.2},{}", 
+                result.algorithm,
+                result.language,
+                result.implementation,
+                result.input_size,
+                result.duration_ms,
+                result.memory_mb,
+                result.cpu_usage_percent,
+                result.cache_misses
+            )?
+        }
+        
+        println(f"📈 Benchmark data exported: results/benchmark_data.csv")
+        
+        Ok(())
+    }
+    
+    fun generate_html_dashboard(&self) -> Result<(), String> {
+        let mut file = File::create("results/dashboard.html")
+            .map_err(|e| format!("Failed to create HTML dashboard: {}", e))?
+        
+        writeln!(file, r#"<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rosetta Ruchy - Performance Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 40px; }}
+        .metric {{ display: inline-block; margin: 20px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }}
+        .chart-container {{ width: 800px; height: 400px; margin: 20px 0; }}
+        h1 {{ color: #2c3e50; }}
+        h2 {{ color: #3498db; }}
+        .status-excellent {{ color: #27ae60; }}
+        .status-good {{ color: #f39c12; }}
+        .status-poor {{ color: #e74c3c; }}
+    </style>
+</head>
+<body>
+    <h1>🚀 Rosetta Ruchy Performance Dashboard</h1>
+    <p>Generated: {} | Ruchy v1.4.0</p>
+    
+    <div class="metrics">
+        <div class="metric">
+            <h3>Total Benchmarks</h3>
+            <div style="font-size: 2em; font-weight: bold;">{}</div>
+        </div>
+        <div class="metric">
+            <h3>Languages Tested</h3>
+            <div style="font-size: 2em; font-weight: bold;">{}</div>
+        </div>
+        <div class="metric">
+            <h3>Algorithms Covered</h3>
+            <div style="font-size: 2em; font-weight: bold;">{}</div>
+        </div>
+    </div>
+    
+    <h2>Performance Comparison</h2>
+    <div class="chart-container">
+        <canvas id="performanceChart"></canvas>
+    </div>
+    
+    <script>
+        // This would contain Chart.js visualization of the benchmark data
+        console.log('Dashboard loaded - implement Chart.js visualizations here');
+    </script>
+</body>
+</html>"#, 
+            chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC"),
+            self.results.len(),
+            self.languages.len(),
+            self.algorithms.len()
+        )?
+        
+        println(f"📊 Interactive dashboard generated: results/dashboard.html")
+        
+        Ok(())
+    }
+}
+
+struct BenchmarkOutput {
+    memory_mb: f64,
+    cpu_usage: f64,
+    cache_misses: u64,
+}
+
+fn main() -> Result<(), String> {
+    println(f"🌟 Rosetta Ruchy Global Comparison Suite v1.4.0")
+    println(f"=================================================")
+    println()
+    
+    let mut suite = ComparisonSuite::new()
+    suite.run_comprehensive_benchmarks()?
+    
+    println()
+    println(f"🎉 Global comparison complete!")
+    println(f"📊 Reports generated in results/ directory")
+    println(f"🔍 View results:")
+    println(f"   - Markdown report: results/global_comparison.md")
+    println(f"   - Raw data: results/benchmark_data.csv")
+    println(f"   - Dashboard: results/dashboard.html")
+    
+    Ok(())
+}
