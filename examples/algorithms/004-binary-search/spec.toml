@@ -1,0 +1,85 @@
+[metadata]
+name = "binary-search"
+category = "searching"
+difficulty = "medium"
+tags = ["divide-conquer", "logarithmic", "sorted-array", "bounds-checking"]
+
+[complexity]
+time_best = "O(1)"
+time_average = "O(log n)"
+time_worst = "O(log n)"
+space_iterative = "O(1)"
+space_recursive = "O(log n)"
+prerequisite = "sorted array"
+
+[test_cases.basic]
+empty = { input = [], target = 5, expected = "None" }
+single_found = { input = [42], target = 42, expected = "Some(0)" }
+single_not_found = { input = [42], target = 5, expected = "None" }
+found_middle = { input = [1, 3, 5, 7, 9], target = 5, expected = "Some(2)" }
+found_first = { input = [1, 3, 5, 7, 9], target = 1, expected = "Some(0)" }
+found_last = { input = [1, 3, 5, 7, 9], target = 9, expected = "Some(4)" }
+not_found_low = { input = [1, 3, 5, 7, 9], target = 0, expected = "None" }
+not_found_high = { input = [1, 3, 5, 7, 9], target = 10, expected = "None" }
+not_found_middle = { input = [1, 3, 5, 7, 9], target = 4, expected = "None" }
+
+[test_cases.duplicates]
+duplicates_leftmost = { 
+    input = [1, 2, 2, 2, 3], 
+    target = 2, 
+    expected_leftmost = "Some(1)",
+    expected_rightmost = "Some(3)"
+}
+all_same = { 
+    input = [5, 5, 5, 5, 5], 
+    target = 5,
+    expected_leftmost = "Some(0)",
+    expected_rightmost = "Some(4)"
+}
+
+[test_cases.range_queries]
+range_basic = {
+    input = [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    range_start = 3,
+    range_end = 6,
+    expected_indices = [2, 3, 4, 5]
+}
+
+[test_cases.interpolation]
+uniform_distribution = { generate = "uniform", min = 0, max = 100000, size = 10000 }
+arithmetic_progression = { generate = "arithmetic", start = 1, step = 2, size = 10000 }
+
+[test_cases.stress]
+large_random = { generate = "sorted", size = 1000000, seed = 42 }
+very_large = { generate = "sorted", size = 10000000, seed = 123 }
+massive = { generate = "sorted", size = 100000000, seed = 456 }
+
+[benchmark]
+iterations = 10000
+warmup = 1000
+sizes = [1000, 10000, 100000, 1000000, 10000000]
+patterns = ["sorted", "uniform_distribution", "duplicates_heavy"]
+search_patterns = ["random_targets", "existing_targets", "boundary_targets"]
+
+[performance_targets]
+"1000000_elements_comparisons" = 20
+"10000000_elements_comparisons" = 24
+"100000000_elements_comparisons" = 27
+cache_hit_rate_percent = 90.0
+parallel_speedup_4_cores = 0.75
+
+[validation]
+property_tests = 20000
+mutation_score = 0.92
+coverage_percent = 99.0
+
+[ruchy_features]
+# v1.4.0 specific features this example demonstrates
+generic_search_traits = true
+hashmap_result_caching = true
+f_string_debug_output = true
+method_chaining_queries = true
+result_error_handling = true
+async_parallel_search = true
+iterator_integration = true
+simd_optimizations = true

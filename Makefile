@@ -19,7 +19,7 @@ DOCKER_RUN := docker run --rm -v $(PWD):/workspace
 
 # Version management
 RUCHY_VERSION := $(shell ruchy --version 2>/dev/null | cut -d' ' -f2 || echo "unknown")
-REQUIRED_VERSION := 1.4.0
+REQUIRED_VERSION := 1.5.0
 
 # Default target
 all: version-check install-hooks quality-gate docker-build tier1-test bench

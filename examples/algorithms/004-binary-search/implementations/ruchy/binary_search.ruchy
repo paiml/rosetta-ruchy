@@ -1,0 +1,757 @@
+#!/usr/bin/env ruchy
+// Binary Search - Advanced Ruchy v1.4.0 Implementation
+// Features: Generic traits, HashMap caching, f-strings, method chaining, async parallel
+
+use std::vec::Vec
+use std::collections::HashMap
+use std::cmp::Ordering
+use std::time::{Duration, Instant}
+use std::sync::{Arc, Mutex}
+use std::ops::Range
+
+// v1.4.0 HashMap for search result caching and analytics
+let mut search_cache: HashMap<String, SearchResult> = HashMap::new()
+let mut search_analytics: HashMap<String, SearchMetrics> = HashMap::new()
+
+#[derive(Debug, Clone)]
+enum SearchResult {
+    Found(usize),
+    NotFound,
+    Range(Vec<usize>),
+}
+
+#[derive(Debug, Clone)]
+struct SearchMetrics {
+    comparisons: u64,
+    duration_ms: f64,
+    cache_hits: u64,
+    cache_misses: u64,
+}
+
+impl Default for SearchMetrics {
+    fn default() -> Self {
+        Self {
+            comparisons: 0,
+            duration_ms: 0.0,
+            cache_hits: 0,
+            cache_misses: 0,
+        }
+    }
+}
+
+// Advanced generic search trait with v1.4.0 features
+trait AdvancedSearchable<T> {
+    fn binary_search(&self, target: &T) -> Result<SearchResult, String>
+    fn binary_search_leftmost(&self, target: &T) -> Result<SearchResult, String>
+    fn binary_search_rightmost(&self, target: &T) -> Result<SearchResult, String>
+    fn interpolation_search(&self, target: &T) -> Result<SearchResult, String>
+    fn exponential_search(&self, target: &T) -> Result<SearchResult, String>
+    fn range_search(&self, start: &T, end: &T) -> Result<SearchResult, String>
+    fn parallel_search(&self, target: &T) -> Result<SearchResult, String>
+    fn cached_search(&self, target: &T) -> Result<SearchResult, String>
+}
+
+impl<T: Ord + Clone + std::fmt::Debug + std::fmt::Display + 'static> AdvancedSearchable<T> for Vec<T>
+where
+    T: std::ops::Sub<Output = T> + std::ops::Add<Output = T> + std::ops::Div<Output = T> + From<usize>,
+{
+    fn binary_search(&self, target: &T) -> Result<SearchResult, String> {
+        let start = Instant::now()
+        let mut comparisons = 0u64
+        
+        let result = binary_search_iterative(self, target, &mut comparisons)?
+        
+        let duration = start.elapsed().as_secs_f64() * 1000.0
+        self.record_search_metrics("binary_search", comparisons, duration)
+        
+        Ok(result)
+    }
+    
+    fn binary_search_leftmost(&self, target: &T) -> Result<SearchResult, String> {
+        let start = Instant::now()
+        let mut comparisons = 0u64
+        
+        let result = binary_search_leftmost_impl(self, target, &mut comparisons)?
+        
+        let duration = start.elapsed().as_secs_f64() * 1000.0
+        self.record_search_metrics("binary_search_leftmost", comparisons, duration)
+        
+        Ok(result)
+    }
+    
+    fn binary_search_rightmost(&self, target: &T) -> Result<SearchResult, String> {
+        let start = Instant::now()
+        let mut comparisons = 0u64
+        
+        let result = binary_search_rightmost_impl(self, target, &mut comparisons)?
+        
+        let duration = start.elapsed().as_secs_f64() * 1000.0
+        self.record_search_metrics("binary_search_rightmost", comparisons, duration)
+        
+        Ok(result)
+    }
+    
+    fn interpolation_search(&self, target: &T) -> Result<SearchResult, String>
+    where
+        T: Copy + Into<f64> + TryFrom<f64>,
+    {
+        let start = Instant::now()
+        let mut comparisons = 0u64
+        
+        let result = interpolation_search_impl(self, target, &mut comparisons)?
+        
+        let duration = start.elapsed().as_secs_f64() * 1000.0
+        self.record_search_metrics("interpolation_search", comparisons, duration)
+        
+        Ok(result)
+    }
+    
+    fn exponential_search(&self, target: &T) -> Result<SearchResult, String> {
+        let start = Instant::now()
+        let mut comparisons = 0u64
+        
+        let result = exponential_search_impl(self, target, &mut comparisons)?
+        
+        let duration = start.elapsed().as_secs_f64() * 1000.0
+        self.record_search_metrics("exponential_search", comparisons, duration)
+        
+        Ok(result)
+    }
+    
+    fn range_search(&self, start_val: &T, end_val: &T) -> Result<SearchResult, String> {
+        let start = Instant::now()
+        let mut comparisons = 0u64
+        
+        // Find leftmost position >= start_val
+        let left_bound = binary_search_leftmost_impl(self, start_val, &mut comparisons)?
+        
+        // Find rightmost position <= end_val  
+        let right_bound = binary_search_rightmost_impl(self, end_val, &mut comparisons)?
+        
+        let result = match (left_bound, right_bound) {
+            (SearchResult::Found(left), SearchResult::Found(right)) => {
+                let indices = (left..=right).collect::<Vec<_>>()
+                SearchResult::Range(indices)
+            }
+            _ => SearchResult::Range(Vec::new())
+        }
+        
+        let duration = start.elapsed().as_secs_f64() * 1000.0
+        self.record_search_metrics("range_search", comparisons, duration)
+        
+        Ok(result)
+    }
+    
+    fn parallel_search(&self, target: &T) -> Result<SearchResult, String> {
+        const PARALLEL_THRESHOLD: usize = 100000
+        
+        if self.len() < PARALLEL_THRESHOLD {
+            return self.binary_search(target)
+        }
+        
+        let start = Instant::now()
+        let chunk_size = self.len() / 4
+        let target_clone = target.clone()
+        
+        let chunks: Vec<_> = self.chunks(chunk_size).collect()
+        let mut handles = Vec::new()
+        
+        // v1.4.0 parallel search with async tasks
+        for (chunk_idx, chunk) in chunks.iter().enumerate() {
+            let chunk_vec = chunk.to_vec()
+            let target_for_task = target_clone.clone()
+            let base_index = chunk_idx * chunk_size
+            
+            let handle = tokio::spawn(async move {
+                let mut comparisons = 0u64
+                match binary_search_iterative(&chunk_vec, &target_for_task, &mut comparisons) {
+                    Ok(SearchResult::Found(relative_idx)) => {
+                        Ok(SearchResult::Found(base_index + relative_idx))
+                    }
+                    Ok(SearchResult::NotFound) => Ok(SearchResult::NotFound),
+                    Err(e) => Err(e),
+                    _ => Ok(SearchResult::NotFound),
+                }
+            })
+            
+            handles.push(handle)
+        }
+        
+        // Wait for first successful result
+        for handle in handles {
+            match handle.await {
+                Ok(Ok(SearchResult::Found(idx))) => {
+                    let duration = start.elapsed().as_secs_f64() * 1000.0
+                    self.record_search_metrics("parallel_search", 0, duration)
+                    return Ok(SearchResult::Found(idx))
+                }
+                _ => continue,
+            }
+        }
+        
+        let duration = start.elapsed().as_secs_f64() * 1000.0
+        self.record_search_metrics("parallel_search", 0, duration)
+        Ok(SearchResult::NotFound)
+    }
+    
+    fn cached_search(&self, target: &T) -> Result<SearchResult, String> {
+        // v1.4.0 HashMap caching implementation
+        let cache_key = format!("{}_{}", self.len(), target)
+        
+        if let Some(cached_result) = search_cache.get(&cache_key) {
+            // Cache hit
+            if let Some(metrics) = search_analytics.get_mut("cached_search") {
+                metrics.cache_hits += 1
+            }
+            
+            println(f"🎯 Cache hit for target {target}")
+            return Ok(cached_result.clone())
+        }
+        
+        // Cache miss - perform search
+        if let Some(metrics) = search_analytics.get_mut("cached_search") {
+            metrics.cache_misses += 1
+        }
+        
+        let result = self.binary_search(target)?
+        search_cache.insert(cache_key, result.clone())
+        
+        println(f"💾 Cached result for target {target}")
+        Ok(result)
+    }
+}
+
+// Helper trait for recording metrics
+trait SearchMetricsRecorder<T> {
+    fn record_search_metrics(&self, algorithm: &str, comparisons: u64, duration: f64)
+}
+
+impl<T> SearchMetricsRecorder<T> for Vec<T> {
+    fn record_search_metrics(&self, algorithm: &str, comparisons: u64, duration: f64) {
+        let key = format!("{}_{}", algorithm, self.len())
+        
+        let metrics = SearchMetrics {
+            comparisons,
+            duration_ms: duration,
+            cache_hits: 0,
+            cache_misses: 0,
+        }
+        
+        search_analytics.insert(key, metrics)
+    }
+}
+
+// Core algorithm implementations
+fn binary_search_iterative<T: Ord>(
+    arr: &[T],
+    target: &T,
+    comparisons: &mut u64,
+) -> Result<SearchResult, String> {
+    let mut left = 0
+    let mut right = arr.len()
+    
+    while left < right {
+        let mid = left + (right - left) / 2
+        *comparisons += 1
+        
+        match arr[mid].cmp(target) {
+            Ordering::Equal => return Ok(SearchResult::Found(mid)),
+            Ordering::Less => left = mid + 1,
+            Ordering::Greater => right = mid,
+        }
+    }
+    
+    Ok(SearchResult::NotFound)
+}
+
+fn binary_search_leftmost_impl<T: Ord>(
+    arr: &[T],
+    target: &T,
+    comparisons: &mut u64,
+) -> Result<SearchResult, String> {
+    let mut left = 0
+    let mut right = arr.len()
+    
+    while left < right {
+        let mid = left + (right - left) / 2
+        *comparisons += 1
+        
+        match arr[mid].cmp(target) {
+            Ordering::Less => left = mid + 1,
+            Ordering::Equal | Ordering::Greater => right = mid,
+        }
+    }
+    
+    if left < arr.len() && arr[left] == *target {
+        Ok(SearchResult::Found(left))
+    } else {
+        Ok(SearchResult::NotFound)
+    }
+}
+
+fn binary_search_rightmost_impl<T: Ord>(
+    arr: &[T],
+    target: &T,
+    comparisons: &mut u64,
+) -> Result<SearchResult, String> {
+    let mut left = 0
+    let mut right = arr.len()
+    
+    while left < right {
+        let mid = left + (right - left) / 2
+        *comparisons += 1
+        
+        match arr[mid].cmp(target) {
+            Ordering::Less | Ordering::Equal => left = mid + 1,
+            Ordering::Greater => right = mid,
+        }
+    }
+    
+    if left > 0 && arr[left - 1] == *target {
+        Ok(SearchResult::Found(left - 1))
+    } else {
+        Ok(SearchResult::NotFound)
+    }
+}
+
+fn interpolation_search_impl<T>(
+    arr: &[T],
+    target: &T,
+    comparisons: &mut u64,
+) -> Result<SearchResult, String>
+where
+    T: Ord + Copy + Into<f64> + TryFrom<f64>,
+{
+    if arr.is_empty() {
+        return Ok(SearchResult::NotFound)
+    }
+    
+    let mut left = 0
+    let mut right = arr.len() - 1
+    
+    while left <= right && *target >= arr[left] && *target <= arr[right] {
+        if left == right {
+            *comparisons += 1
+            return if arr[left] == *target {
+                Ok(SearchResult::Found(left))
+            } else {
+                Ok(SearchResult::NotFound)
+            }
+        }
+        
+        // Interpolation formula
+        let left_val: f64 = arr[left].into()
+        let right_val: f64 = arr[right].into()
+        let target_val: f64 = (*target).into()
+        
+        if (right_val - left_val).abs() < f64::EPSILON {
+            break
+        }
+        
+        let pos = left + ((target_val - left_val) / (right_val - left_val) * (right - left) as f64) as usize
+        let pos = pos.min(right).max(left)
+        
+        *comparisons += 1
+        match arr[pos].cmp(target) {
+            Ordering::Equal => return Ok(SearchResult::Found(pos)),
+            Ordering::Less => left = pos + 1,
+            Ordering::Greater => {
+                if pos == 0 {
+                    break
+                }
+                right = pos - 1
+            }
+        }
+    }
+    
+    Ok(SearchResult::NotFound)
+}
+
+fn exponential_search_impl<T: Ord>(
+    arr: &[T],
+    target: &T,
+    comparisons: &mut u64,
+) -> Result<SearchResult, String> {
+    if arr.is_empty() {
+        return Ok(SearchResult::NotFound)
+    }
+    
+    // Find range for binary search
+    let mut bound = 1
+    *comparisons += 1
+    while bound < arr.len() && arr[bound] < *target {
+        *comparisons += 1
+        bound *= 2
+    }
+    
+    // Binary search in the found range
+    let left = bound / 2
+    let right = (bound + 1).min(arr.len())
+    
+    binary_search_iterative(&arr[left..right], target, comparisons)
+        .map(|result| match result {
+            SearchResult::Found(relative_idx) => SearchResult::Found(left + relative_idx),
+            other => other,
+        })
+}
+
+// v1.4.0 method chaining showcase for query building
+struct SearchQuery<T> {
+    data: Vec<T>,
+    target: Option<T>,
+    algorithm: String,
+    cache_enabled: bool,
+}
+
+impl<T: Ord + Clone + std::fmt::Debug + std::fmt::Display + 'static> SearchQuery<T>
+where
+    T: std::ops::Sub<Output = T> + std::ops::Add<Output = T> + std::ops::Div<Output = T> + From<usize>,
+{
+    fn new(data: Vec<T>) -> Self {
+        Self {
+            data,
+            target: None,
+            algorithm: "binary_search".to_string(),
+            cache_enabled: false,
+        }
+    }
+    
+    fn target(mut self, target: T) -> Self {
+        self.target = Some(target)
+        self
+    }
+    
+    fn algorithm(mut self, algorithm: &str) -> Self {
+        self.algorithm = algorithm.to_string()
+        self
+    }
+    
+    fn with_cache(mut self) -> Self {
+        self.cache_enabled = true
+        self
+    }
+    
+    fn execute(self) -> Result<SearchResult, String> {
+        let target = self.target.ok_or("Target not specified")?
+        
+        match self.algorithm.as_str() {
+            "binary_search" => {
+                if self.cache_enabled {
+                    self.data.cached_search(&target)
+                } else {
+                    self.data.binary_search(&target)
+                }
+            }
+            "leftmost" => self.data.binary_search_leftmost(&target),
+            "rightmost" => self.data.binary_search_rightmost(&target),
+            "interpolation" => self.data.interpolation_search(&target),
+            "exponential" => self.data.exponential_search(&target),
+            "parallel" => self.data.parallel_search(&target),
+            _ => Err(f"Unknown algorithm: {self.algorithm}")
+        }
+    }
+}
+
+// Performance analytics and reporting
+fn generate_search_analytics_report() {
+    println(f"🔍 Binary Search Analytics Report (v1.4.0)")
+    println(f"==========================================")
+    println()
+    
+    if search_analytics.is_empty() {
+        println(f"⚠️  No search analytics available")
+        return
+    }
+    
+    // Group by algorithm using method chaining
+    let mut by_algorithm: HashMap<String, Vec<(&String, &SearchMetrics)>> = HashMap::new()
+    
+    for (key, metrics) in &search_analytics {
+        let algorithm = key.split('_').take(2).collect::<Vec<_>>().join("_")
+        by_algorithm.entry(algorithm).or_insert_with(Vec::new).push((key, metrics))
+    }
+    
+    for (algorithm, entries) in by_algorithm {
+        println(f"## {algorithm.to_uppercase()} Performance")
+        println()
+        
+        let total_comparisons: u64 = entries
+            .iter()
+            .map(|(_, metrics)| metrics.comparisons)
+            .sum()
+        
+        let avg_comparisons = total_comparisons as f64 / entries.len() as f64
+        let avg_duration = entries
+            .iter()
+            .map(|(_, metrics)| metrics.duration_ms)
+            .sum::<f64>() / entries.len() as f64
+        
+        println(f"Average comparisons: {avg_comparisons:.1}")
+        println(f"Average duration: {avg_duration:.3}ms")
+        
+        if algorithm == "cached_search" {
+            let total_hits: u64 = entries.iter().map(|(_, m)| m.cache_hits).sum()
+            let total_misses: u64 = entries.iter().map(|(_, m)| m.cache_misses).sum()
+            let hit_rate = if total_hits + total_misses > 0 {
+                total_hits as f64 / (total_hits + total_misses) as f64 * 100.0
+            } else {
+                0.0
+            }
+            
+            println(f"Cache hit rate: {hit_rate:.1}%")
+            println(f"Cache entries: {search_cache.len()}")
+        }
+        
+        println()
+    }
+    
+    // Overall statistics
+    let total_searches = search_analytics.len()
+    let total_duration: f64 = search_analytics.values().map(|m| m.duration_ms).sum()
+    
+    println(f"## Summary")
+    println(f"Total searches: {total_searches}")
+    println(f"Total time: {total_duration:.2}ms")
+    println(f"Average per search: {total_duration / total_searches as f64:.3}ms")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*
+    
+    #[test]
+    fn test_binary_search_basic() -> Result<(), String> {
+        let arr = vec![1, 3, 5, 7, 9]
+        
+        assert!(matches!(arr.binary_search(&5)?, SearchResult::Found(2)))
+        assert!(matches!(arr.binary_search(&4)?, SearchResult::NotFound))
+        assert!(matches!(arr.binary_search(&1)?, SearchResult::Found(0)))
+        assert!(matches!(arr.binary_search(&9)?, SearchResult::Found(4)))
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_leftmost_rightmost() -> Result<(), String> {
+        let arr = vec![1, 2, 2, 2, 3]
+        
+        assert!(matches!(arr.binary_search_leftmost(&2)?, SearchResult::Found(1)))
+        assert!(matches!(arr.binary_search_rightmost(&2)?, SearchResult::Found(3)))
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_range_search() -> Result<(), String> {
+        let arr = vec![1, 2, 3, 4, 5, 6, 7, 8, 9]
+        
+        match arr.range_search(&3, &6)? {
+            SearchResult::Range(indices) => {
+                assert_eq!(indices, vec![2, 3, 4, 5])
+            }
+            _ => return Err("Expected range result".to_string())
+        }
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_method_chaining_query() -> Result<(), String> {
+        let arr = vec![1, 3, 5, 7, 9, 11, 13]
+        
+        let result = SearchQuery::new(arr)
+            .target(7)
+            .algorithm("binary_search")
+            .with_cache()
+            .execute()?
+        
+        assert!(matches!(result, SearchResult::Found(3)))
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_cached_search() -> Result<(), String> {
+        let arr = vec![1, 3, 5, 7, 9]
+        
+        // First search - cache miss
+        let result1 = arr.cached_search(&5)?
+        assert!(matches!(result1, SearchResult::Found(2)))
+        
+        // Second search - cache hit  
+        let result2 = arr.cached_search(&5)?
+        assert!(matches!(result2, SearchResult::Found(2)))
+        
+        Ok(())
+    }
+    
+    #[property_test(20000)]
+    fn prop_binary_search_correctness(mut arr: Vec<i32>, target: i32) -> Result<(), String> {
+        arr.sort()
+        
+        let result = arr.binary_search(&target)?
+        
+        match result {
+            SearchResult::Found(idx) => {
+                assert!(idx < arr.len())
+                assert_eq!(arr[idx], target)
+            }
+            SearchResult::NotFound => {
+                assert!(!arr.contains(&target))
+            }
+            _ => return Err("Unexpected result type".to_string())
+        }
+        
+        Ok(())
+    }
+    
+    #[property_test(20000)]  
+    fn prop_leftmost_rightmost_consistency(mut arr: Vec<i32>, target: i32) -> Result<(), String> {
+        arr.sort()
+        
+        let leftmost = arr.binary_search_leftmost(&target)?
+        let rightmost = arr.binary_search_rightmost(&target)?
+        
+        match (leftmost, rightmost) {
+            (SearchResult::Found(left), SearchResult::Found(right)) => {
+                assert!(left <= right)
+                assert_eq!(arr[left], target)
+                assert_eq!(arr[right], target)
+            }
+            (SearchResult::NotFound, SearchResult::NotFound) => {
+                assert!(!arr.contains(&target))
+            }
+            _ => return Err("Inconsistent leftmost/rightmost results".to_string())
+        }
+        
+        Ok(())
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+    let test_arrays = vec![
+        vec![],
+        vec![42],
+        vec![1, 3, 5, 7, 9],
+        vec![1, 2, 2, 2, 3],
+        vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+        (1..=10000).collect::<Vec<_>>(), // Large sorted array
+    ]
+    
+    let test_targets = vec![0, 1, 2, 5, 9, 10, 42, 5000]
+    
+    println(f"🎯 Binary Search v1.4.0 Advanced Feature Showcase")
+    println(f"=================================================")
+    println()
+    
+    for (i, arr) in test_arrays.iter().enumerate() {
+        println(f"Test Array {i + 1}: {arr.len()} elements")
+        if arr.len() <= 10 {
+            println(f"  Data: {arr:?}")
+        }
+        
+        for &target in &test_targets {
+            if arr.len() > 1000 && target > 10000 {
+                continue // Skip expensive tests
+            }
+            
+            // Classic binary search
+            match arr.binary_search(&target) {
+                Ok(SearchResult::Found(idx)) => {
+                    println(f"  🎯 Target {target}: Found at index {idx}")
+                }
+                Ok(SearchResult::NotFound) => {
+                    println(f"  ❌ Target {target}: Not found")
+                }
+                _ => {}
+            }
+            
+            // Demonstrate method chaining
+            if arr.len() <= 100 {
+                let result = SearchQuery::new(arr.clone())
+                    .target(target)
+                    .algorithm("leftmost")
+                    .with_cache()
+                    .execute()?
+                
+                match result {
+                    SearchResult::Found(idx) => {
+                        println(f"    📍 Leftmost {target}: index {idx}")
+                    }
+                    _ => {}
+                }
+            }
+        }
+        
+        // Range search demonstration
+        if arr.len() >= 5 && !arr.is_empty() {
+            let start_val = arr[1]
+            let end_val = arr[arr.len().saturating_sub(2)]
+            
+            match arr.range_search(&start_val, &end_val) {
+                Ok(SearchResult::Range(indices)) => {
+                    println(f"  📊 Range [{start_val}, {end_val}]: {indices.len()} elements")
+                }
+                _ => {}
+            }
+        }
+        
+        println()
+    }
+    
+    // v1.4.0 advanced features demonstration
+    println(f"🚀 Advanced v1.4.0 Features:")
+    println()
+    
+    // HashMap caching showcase
+    let large_array: Vec<i32> = (1..=100000).step_by(2).collect()
+    println(f"📊 Cache Performance Test ({large_array.len()} elements):")
+    
+    for target in [1001, 5001, 9001, 1001, 5001, 9001] { // Repeated searches
+        let start = Instant::now()
+        let _result = large_array.cached_search(&target)?
+        let duration = start.elapsed().as_micros()
+        println(f"  Search for {target}: {duration}μs")
+    }
+    
+    // Method chaining showcase
+    println(f"\n🔗 Method Chaining Queries:")
+    let sample_data = vec![1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
+    
+    let queries = vec![
+        ("Binary", "binary_search"),
+        ("Leftmost", "leftmost"), 
+        ("Interpolation", "interpolation"),
+        ("Exponential", "exponential"),
+    ]
+    
+    for (name, algorithm) in queries {
+        let result = SearchQuery::new(sample_data.clone())
+            .target(11)
+            .algorithm(algorithm)
+            .execute()?
+        
+        match result {
+            SearchResult::Found(idx) => {
+                println(f"  {name}: Found at index {idx}")
+            }
+            _ => {
+                println(f"  {name}: Not found")
+            }
+        }
+    }
+    
+    // Generate comprehensive analytics
+    generate_search_analytics_report()
+    
+    println()
+    println(f"✅ v1.4.0 features successfully demonstrated!")
+    println(f"✨ HashMap analytics: {search_analytics.len()} search operations tracked")
+    println(f"✨ Result caching: {search_cache.len()} cached entries")
+    println(f"✨ F-string interpolation: Rich debugging output enabled")  
+    println(f"✨ Method chaining: Fluent query API operational")
+    println(f"✨ Generic traits: Type-safe search across comparable types")
+    
+    Ok(())
+}
