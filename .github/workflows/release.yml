@@ -64,13 +64,18 @@ jobs:
         if: matrix.target != 'x86_64-unknown-linux-gnu' && matrix.target != 'x86_64-apple-darwin' && matrix.os == 'ubuntu-latest'
         run: cargo install cross --git https://github.com/cross-rs/cross
 
-      - name: Build release binary
+      - name: Build release binary (Unix)
+        if: matrix.os != 'windows-latest'
         run: |
           if [[ "${{ matrix.os }}" == "ubuntu-latest" && "${{ matrix.target }}" != "x86_64-unknown-linux-gnu" ]]; then
             cross build --release --target ${{ matrix.target }} --package rosetta-ruchy-mcp
           else
             cargo build --release --target ${{ matrix.target }} --package rosetta-ruchy-mcp
           fi
+
+      - name: Build release binary (Windows)
+        if: matrix.os == 'windows-latest'
+        run: cargo build --release --target ${{ matrix.target }} --package rosetta-ruchy-mcp
 
       - name: Strip binary (Unix)
         if: matrix.os != 'windows-latest'
@@ -91,12 +96,14 @@ jobs:
 
       - name: Copy binary and create archive (Windows)
         if: matrix.archive == 'zip'
+        shell: pwsh
         run: |
-          cp target/${{ matrix.target }}/release/${{ matrix.binary }} release/
-          cp README.md LICENSE release/
-          cd release
-          7z a ../rosetta-ruchy-mcp-${{ matrix.target }}.zip .
-          cd ..
+          Copy-Item "target/${{ matrix.target }}/release/${{ matrix.binary }}" "release/"
+          Copy-Item "README.md" "release/"
+          Copy-Item "LICENSE" "release/"
+          Set-Location "release"
+          7z a "../rosetta-ruchy-mcp-${{ matrix.target }}.zip" .
+          Set-Location ".."
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
