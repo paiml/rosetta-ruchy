@@ -8,6 +8,7 @@
 .PHONY: refactor-plan pdmt-todos
 .PHONY: pre-release-checks release-auto release-patch release-minor release-major
 .PHONY: docker-build tier1-test tier2-test bench compare validate
+.PHONY: version-check version-update new-example
 
 # Global Configuration
 EXAMPLES := $(wildcard examples/*/*/)
@@ -16,8 +17,12 @@ TIER2_LANGUAGES := typescript java cpp csharp swift
 ALL_LANGUAGES := $(TIER1_LANGUAGES) $(TIER2_LANGUAGES)
 DOCKER_RUN := docker run --rm -v $(PWD):/workspace
 
+# Version management
+RUCHY_VERSION := $(shell ruchy --version 2>/dev/null | cut -d' ' -f2 || echo "unknown")
+REQUIRED_VERSION := 1.4.0
+
 # Default target
-all: install-hooks quality-gate docker-build tier1-test bench
+all: version-check install-hooks quality-gate docker-build tier1-test bench
 
 # Development Environment Setup
 install-dev-tools:
@@ -222,6 +227,33 @@ release-minor: pre-release-checks
 release-major: pre-release-checks
 	@echo "🚀 Releasing major version..."
 	@./scripts/release.sh major
+
+# Version Management
+version-check:
+	@echo "🔍 Checking Ruchy version..."
+	@echo "Current version: $(RUCHY_VERSION)"
+	@echo "Required version: $(REQUIRED_VERSION)+"
+	@if [ "$(RUCHY_VERSION)" != "$(REQUIRED_VERSION)" ]; then \
+		echo "⚠️  Version mismatch detected"; \
+		echo "Run 'make version-update' to update examples"; \
+	else \
+		echo "✅ Version is up to date"; \
+	fi
+
+version-update:
+	@echo "🚀 Updating to latest Ruchy version..."
+	@ruchy scripts/version_manager.ruchy
+
+new-example:
+	@echo "📝 Creating new example..."
+	@if [ -z "$(NAME)" ]; then \
+		echo "❌ Usage: make new-example NAME=003-example-name"; \
+		exit 1; \
+	fi
+	@ruchy scripts/create_example.ruchy $(NAME)
+	@echo "✅ Example $(NAME) created"
+	@echo "🔄 Running version update for new example..."
+	@$(MAKE) version-update
 
 # Cleanup
 clean:
