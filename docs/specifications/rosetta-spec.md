@@ -6,6 +6,76 @@ A polyglot benchmark suite demonstrating Ruchy's performance parity with Rust wh
 
 **Key Differentiator**: Ruchy's advanced tooling suite (AST analysis, formal verification, provability checking, hardware-aware optimization) creates unprecedented opportunities for optimization, reliability, and safety that are showcased in every example.
 
+## Repository Usage Patterns
+
+### For End Users
+- **Language Performance Comparison**: Run `ruchy orchestrate.ruchy all` for complete benchmark analysis
+- **Learning & Research**: Study equivalent implementations across 9+ languages in `examples/`
+- **Academic Citation**: Reproducible benchmarks with statistical rigor and Docker isolation
+- **Code Translation**: Use built-in MCP server to translate existing code to Ruchy
+
+### For Claude Code Agents  
+- **Development Workflow**: Ruchy-only scripting (zero bash/shell), Toyota Way methodology
+- **Quality Gates**: Zero-tolerance policies (warnings, SATD comments, regression)
+- **Advanced Tooling Integration**: Mandatory `ruchy ast`, `ruchy provability`, `ruchy quality-gate`
+- **Performance Validation**: Maintain 5% Rust parity, statistical benchmark analysis
+
+### For Ruchy Upstream Developers
+- **Compiler Regression Testing**: Continuous validation against production workloads  
+- **Performance Optimization**: Benchmark-driven development with real algorithm complexity
+- **Formal Verification Validation**: SMT solver integration tested on diverse examples
+- **Documentation & Examples**: Canonical reference implementations showcasing language advantages
+
+## MCP Server Integration
+
+This repository functions as an **MCP (Model Context Protocol) server** that provides code translation capabilities to Claude Code agents and other AI systems.
+
+### MCP Server Capabilities
+
+#### Code Translation Service
+- **Rust → Ruchy**: Preserve performance characteristics while adding formal verification
+- **Python → Ruchy**: Maintain ergonomics while gaining static analysis benefits  
+- **JavaScript → Ruchy**: Type safety and performance improvements
+- **Go → Ruchy**: Concurrency patterns with provable correctness
+- **C → Ruchy**: Memory safety with zero-cost abstractions
+
+#### Advanced Analysis Service
+- **Complexity Analysis**: Automated BigO verification and optimization suggestions
+- **Provability Assessment**: SMT solver integration for correctness guarantees
+- **Performance Prediction**: Benchmark-based performance estimates before translation
+- **Quality Scoring**: Comprehensive code quality metrics with improvement recommendations
+
+#### Integration Workflow
+```json
+{
+  "mcp_server": {
+    "name": "rosetta-ruchy-translator",
+    "version": "1.0.0",
+    "capabilities": [
+      "code_translation",
+      "performance_analysis", 
+      "formal_verification",
+      "benchmark_comparison"
+    ],
+    "endpoints": {
+      "translate": "/api/v1/translate",
+      "analyze": "/api/v1/analyze",
+      "benchmark": "/api/v1/benchmark",
+      "verify": "/api/v1/verify"
+    }
+  }
+}
+```
+
+### PMCP Support Integration
+
+The repository integrates with **PMCP (Protocol for MCP)** to provide:
+
+- **Real-time Translation**: Live code translation with immediate feedback
+- **Interactive Verification**: Step-by-step formal verification guidance
+- **Performance Insights**: Immediate benchmark comparisons during translation
+- **Quality Assurance**: Real-time quality gate checking during development
+
 ## Architecture Principles
 
 1. **Measurable superiority** - Every example must demonstrate quantifiable advantage

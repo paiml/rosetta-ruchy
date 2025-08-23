@@ -1,0 +1,57 @@
+[package]
+name = "rosetta-ruchy-mcp"
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+description = "MCP server for real-time code translation to Ruchy with formal verification"
+keywords = ["mcp", "ruchy", "translation", "formal-verification", "code-analysis"]
+categories = ["development-tools", "web-programming::http-server"]
+edition.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "rosetta-ruchy-mcp"
+path = "src/main.rs"
+
+[dependencies]
+# Workspace dependencies
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+clap.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+regex.workspace = true
+walkdir.workspace = true
+uuid.workspace = true
+
+# HTTP server dependencies
+axum.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+
+# Code parsing and analysis
+tree-sitter.workspace = true
+
+# HTTP client for external integrations
+reqwest = { version = "0.11", features = ["json"] }
+
+# Async runtime
+futures = "0.3"
+
+# Process execution for Ruchy tooling
+subprocess.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+assert_cmd.workspace = true
+predicates.workspace = true
+
+[features]
+default = []
+pmcp = []
