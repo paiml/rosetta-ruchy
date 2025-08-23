@@ -44,12 +44,12 @@
 - [x] Implement Go fibonacci (concurrency patterns)
 - [x] Implement Ruchy fibonacci (reference implementation)
 
-### ROSETTA-006: Language-Specific Makefiles
-- [ ] Create implementations/rust/Makefile with cargo integration
-- [ ] Create implementations/python/Makefile with pytest/benchmark
-- [ ] Create implementations/javascript/Makefile with npm/jest
-- [ ] Create implementations/go/Makefile with go test/benchmark
-- [ ] Create implementations/ruchy/Makefile with ruchy toolchain
+### ROSETTA-006: Language-Specific Build Scripts (Ruchy)
+- [x] Create implementations/rust/build.ruchy with cargo integration
+- [x] Create implementations/python/build.ruchy with pytest/benchmark
+- [x] Create implementations/javascript/build.ruchy with npm/jest
+- [x] Create implementations/go/build.ruchy with go test/benchmark
+- [x] Create implementations/ruchy/build.ruchy with ruchy toolchain
 
 ## Phase 2: Quality & Validation (Weeks 5-6)
 
