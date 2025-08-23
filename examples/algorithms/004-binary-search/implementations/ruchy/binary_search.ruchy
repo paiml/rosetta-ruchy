@@ -1,13 +1,8 @@
-#!/usr/bin/env ruchy
-// Binary Search - Advanced Ruchy v1.4.0 Implementation
-// Features: Generic traits, HashMap caching, f-strings, method chaining, async parallel
+// Binary Search - Ruchy v1.5.0 Self-Hosting Implementation  
+// Features: self-hosting compilation, Algorithm W type inference, HashMap caching
 
-use std::vec::Vec
-use std::collections::HashMap
-use std::cmp::Ordering
-use std::time::{Duration, Instant}
-use std::sync::{Arc, Mutex}
-use std::ops::Range
+use std::collections::HashMap;
+use std::process::Command;
 
 // v1.4.0 HashMap for search result caching and analytics
 let mut search_cache: HashMap<String, SearchResult> = HashMap::new()

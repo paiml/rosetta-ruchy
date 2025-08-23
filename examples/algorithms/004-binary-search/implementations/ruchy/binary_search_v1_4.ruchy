@@ -1,0 +1,170 @@
+// Binary Search - Ruchy v1.4.0 Implementation
+// Features: HashMap caching, f-string interpolation, method chaining
+
+use std::collections::HashMap;
+
+// Enhanced binary search with v1.4.0 features
+struct BinarySearcher<T> {
+    cache: HashMap<T, Option<usize>>,
+    performance_stats: HashMap<String, f64>,
+    data: Vec<T>,
+    search_count: usize,
+}
+
+impl<T: Ord + Clone + std::hash::Hash + std::fmt::Debug> BinarySearcher<T> {
+    fun new(data: Vec<T>) -> Self {
+        let mut performance_stats = HashMap::new();
+        performance_stats.insert("cache_hits".to_string(), 0.0);
+        performance_stats.insert("cache_misses".to_string(), 0.0);
+        performance_stats.insert("total_comparisons".to_string(), 0.0);
+        
+        Self {
+            cache: HashMap::new(),
+            performance_stats,
+            data,
+            search_count: 0,
+        }
+    }
+    
+    // Classic binary search with comparison counting
+    fun binary_search_with_stats(&mut self, target: &T) -> Option<usize> {
+        let mut left = 0;
+        let mut right = self.data.len();
+        let mut comparisons = 0;
+        
+        while left < right {
+            comparisons += 1;
+            let mid = left + (right - left) / 2;
+            
+            match self.data[mid].cmp(target) {
+                std::cmp::Ordering::Equal => {
+                    self.update_stats("total_comparisons", comparisons as f64);
+                    return Some(mid);
+                }
+                std::cmp::Ordering::Less => left = mid + 1,
+                std::cmp::Ordering::Greater => right = mid,
+            }
+        }
+        
+        self.update_stats("total_comparisons", comparisons as f64);
+        None
+    }
+    
+    // Enhanced search with HashMap caching (v1.4.0 feature)
+    fun search_with_cache(&mut self, target: &T) -> Option<usize> {
+        self.search_count += 1;
+        
+        // Check cache first (v1.4.0 HashMap integration)
+        if let Some(cached_result) = self.cache.get(target) {
+            self.update_stats("cache_hits", 1.0);
+            println(f"🎯 Cache hit #{self.search_count} for target: {target:?}");
+            return *cached_result;
+        }
+        
+        // Cache miss - perform search
+        self.update_stats("cache_misses", 1.0);
+        let result = self.binary_search_with_stats(target);
+        
+        // Cache the result (v1.4.0 HashMap feature)
+        self.cache.insert(target.clone(), result);
+        println(f"💾 Cached result #{self.search_count} for {target:?}: {result:?}");
+        
+        result
+    }
+    
+    // Method chaining for fluent API (v1.4.0 feature)
+    fun search(&mut self, target: &T) -> &mut Self {
+        let result = self.search_with_cache(target);
+        match result {
+            Some(idx) => println(f"✅ Found {target:?} at index {idx}"),
+            None => println(f"❌ {target:?} not found"),
+        }
+        self
+    }
+    
+    fun update_stats(&mut self, key: &str, value: f64) {
+        let current = self.performance_stats.get(key).unwrap_or(&0.0);
+        self.performance_stats.insert(key.to_string(), current + value);
+    }
+    
+    // Performance analysis with f-string interpolation (v1.4.0 feature)
+    fun show_performance(&self) {
+        let cache_hits = self.performance_stats.get("cache_hits").unwrap_or(&0.0);
+        let cache_misses = self.performance_stats.get("cache_misses").unwrap_or(&0.0);
+        let total_comparisons = self.performance_stats.get("total_comparisons").unwrap_or(&0.0);
+        let total_searches = cache_hits + cache_misses;
+        let cache_hit_rate = if total_searches > 0.0 { cache_hits / total_searches * 100.0 } else { 0.0 };
+        
+        println(f"\n📊 Performance Statistics:");
+        println(f"   Total searches: {total_searches}");
+        println(f"   Cache hits: {cache_hits} ({cache_hit_rate:.1}%)");
+        println(f"   Cache misses: {cache_misses}");
+        println(f"   Total comparisons: {total_comparisons}");
+        if cache_misses > 0.0 {
+            println(f"   Avg comparisons per search: {total_comparisons / cache_misses:.1}");
+        }
+    }
+}
+
+// Standalone binary search function
+fun binary_search<T: Ord>(arr: &[T], target: &T) -> Option<usize> {
+    let mut left = 0;
+    let mut right = arr.len();
+    
+    while left < right {
+        let mid = left + (right - left) / 2;
+        
+        match arr[mid].cmp(target) {
+            std::cmp::Ordering::Equal => return Some(mid),
+            std::cmp::Ordering::Less => left = mid + 1,
+            std::cmp::Ordering::Greater => right = mid,
+        }
+    }
+    
+    None
+}
+
+fun main() {
+    println(f"🔍 Binary Search - Ruchy v1.4.0 Advanced Features");
+    println(f"===================================================");
+    println();
+    
+    let data = vec![1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 23, 29, 31, 37, 41, 43, 47];
+    println(f"📊 Test data ({data.len()} elements): {data:?}");
+    println();
+    
+    // Test basic binary search
+    println(f"🔍 Basic binary search tests:");
+    for target in [5, 11, 20, 1, 47, 25] {
+        match binary_search(&data, &target) {
+            Some(idx) => println(f"   ✅ Found {target} at index {idx}"),
+            None => println(f"   ❌ {target} not found"),
+        }
+    }
+    
+    println();
+    println(f"🚀 Enhanced search with v1.4.0 features:");
+    
+    // Test enhanced searcher with caching and method chaining
+    let mut searcher = BinarySearcher::new(data.clone());
+    
+    // Method chaining demonstration (v1.4.0 feature)
+    searcher
+        .search(&7)    // Cache miss
+        .search(&15)   // Cache miss  
+        .search(&7)    // Cache hit
+        .search(&23)   // Cache miss
+        .search(&15)   // Cache hit
+        .search(&7);   // Cache hit
+    
+    // Performance analysis with f-string interpolation
+    searcher.show_performance();
+    
+    println();
+    println(f"✅ Binary search demonstration complete");
+    println(f"🔧 Features used:");
+    println(f"   📦 HashMap caching for performance optimization");
+    println(f"   🔗 Method chaining for fluent API design"); 
+    println(f"   📝 F-string interpolation for rich output formatting");
+    println(f"   📊 Performance tracking and statistical analysis");
+}
