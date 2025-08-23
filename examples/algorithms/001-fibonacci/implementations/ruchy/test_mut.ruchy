@@ -1,0 +1,17 @@
+fun fib_iter(n: i32) -> i32 {
+    if n <= 1 { return n }
+    
+    let prev = 0;
+    let curr = 1;
+    let result = 0;
+    
+    for i in 2..=n {
+        result = prev + curr;
+        prev = curr;
+        curr = result;
+    }
+    
+    result
+}
+
+fib_iter(10)

@@ -1,0 +1,19 @@
+// Test iterative variant
+fun fib_iterative(n: i32) -> i32 {
+    if n <= 1 {
+        return n
+    }
+    
+    let prev = 0;
+    let curr = 1;
+    
+    for i in 2..=n {
+        let next = prev + curr;
+        prev = curr;
+        curr = next;
+    }
+    
+    curr
+}
+
+fib_iterative(10)

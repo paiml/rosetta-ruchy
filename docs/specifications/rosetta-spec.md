@@ -4,6 +4,8 @@
 
 A polyglot benchmark suite demonstrating Ruchy's performance parity with Rust while maintaining Python-like ergonomics. The repository provides empirical evidence of zero-cost abstractions through systematic comparison across production workloads.
 
+**Key Differentiator**: Ruchy's advanced tooling suite (AST analysis, formal verification, provability checking, hardware-aware optimization) creates unprecedented opportunities for optimization, reliability, and safety that are showcased in every example.
+
 ## Architecture Principles
 
 1. **Measurable superiority** - Every example must demonstrate quantifiable advantage
@@ -14,7 +16,12 @@ A polyglot benchmark suite demonstrating Ruchy's performance parity with Rust wh
 ## Language Tiers
 
 ### Tier 1: Core (Full CI, All Examples)
-- **Ruchy** - Reference implementation
+- **Ruchy** - Reference implementation with advanced tooling
+  - Formal verification via SMT solvers (Z3, CVC5)
+  - Provability analysis for correctness guarantees
+  - Hardware-aware optimization
+  - Complexity verification (BigO analysis)
+  - Real-time quality scoring
 - **Rust** - Performance baseline
 - **Python** - Ergonomics baseline
 - **JavaScript** - Ecosystem comparison
@@ -28,6 +35,44 @@ A polyglot benchmark suite demonstrating Ruchy's performance parity with Rust wh
 ### Tier 3: Reference (Single Example)
 - **Kotlin**, **Ruby**, **PHP**, **SQL**, **Elixir**, **Dart**, **R**, **Julia**, **Zig**, **Scala**
 - Demonstration only, no CI requirements
+
+## Ruchy Advanced Tooling Workflow
+
+Every Ruchy implementation MUST demonstrate the following tooling capabilities:
+
+### 1. Static Analysis Phase
+```bash
+ruchy ast fibonacci.ruchy          # Generate and analyze AST
+ruchy provability fibonacci.ruchy   # Formal correctness verification
+ruchy runtime fibonacci.ruchy       # Complexity and performance analysis
+```
+
+### 2. Verification Phase  
+```bash
+ruchy quality-gate fibonacci.ruchy \
+  --complexity-max 10 \
+  --provability-min 0.90 \
+  --no-panics
+```
+
+### 3. Optimization Phase
+```bash
+ruchy optimize fibonacci.ruchy --target-cpu native
+ruchy optimize fibonacci.ruchy --vectorize
+ruchy transpile fibonacci.ruchy --optimize-level 3
+```
+
+### 4. Quality Reporting
+```bash
+ruchy score fibonacci.ruchy         # Unified quality score
+ruchy mcp --analyze fibonacci.ruchy # Real-time analysis dashboard
+```
+
+This tooling creates opportunities for:
+- **Optimization**: Hardware-specific code generation surpassing hand-tuned assembly
+- **Reliability**: Mathematically proven correctness eliminating entire bug classes
+- **Safety**: Memory safety guarantees without runtime overhead
+- **Maintainability**: Automated complexity analysis preventing technical debt
 
 ## Repository Structure
 
@@ -219,43 +264,93 @@ validate-spec:
 		--validate $(SPEC)
 ```
 
-### Language-Specific Makefile (Ruchy)
+### Language-Specific Makefile (Ruchy) - Advanced Tooling Showcase
 ```makefile
 # implementations/ruchy/Makefile
+# Demonstrates Ruchy's defining trait: advanced static analysis and verification
 RUCHY := ruchy
 RUCHY_FLAGS := --edition 2025
 SPEC := ../../spec.toml
 
-.PHONY: build test bench lint format clean verify
+.PHONY: all analyze verify optimize test bench clean
 
-build:
-	$(RUCHY) build $(RUCHY_FLAGS)
+# Primary workflow: analyze -> verify -> optimize -> test
+all: analyze verify optimize test bench quality-report
 
-test: build
-	$(RUCHY) test --property-tests 1000
-	$(RUCHY) mutate --min-score 0.85
+# STEP 1: Advanced Static Analysis (Ruchy's Core Strength)
+analyze:
+	@echo "🔍 Running Ruchy Advanced Analysis Suite"
+	$(RUCHY) ast fibonacci.ruchy --format json > analysis/ast.json
+	$(RUCHY) provability fibonacci.ruchy --smt-solver z3 > analysis/provability.md
+	$(RUCHY) runtime fibonacci.ruchy --complexity-analysis > analysis/runtime.md
+	$(RUCHY) score fibonacci.ruchy --detailed > analysis/quality_score.md
 
-bench: build
-	$(RUCHY) bench --export json
-
-lint:
-	$(RUCHY) clippy -- -W clippy::all
-	$(RUCHY) tidy --check
-
-format:
-	$(RUCHY) fmt
-
+# STEP 2: Formal Verification (Unique to Ruchy)
 verify:
-	$(RUCHY) verify --smt-solver z3 --spec $(SPEC)
+	@echo "✅ Formal Verification & Correctness"
+	$(RUCHY) provability fibonacci.ruchy --verify-correctness
+	$(RUCHY) provability fibonacci.ruchy --verify-termination
+	$(RUCHY) provability fibonacci.ruchy --verify-memory-safety
+	$(RUCHY) quality-gate fibonacci.ruchy --threshold 0.95
+
+# STEP 3: Hardware-Aware Optimization (Ruchy Exclusive)
+optimize:
+	@echo "⚡ Hardware-Aware Optimization"
+	$(RUCHY) optimize fibonacci.ruchy --target-cpu native
+	$(RUCHY) optimize fibonacci.ruchy --vectorize
+	$(RUCHY) optimize fibonacci.ruchy --cache-analysis
+	$(RUCHY) transpile fibonacci.ruchy --optimize-level 3 > fibonacci_optimized.rs
+
+# STEP 4: Property-Based Testing with Mutation
+test: build
+	$(RUCHY) test --property-tests 10000 --shrink
+	$(RUCHY) test --mutation-testing --min-score 0.90
+	$(RUCHY) test --coverage --min-coverage 95
+
+# STEP 5: Performance Benchmarking with Complexity Verification
+bench: build
+	$(RUCHY) bench --verify-complexity O(n)
+	$(RUCHY) bench --compare-languages rust,c,go
+	$(RUCHY) bench --export json --include-provability
+
+# STEP 6: Quality Gate Enforcement
+quality-gate:
+	$(RUCHY) quality-gate fibonacci.ruchy \
+		--complexity-max 10 \
+		--mutation-score-min 0.85 \
+		--coverage-min 95 \
+		--provability-min 0.90 \
+		--no-unsafe \
+		--no-panics
+
+# STEP 7: Generate Comprehensive Quality Report
+quality-report:
+	@echo "📊 Generating Quality Report"
+	$(RUCHY) mcp --analyze fibonacci.ruchy > reports/quality_dashboard.html
+	$(RUCHY) doc fibonacci.ruchy --include-proofs > reports/verified_docs.html
+	@echo "Reports generated in reports/"
+
+# Build with verification
+build:
+	$(RUCHY) compile fibonacci.ruchy --verify --optimize
+
+# Format with style verification
+format:
+	$(RUCHY) fmt fibonacci.ruchy --verify-idiomatic
+
+# Lint with advanced checks
+lint:
+	$(RUCHY) lint fibonacci.ruchy --include-provability
+	$(RUCHY) lint fibonacci.ruchy --detect-antipatterns
 
 clean:
+	rm -rf target/ analysis/ reports/
 	$(RUCHY) clean
-	rm -rf target/
 
-# CI-specific targets
-ci-test: verify test
+# CI-specific targets with quality gates
+ci-test: quality-gate verify test
 ci-bench: bench
-	@$(RUCHY) bench --compare-baseline rust
+	@$(RUCHY) bench --compare-baseline rust --fail-on-regression 5
 ```
 
 ### Language-Specific Makefile (Rust)

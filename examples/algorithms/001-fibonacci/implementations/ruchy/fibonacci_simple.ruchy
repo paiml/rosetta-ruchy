@@ -1,0 +1,41 @@
+// Simple Fibonacci implementation in Ruchy
+
+fun fibonacci(n: i32) -> i32 {
+    if n <= 1 {
+        n
+    } else {
+        fibonacci(n - 1) + fibonacci(n - 2)
+    }
+}
+
+fun fibonacci_iterative(n: i32) -> i32 {
+    if n <= 1 {
+        return n
+    }
+    
+    let prev = 0;
+    let curr = 1;
+    
+    for i in 2..=n {
+        let next = prev + curr;
+        prev = curr;
+        curr = next;
+    }
+    
+    curr
+}
+
+// Test the implementations
+let n = 10;
+let result_recursive = fibonacci(n);
+let result_iterative = fibonacci_iterative(n);
+
+println("fibonacci(" + n.to_string() + ") = " + result_recursive.to_string());
+println("fibonacci_iterative(" + n.to_string() + ") = " + result_iterative.to_string());
+
+// Verify they match
+if result_recursive == result_iterative {
+    println("✓ Results match: " + result_recursive.to_string())
+} else {
+    println("✗ Results don't match!")
+}
