@@ -1,0 +1,20 @@
+[package]
+name = "quicksort-rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rayon = { version = "1.10", optional = true }
+
+[dev-dependencies]
+criterion = "0.5"
+quickcheck = "1.0"
+quickcheck_macros = "1.0"
+
+[features]
+default = []
+parallel = ["rayon"]
+
+[[bench]]
+name = "quicksort"
+harness = false

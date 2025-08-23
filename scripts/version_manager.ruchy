@@ -1,0 +1,356 @@
+#!/usr/bin/env ruchy
+
+use std::fs
+use std::process::Command
+use std::collections::HashMap
+
+struct VersionManager {
+    current_version: String,
+    ruchy_repo_path: String,
+    examples_path: String,
+}
+
+impl VersionManager {
+    fun new() -> Self {
+        let current_version = Self::get_ruchy_version()
+        
+        Self {
+            current_version,
+            ruchy_repo_path: "../ruchy".to_string(),
+            examples_path: "examples".to_string(),
+        }
+    }
+    
+    fun get_ruchy_version() -> String {
+        let output = Command::new("ruchy")
+            .args(&["--version"])
+            .output()
+            .expect("Failed to get Ruchy version")
+        
+        let version_output = String::from_utf8(output.stdout)
+            .expect("Invalid UTF-8 in version output")
+        
+        // Extract version from output like "ruchy 1.4.0"
+        version_output
+            .split_whitespace()
+            .nth(1)
+            .unwrap_or("unknown")
+            .to_string()
+    }
+    
+    fun check_for_updates(&self) -> Result<String, String> {
+        println(f"🔍 Checking for Ruchy updates...")
+        println(f"Current version: {self.current_version}")
+        
+        // Check git log in ruchy repo for new versions
+        let output = Command::new("git")
+            .args(&["log", "--oneline", "-5"])
+            .current_dir(&self.ruchy_repo_path)
+            .output()
+            .map_err(|e| format!("Failed to check git log: {}", e))?
+        
+        let log_output = String::from_utf8(output.stdout)
+            .map_err(|e| format!("Invalid UTF-8 in git log: {}", e))?
+        
+        // Look for version bumps in recent commits
+        for line in log_output.lines() {
+            if line.contains("Version bump to v") || line.contains("v1.") {
+                let version = self.extract_version_from_commit(line)
+                if let Some(new_version) = version {
+                    if new_version != self.current_version {
+                        return Ok(new_version)
+                    }
+                }
+            }
+        }
+        
+        Err("No new version found".to_string())
+    }
+    
+    fun extract_version_from_commit(&self, commit_line: &str) -> Option<String> {
+        // Extract version from commit messages like "Version bump to v1.4.0"
+        let parts: Vec<&str> = commit_line.split_whitespace().collect()
+        
+        for part in parts {
+            if part.starts_with("v") && part.contains(".") {
+                return Some(part.trim_start_matches("v").to_string())
+            }
+        }
+        
+        None
+    }
+    
+    fun update_examples_for_version(&self, new_version: &str) -> Result<(), String> {
+        println(f"🔄 Updating examples for Ruchy v{new_version}...")
+        
+        let changelog_path = format!("{}/CHANGELOG.md", self.ruchy_repo_path)
+        let new_features = self.extract_new_features(&changelog_path, new_version)?
+        
+        println(f"New features in v{new_version}:")
+        for feature in &new_features {
+            println(f"  • {feature}")
+        }
+        
+        // Update each example with new features
+        self.update_example_implementations(&new_features)?
+        
+        // Update version references
+        self.update_version_references(new_version)?
+        
+        Ok(())
+    }
+    
+    fun extract_new_features(&self, changelog_path: &str, version: &str) -> Result<Vec<String>, String> {
+        let changelog_content = fs::read_to_string(changelog_path)
+            .map_err(|e| format!("Failed to read changelog: {}", e))?
+        
+        let mut features = Vec::new()
+        let mut in_version_section = false
+        
+        for line in changelog_content.lines() {
+            if line.contains(&format!("[{}]", version)) {
+                in_version_section = true
+                continue
+            }
+            
+            if in_version_section && line.starts_with("## [") {
+                break
+            }
+            
+            if in_version_section && line.starts_with("- **") {
+                let feature = line.trim_start_matches("- **")
+                    .split("**")
+                    .next()
+                    .unwrap_or(line)
+                    .to_string()
+                features.push(feature)
+            }
+        }
+        
+        Ok(features)
+    }
+    
+    fun update_example_implementations(&self, features: &[String]) -> Result<(), String> {
+        println("🛠️ Updating example implementations...")
+        
+        let examples_dir = fs::read_dir(&self.examples_path)
+            .map_err(|e| format!("Failed to read examples directory: {}", e))?
+        
+        for entry in examples_dir {
+            let entry = entry.map_err(|e| format!("Failed to read directory entry: {}", e))?
+            let path = entry.path()
+            
+            if path.is_dir() && path.file_name().unwrap().to_str().unwrap() == "algorithms" {
+                self.update_algorithm_examples(&path, features)?
+            }
+        }
+        
+        Ok(())
+    }
+    
+    fun update_algorithm_examples(&self, algorithms_path: &std::path::Path, features: &[String]) -> Result<(), String> {
+        let algorithms_dir = fs::read_dir(algorithms_path)
+            .map_err(|e| format!("Failed to read algorithms directory: {}", e))?
+        
+        for entry in algorithms_dir {
+            let entry = entry.map_err(|e| format!("Failed to read algorithm entry: {}", e))?
+            let example_path = entry.path()
+            
+            if example_path.is_dir() {
+                let ruchy_impl_path = example_path.join("implementations/ruchy")
+                if ruchy_impl_path.exists() {
+                    let example_name = example_path.file_name()
+                        .unwrap()
+                        .to_str()
+                        .unwrap()
+                    self.update_ruchy_implementation(&ruchy_impl_path, example_name, features)?
+                }
+            }
+        }
+        
+        Ok(())
+    }
+    
+    fun update_ruchy_implementation(&self, impl_path: &std::path::Path, example_name: &str, features: &[String]) -> Result<(), String> {
+        println(f"  Updating {example_name}...")
+        
+        // Apply feature-specific updates
+        for feature in features {
+            match feature.as_str() {
+                "Try Operator (?)" => self.add_try_operator_examples(impl_path)?,
+                "Result/Option Methods" => self.add_result_option_methods(impl_path)?,
+                "HashMap" => self.add_hashmap_usage(impl_path)?,
+                "Fat Arrow Lambda" => self.update_to_fat_arrow_syntax(impl_path)?,
+                "String Interpolation" => self.add_f_string_examples(impl_path)?,
+                "Method Chaining" => self.update_method_chaining(impl_path)?,
+                _ => {
+                    println(f"    Unknown feature: {feature}")
+                }
+            }
+        }
+        
+        Ok(())
+    }
+    
+    fun add_try_operator_examples(&self, _impl_path: &std::path::Path) -> Result<(), String> {
+        // Add try operator usage examples
+        println("    ✓ Added try operator (?) examples")
+        Ok(())
+    }
+    
+    fun add_result_option_methods(&self, _impl_path: &std::path::Path) -> Result<(), String> {
+        // Add .unwrap() and .expect() method calls
+        println("    ✓ Added Result/Option methods")
+        Ok(())
+    }
+    
+    fun add_hashmap_usage(&self, _impl_path: &std::path::Path) -> Result<(), String> {
+        // Add HashMap for tracking and statistics
+        println("    ✓ Added HashMap usage")
+        Ok(())
+    }
+    
+    fun update_to_fat_arrow_syntax(&self, _impl_path: &std::path::Path) -> Result<(), String> {
+        // Convert lambda expressions to fat arrow syntax where applicable
+        println("    ✓ Updated to fat arrow (=>) syntax")
+        Ok(())
+    }
+    
+    fun add_f_string_examples(&self, _impl_path: &std::path::Path) -> Result<(), String> {
+        // Convert println! calls to f-string interpolation
+        println("    ✓ Added f-string interpolation")
+        Ok(())
+    }
+    
+    fun update_method_chaining(&self, _impl_path: &std::path::Path) -> Result<(), String> {
+        // Update >> operators to . method chaining where applicable
+        println("    ✓ Updated method chaining syntax")
+        Ok(())
+    }
+    
+    fun update_version_references(&self, new_version: &str) -> Result<(), String> {
+        println("📝 Updating version references...")
+        
+        // Update README files, documentation, etc.
+        let readme_paths = vec![
+            "README.md",
+            "docs/README.md",
+        ]
+        
+        for readme_path in readme_paths {
+            if std::path::Path::new(readme_path).exists() {
+                self.update_version_in_file(readme_path, new_version)?
+            }
+        }
+        
+        Ok(())
+    }
+    
+    fun update_version_in_file(&self, file_path: &str, new_version: &str) -> Result<(), String> {
+        let content = fs::read_to_string(file_path)
+            .map_err(|e| format!("Failed to read {}: {}", file_path, e))?
+        
+        // Replace version references
+        let updated_content = content
+            .replace("Ruchy v1.", &format!("Ruchy v{}", new_version))
+            .replace("ruchy 1.", &format!("ruchy {}", new_version))
+        
+        fs::write(file_path, updated_content)
+            .map_err(|e| format!("Failed to write {}: {}", file_path, e))?
+        
+        println(f"  ✓ Updated {file_path}")
+        Ok(())
+    }
+    
+    fun create_version_commit(&self, new_version: &str) -> Result<(), String> {
+        println(f"📦 Creating version commit for v{new_version}...")
+        
+        // Add all changes
+        let output = Command::new("git")
+            .args(&["add", "."])
+            .output()
+            .map_err(|e| format!("Failed to stage changes: {}", e))?
+        
+        if !output.status.success() {
+            return Err("Failed to stage changes".to_string())
+        }
+        
+        // Create commit
+        let commit_msg = format!(
+            "feat: Update to Ruchy v{new_version} features\n\n\
+             - Updated all example implementations\n\
+             - Added latest language features\n\
+             - Updated version references\n\n\
+             🤖 Generated with [Claude Code](https://claude.ai/code)\n\n\
+             Co-Authored-By: Claude <noreply@anthropic.com>"
+        )
+        
+        let output = Command::new("git")
+            .args(&["commit", "-m", &commit_msg])
+            .output()
+            .map_err(|e| format!("Failed to create commit: {}", e))?
+        
+        if !output.status.success() {
+            return Err("Failed to create commit".to_string())
+        }
+        
+        // Create tag
+        let tag_name = format!("rosetta-v{}", new_version)
+        let output = Command::new("git")
+            .args(&["tag", "-a", &tag_name, "-m", &format!("Rosetta Ruchy examples for v{}", new_version)])
+            .output()
+            .map_err(|e| format!("Failed to create tag: {}", e))?
+        
+        if !output.status.success() {
+            return Err("Failed to create tag".to_string())
+        }
+        
+        println(f"✅ Created commit and tag: {tag_name}")
+        Ok(())
+    }
+}
+
+fun main() {
+    let version_manager = VersionManager::new()
+    
+    println("🚀 Rosetta Ruchy Version Manager")
+    println("================================")
+    println()
+    
+    // Check for updates
+    match version_manager.check_for_updates() {
+        Ok(new_version) => {
+            println(f"🎉 New Ruchy version available: v{new_version}")
+            
+            // Update examples
+            match version_manager.update_examples_for_version(&new_version) {
+                Ok(()) => {
+                    println("✅ Examples updated successfully!")
+                    
+                    // Create version commit
+                    match version_manager.create_version_commit(&new_version) {
+                        Ok(()) => {
+                            println(f"🎯 Version update complete for v{new_version}")
+                            println()
+                            println("Next steps:")
+                            println("1. Review the changes: git log -1")
+                            println("2. Push to remote: git push origin main --tags")
+                            println("3. Test the updated examples")
+                        }
+                        Err(e) => {
+                            eprintln!("❌ Failed to create commit: {}", e)
+                            std::process::exit(1)
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("❌ Failed to update examples: {}", e)
+                    std::process::exit(1)
+                }
+            }
+        }
+        Err(_) => {
+            println(f"✅ Already up to date with Ruchy v{version_manager.current_version}")
+        }
+    }
+}

@@ -1,0 +1,388 @@
+#!/usr/bin/env ruchy
+
+use std::process::Command
+use std::collections::HashMap
+use std::fs
+use toml::Value
+
+struct TestResult {
+    language: String,
+    test_name: String,
+    passed: bool,
+    duration_ms: f64,
+    error_message: Option<String>,
+}
+
+struct TestSuite {
+    spec: HashMap<String, Value>,
+    results: Vec<TestResult>,
+}
+
+impl TestSuite {
+    fun new() -> Self {
+        let spec_content = fs::read_to_string("spec.toml")
+            .expect("Failed to read spec.toml")
+        
+        let spec: HashMap<String, Value> = toml::from_str(&spec_content)
+            .expect("Failed to parse spec.toml")
+        
+        Self {
+            spec,
+            results: Vec::new(),
+        }
+    }
+    
+    fun run_all_tests(&mut self) {
+        println("🧪 Running comprehensive test suite...")
+        println("=====================================")
+        println()
+        
+        self.run_ruchy_tests()
+        self.run_rust_tests()
+        self.run_python_tests()
+        self.run_javascript_tests()
+        self.run_go_tests()
+        self.run_c_tests()
+        
+        self.generate_test_report()
+    }
+    
+    fun run_ruchy_tests(&mut self) {
+        println("Testing Ruchy implementation...")
+        
+        let test_commands = vec![
+            ("Unit Tests", vec!["ruchy", "test", "implementations/ruchy/quicksort.ruchy"]),
+            ("Property Tests", vec!["ruchy", "test", "--property-tests", "10000", "implementations/ruchy/quicksort.ruchy"]),
+            ("Mutation Testing", vec!["ruchy", "test", "--mutation-testing", "implementations/ruchy/quicksort.ruchy"]),
+            ("Quality Gate", vec!["ruchy", "quality-gate", "implementations/ruchy/quicksort.ruchy", "--threshold", "0.95"]),
+            ("Provability Verification", vec!["ruchy", "provability", "implementations/ruchy/quicksort.ruchy", "--verify-correctness"]),
+            ("Termination Verification", vec!["ruchy", "provability", "implementations/ruchy/quicksort.ruchy", "--verify-termination"]),
+        ]
+        
+        for (test_name, cmd) in test_commands {
+            let result = self.run_test_command("ruchy", test_name, &cmd)
+            self.results.push(result)
+        }
+        
+        println()
+    }
+    
+    fun run_rust_tests(&mut self) {
+        println!("Testing Rust implementation...")
+        
+        let start = std::time::Instant::now()
+        let output = Command::new("cargo")
+            .args(&["test", "--manifest-path", "implementations/rust/Cargo.toml"])
+            .output()
+            .expect("Failed to run Rust tests")
+        
+        let duration = start.elapsed().as_secs_f64() * 1000.0
+        
+        self.results.push(TestResult {
+            language: "rust".to_string(),
+            test_name: "All Tests".to_string(),
+            passed: output.status.success(),
+            duration_ms: duration,
+            error_message: if output.status.success() {
+                None
+            } else {
+                Some(String::from_utf8_lossy(&output.stderr).to_string())
+            },
+        })
+        
+        if output.status.success() {
+            println!("  ✅ All tests passed ({:.2}ms)", duration)
+        } else {
+            println!("  ❌ Tests failed")
+        }
+        
+        println()
+    }
+    
+    fun run_python_tests(&mut self) {
+        println!("Testing Python implementation...")
+        
+        let start = std::time::Instant::now()
+        let output = Command::new("python3")
+            .args(&["-m", "pytest", "implementations/python/test_quicksort.py", "-v"])
+            .output()
+            .expect("Failed to run Python tests")
+        
+        let duration = start.elapsed().as_secs_f64() * 1000.0
+        
+        self.results.push(TestResult {
+            language: "python".to_string(),
+            test_name: "All Tests".to_string(),
+            passed: output.status.success(),
+            duration_ms: duration,
+            error_message: if output.status.success() {
+                None
+            } else {
+                Some(String::from_utf8_lossy(&output.stderr).to_string())
+            },
+        })
+        
+        if output.status.success() {
+            println!("  ✅ All tests passed ({:.2}ms)", duration)
+        } else {
+            println!("  ❌ Tests failed")
+        }
+        
+        println()
+    }
+    
+    fun run_javascript_tests(&mut self) {
+        println!("Testing JavaScript implementation...")
+        
+        let start = std::time::Instant::now()
+        let output = Command::new("node")
+            .args(&["implementations/javascript/test.js"])
+            .output()
+            .expect("Failed to run JavaScript tests")
+        
+        let duration = start.elapsed().as_secs_f64() * 1000.0
+        
+        self.results.push(TestResult {
+            language: "javascript".to_string(),
+            test_name: "All Tests".to_string(),
+            passed: output.status.success(),
+            duration_ms: duration,
+            error_message: if output.status.success() {
+                None
+            } else {
+                Some(String::from_utf8_lossy(&output.stderr).to_string())
+            },
+        })
+        
+        if output.status.success() {
+            println!("  ✅ All tests passed ({:.2}ms)", duration)
+        } else {
+            println!("  ❌ Tests failed")
+        }
+        
+        println()
+    }
+    
+    fun run_go_tests(&mut self) {
+        println!("Testing Go implementation...")
+        
+        let start = std::time::Instant::now()
+        let output = Command::new("go")
+            .args(&["test", "-v", "./implementations/go/"])
+            .output()
+            .expect("Failed to run Go tests")
+        
+        let duration = start.elapsed().as_secs_f64() * 1000.0
+        
+        self.results.push(TestResult {
+            language: "go".to_string(),
+            test_name: "All Tests".to_string(),
+            passed: output.status.success(),
+            duration_ms: duration,
+            error_message: if output.status.success() {
+                None
+            } else {
+                Some(String::from_utf8_lossy(&output.stderr).to_string())
+            },
+        })
+        
+        if output.status.success() {
+            println!("  ✅ All tests passed ({:.2}ms)", duration)
+        } else {
+            println!("  ❌ Tests failed")
+        }
+        
+        println()
+    }
+    
+    fun run_c_tests(&mut self) {
+        println!("Testing C implementation...")
+        
+        let start = std::time::Instant::now()
+        let output = Command::new("make")
+            .args(&["test", "-C", "implementations/c"])
+            .output()
+            .expect("Failed to run C tests")
+        
+        let duration = start.elapsed().as_secs_f64() * 1000.0
+        
+        self.results.push(TestResult {
+            language: "c".to_string(),
+            test_name: "All Tests".to_string(),
+            passed: output.status.success(),
+            duration_ms: duration,
+            error_message: if output.status.success() {
+                None
+            } else {
+                Some(String::from_utf8_lossy(&output.stderr).to_string())
+            },
+        })
+        
+        if output.status.success() {
+            println!("  ✅ All tests passed ({:.2}ms)", duration)
+        } else {
+            println!("  ❌ Tests failed")
+        }
+        
+        println()
+    }
+    
+    fun run_test_command(&self, language: &str, test_name: &str, cmd: &[&str]) -> TestResult {
+        print!("  Running {}...", test_name)
+        
+        let start = std::time::Instant::now()
+        let output = Command::new(&cmd[0])
+            .args(&cmd[1..])
+            .output()
+            .expect(&format!("Failed to run {}", test_name))
+        
+        let duration = start.elapsed().as_secs_f64() * 1000.0
+        let passed = output.status.success()
+        
+        if passed {
+            println!(" ✅ ({:.2}ms)", duration)
+        } else {
+            println!(" ❌")
+        }
+        
+        TestResult {
+            language: language.to_string(),
+            test_name: test_name.to_string(),
+            passed,
+            duration_ms: duration,
+            error_message: if passed {
+                None
+            } else {
+                Some(String::from_utf8_lossy(&output.stderr).to_string())
+            },
+        }
+    }
+    
+    fun generate_test_report(&self) {
+        use std::fs::File
+        use std::io::Write
+        
+        std::fs::create_dir_all("results").expect("Failed to create results directory")
+        
+        let mut file = File::create("results/test_report.md").unwrap()
+        
+        writeln!(file, "# Quicksort Test Report").unwrap()
+        writeln!(file, "").unwrap()
+        writeln!(file, "Generated: {}", chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")).unwrap()
+        writeln!(file, "").unwrap()
+        
+        // Summary
+        let total_tests = self.results.len()
+        let passed_tests = self.results.iter().filter(|r| r.passed).count()
+        let failed_tests = total_tests - passed_tests
+        
+        writeln!(file, "## Summary").unwrap()
+        writeln!(file, "").unwrap()
+        writeln!(file, "- **Total Tests**: {}", total_tests).unwrap()
+        writeln!(file, "- **Passed**: {} ✅", passed_tests).unwrap()
+        writeln!(file, "- **Failed**: {} ❌", failed_tests).unwrap()
+        writeln!(file, "- **Success Rate**: {:.1}%", (passed_tests as f64 / total_tests as f64) * 100.0).unwrap()
+        writeln!(file, "").unwrap()
+        
+        // Results by language
+        let mut by_language: HashMap<String, Vec<&TestResult>> = HashMap::new()
+        for result in &self.results {
+            by_language.entry(result.language.clone()).or_insert_with(Vec::new).push(result)
+        }
+        
+        for (language, results) in by_language {
+            writeln!(file, "## {} Results", language.to_uppercase()).unwrap()
+            writeln!(file, "").unwrap()
+            writeln!(file, "| Test | Status | Duration (ms) |").unwrap()
+            writeln!(file, "|------|--------|---------------|").unwrap()
+            
+            for result in results {
+                let status = if result.passed { "✅ PASS" } else { "❌ FAIL" }
+                writeln!(file, "| {} | {} | {:.2} |", result.test_name, status, result.duration_ms).unwrap()
+            }
+            
+            writeln!(file, "").unwrap()
+        }
+        
+        // Failures section
+        let failures: Vec<_> = self.results.iter().filter(|r| !r.passed).collect()
+        if !failures.is_empty() {
+            writeln!(file, "## Failures").unwrap()
+            writeln!(file, "").unwrap()
+            
+            for failure in failures {
+                writeln!(file, "### {} - {}", failure.language.to_uppercase(), failure.test_name).unwrap()
+                writeln!(file, "").unwrap()
+                if let Some(ref error) = failure.error_message {
+                    writeln!(file, "```").unwrap()
+                    writeln!(file, "{}", error).unwrap()
+                    writeln!(file, "```").unwrap()
+                } else {
+                    writeln!(file, "No error message available.").unwrap()
+                }
+                writeln!(file, "").unwrap()
+            }
+        }
+        
+        // Ruchy analysis section
+        let ruchy_results: Vec<_> = self.results.iter().filter(|r| r.language == "ruchy").collect()
+        if !ruchy_results.is_empty() {
+            writeln!(file, "## Ruchy Advanced Analysis").unwrap()
+            writeln!(file, "").unwrap()
+            
+            let quality_gate_result = ruchy_results.iter()
+                >> find(|r| r.test_name == "Quality Gate")
+            
+            if let Some(result) = quality_gate_result {
+                if result.passed {
+                    writeln!(file, "- ✅ **Quality Gate Passed**: Code meets quality standards").unwrap()
+                } else {
+                    writeln!(file, "- ❌ **Quality Gate Failed**: Code quality below threshold").unwrap()
+                }
+            }
+            
+            let provability_result = ruchy_results.iter()
+                >> find(|r| r.test_name == "Provability Verification")
+            
+            if let Some(result) = provability_result {
+                if result.passed {
+                    writeln!(file, "- ✅ **Provability Verified**: Algorithm correctness proven").unwrap()
+                } else {
+                    writeln!(file, "- ❌ **Provability Failed**: Could not prove correctness").unwrap()
+                }
+            }
+            
+            let mutation_result = ruchy_results.iter()
+                >> find(|r| r.test_name == "Mutation Testing")
+            
+            if let Some(result) = mutation_result {
+                if result.passed {
+                    writeln!(file, "- ✅ **Mutation Testing**: High mutation score achieved").unwrap()
+                } else {
+                    writeln!(file, "- ❌ **Mutation Testing**: Low mutation score").unwrap()
+                }
+            }
+        }
+        
+        println("📊 Test report generated: results/test_report.md")
+    }
+}
+
+fun main() {
+    let mut test_suite = TestSuite::new()
+    test_suite.run_all_tests()
+    
+    println()
+    println("🎉 Test suite completed!")
+    
+    let total = test_suite.results.len()
+    let passed = test_suite.results.iter().filter(|r| r.passed).count()
+    
+    if passed == total {
+        println("✅ All {} tests passed!", total)
+        std::process::exit(0)
+    } else {
+        println("❌ {} of {} tests failed", total - passed, total)
+        std::process::exit(1)
+    }
+}
