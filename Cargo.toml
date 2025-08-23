@@ -2,7 +2,7 @@
 members = [
     "harness/runner",
     "scripts/validation-tools",
-    "mcp-server",
+    "mcp-server", "examples/algorithms/005-hash-table/implementations/rust", "examples/algorithms/006-red-black-tree/implementations/rust", "examples/algorithms/007-dijkstra-shortest-path/implementations/rust", "examples/algorithms/008-longest-common-subsequence/implementations/rust", "examples/algorithms/009-knapsack-problem/implementations/rust",
 ]
 default-members = ["harness/runner", "mcp-server"]
 resolver = "2"

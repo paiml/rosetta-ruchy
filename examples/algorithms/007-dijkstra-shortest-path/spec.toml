@@ -1,0 +1,197 @@
+[metadata]
+name = "dijkstra-shortest-path"
+category = "graph-algorithms"
+difficulty = "medium"
+tags = ["graph", "shortest-path", "greedy", "priority-queue", "weighted-graph"]
+
+[complexity]
+time_standard = "O((V + E) log V) with binary heap"
+time_fibonacci_heap = "O(E + V log V)"
+space = "O(V)"
+preprocessing = "O(1)"
+
+[test_cases.basic]
+single_node = {
+    graph = { nodes = ["A"], edges = [] },
+    source = "A",
+    target = "A",
+    expected_distance = 0,
+    expected_path = ["A"]
+}
+
+two_nodes_connected = {
+    graph = { 
+        nodes = ["A", "B"],
+        edges = [["A", "B", 5]]
+    },
+    source = "A",
+    target = "B",
+    expected_distance = 5,
+    expected_path = ["A", "B"]
+}
+
+triangle_graph = {
+    graph = {
+        nodes = ["A", "B", "C"],
+        edges = [["A", "B", 4], ["B", "C", 3], ["A", "C", 10]]
+    },
+    source = "A",
+    target = "C",
+    expected_distance = 7,
+    expected_path = ["A", "B", "C"]
+}
+
+[test_cases.complex]
+diamond_graph = {
+    graph = {
+        nodes = ["S", "A", "B", "T"],
+        edges = [
+            ["S", "A", 3],
+            ["S", "B", 5],
+            ["A", "T", 7],
+            ["B", "T", 2],
+            ["A", "B", 1]
+        ]
+    },
+    source = "S",
+    target = "T",
+    expected_distance = 7,
+    expected_path = ["S", "B", "T"]
+}
+
+multiple_paths = {
+    graph = {
+        nodes = ["A", "B", "C", "D", "E", "F"],
+        edges = [
+            ["A", "B", 4], ["A", "C", 2],
+            ["B", "D", 5], ["C", "D", 8],
+            ["C", "E", 10], ["D", "E", 2],
+            ["D", "F", 6], ["E", "F", 3]
+        ]
+    },
+    source = "A",
+    target = "F",
+    expected_distance = 13,
+    expected_path = ["A", "B", "D", "E", "F"]
+}
+
+[test_cases.edge_cases]
+unreachable_node = {
+    graph = {
+        nodes = ["A", "B", "C", "D"],
+        edges = [["A", "B", 1], ["C", "D", 1]]
+    },
+    source = "A",
+    target = "D",
+    expected_distance = "infinity",
+    expected_path = []
+}
+
+negative_edge_detection = {
+    graph = {
+        nodes = ["A", "B", "C"],
+        edges = [["A", "B", 5], ["B", "C", -3]]
+    },
+    should_error = true,
+    error_message = "Negative edge weights not supported"
+}
+
+self_loops = {
+    graph = {
+        nodes = ["A", "B"],
+        edges = [["A", "A", 0], ["A", "B", 5]]
+    },
+    source = "A",
+    target = "B",
+    expected_distance = 5
+}
+
+[test_cases.performance]
+dense_graph = {
+    generate = "complete_graph",
+    nodes = 100,
+    weight_range = [1, 100],
+    verify_correctness = true
+}
+
+sparse_graph = {
+    generate = "random_graph",
+    nodes = 10000,
+    edges = 20000,
+    weight_range = [1, 1000],
+    measure_time = true
+}
+
+grid_graph = {
+    generate = "grid",
+    width = 100,
+    height = 100,
+    diagonal_allowed = false,
+    weight_range = [1, 10]
+}
+
+social_network = {
+    generate = "small_world",
+    nodes = 5000,
+    avg_degree = 6,
+    rewiring_prob = 0.1
+}
+
+[test_cases.concurrent]
+parallel_sources = {
+    graph = "large_random",
+    sources = ["A", "B", "C", "D", "E"],
+    measure_speedup = true,
+    expected_speedup_min = 2.5
+}
+
+concurrent_updates = {
+    initial_graph = "sparse",
+    concurrent_operations = [
+        ["add_edge", "X", "Y", 10],
+        ["remove_edge", "A", "B"],
+        ["update_weight", "C", "D", 15]
+    ],
+    verify_consistency = true
+}
+
+[benchmark]
+iterations = 1000
+warmup = 100
+graph_sizes = [10, 100, 1000, 10000]
+graph_types = ["sparse", "dense", "grid", "small_world"]
+operations = ["single_source", "all_pairs_subset", "path_reconstruction"]
+
+[performance_targets]
+"1000_nodes_sparse" = 0.001  # seconds
+"10000_nodes_sparse" = 0.01
+"complete_graph_100" = 0.0001
+memory_overhead_ratio = 2.0  # relative to graph size
+
+[algorithms.comparison]
+dijkstra = { implemented = true }
+bellman_ford = { implemented = true, handles_negative = true }
+a_star = { implemented = true, requires_heuristic = true }
+floyd_warshall = { implemented = false, all_pairs = true }
+
+[visualization]
+show_graph = true
+highlight_shortest_path = true
+show_distances = true
+animate_exploration = true
+export_formats = ["ascii", "dot", "svg"]
+
+[validation]
+property_tests = 10000
+path_verification = true
+triangle_inequality = true
+relaxation_correctness = true
+
+[ruchy_features]
+# v1.5.0 specific features this example demonstrates
+concurrent_graph_operations = true        # Async graph updates and queries
+self_hosting_heap_generation = true       # Generate optimized heap operations
+algorithm_w_graph_traits = true           # Complex trait bounds for graph types
+pattern_matching_edge_cases = true        # Exhaustive pattern matching
+formal_correctness_proofs = true          # SMT solver verification of Dijkstra's
+lock_free_priority_queue = true           # Concurrent priority queue operations
