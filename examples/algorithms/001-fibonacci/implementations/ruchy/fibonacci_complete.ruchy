@@ -1,0 +1,96 @@
+// Complete Fibonacci implementation in Ruchy
+// All variants for benchmarking
+
+// Recursive Fibonacci (exponential complexity)
+fun fib_recursive(n: i32) -> i32 {
+    if n <= 1 {
+        n
+    } else {
+        fib_recursive(n - 1) + fib_recursive(n - 2)
+    }
+}
+
+// Iterative Fibonacci (linear complexity)
+fun fib_iterative(n: i32) -> i32 {
+    if n <= 1 {
+        return n
+    }
+    
+    let prev = 0;
+    let curr = 1;
+    
+    for i in 2..=n {
+        let next = prev + curr;
+        prev = curr;
+        curr = next;
+    }
+    
+    curr
+}
+
+// Tail-recursive Fibonacci
+fun fib_tail_recursive(n: i32) -> i32 {
+    fun helper(n: i32, prev: i32, curr: i32) -> i32 {
+        if n == 0 {
+            prev
+        } else {
+            helper(n - 1, curr, prev + curr)
+        }
+    }
+    
+    helper(n, 0, 1)
+}
+
+// Pattern matching version
+fun fib_pattern(n: i32) -> i32 {
+    match n {
+        0 => 0,
+        1 => 1,
+        _ => fib_pattern(n - 1) + fib_pattern(n - 2)
+    }
+}
+
+// Test all implementations
+fun test_all() -> bool {
+    let test_values = [0, 1, 5, 10, 20];
+    let expected = [0, 1, 5, 55, 6765];
+    
+    for i in 0..5 {
+        let n = test_values[i];
+        let exp = expected[i];
+        
+        let r1 = fib_recursive(n);
+        let r2 = fib_iterative(n);
+        let r3 = fib_tail_recursive(n);
+        let r4 = fib_pattern(n);
+        
+        if r1 != exp || r2 != exp || r3 != exp || r4 != exp {
+            return false
+        }
+    }
+    
+    true
+}
+
+// Run tests and demonstrate all variants
+let test_n = 10;
+
+let recursive_result = fib_recursive(test_n);
+let iterative_result = fib_iterative(test_n);
+let tail_result = fib_tail_recursive(test_n);
+let pattern_result = fib_pattern(test_n);
+
+// Verify all implementations give the same result
+if recursive_result == 55 && 
+   iterative_result == 55 && 
+   tail_result == 55 && 
+   pattern_result == 55 {
+    // Run comprehensive tests
+    if test_all() {
+        55  // Return success value
+    } else {
+        -1  // Test failure
+    }
+} else {
+    -2  // Basic test failure
+}

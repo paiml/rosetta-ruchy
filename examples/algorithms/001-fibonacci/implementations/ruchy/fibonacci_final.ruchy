@@ -1,0 +1,73 @@
+// Fibonacci implementations in Ruchy
+// Rosetta Ruchy benchmark suite
+
+// Recursive Fibonacci (exponential complexity)
+fun fib_recursive(n: i32) -> i32 {
+    if n <= 1 {
+        n
+    } else {
+        fib_recursive(n - 1) + fib_recursive(n - 2)
+    }
+}
+
+// Iterative Fibonacci (linear complexity) 
+fun fib_iterative(n: i32) -> i32 {
+    if n <= 1 {
+        return n
+    }
+    
+    let mut prev = 0;
+    let mut curr = 1;
+    
+    for i in 2..=n {
+        let next = prev + curr;
+        prev = curr;
+        curr = next;
+    }
+    
+    curr
+}
+
+// Tail-recursive Fibonacci
+fun fib_tail(n: i32) -> i32 {
+    fun helper(n: i32, prev: i32, curr: i32) -> i32 {
+        if n == 0 {
+            prev
+        } else {
+            helper(n - 1, curr, prev + curr)
+        }
+    }
+    
+    helper(n, 0, 1)
+}
+
+// Pattern matching Fibonacci
+fun fib_match(n: i32) -> i32 {
+    match n {
+        0 => 0,
+        1 => 1,
+        _ => fib_match(n - 1) + fib_match(n - 2)
+    }
+}
+
+// Test with various values
+let test_10_recursive = fib_recursive(10);
+let test_10_iterative = fib_iterative(10);
+let test_10_tail = fib_tail(10);
+let test_10_match = fib_match(10);
+
+// All should equal 55
+if test_10_recursive == 55 && test_10_iterative == 55 && 
+   test_10_tail == 55 && test_10_match == 55 {
+    // Test more values
+    let test_20_iter = fib_iterative(20);
+    let test_20_tail = fib_tail(20);
+    
+    if test_20_iter == 6765 && test_20_tail == 6765 {
+        test_20_iter  // Return success
+    } else {
+        -1  // Failed on n=20
+    }
+} else {
+    -2  // Failed on n=10
+}

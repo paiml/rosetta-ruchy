@@ -121,6 +121,27 @@ struct BenchmarkResult {
     memory_profile: Option<MemoryProfile>,
     /// Binary size analysis data
     binary_analysis: Option<BinarySizeAnalysis>,
+    /// Ruchy-specific advanced analysis (only for Ruchy language)
+    ruchy_analysis: Option<RuchyAnalysis>,
+}
+
+/// Ruchy advanced tooling analysis
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct RuchyAnalysis {
+    /// AST complexity score
+    ast_complexity: u32,
+    /// Formal provability score (0-100)
+    provability_score: f64,
+    /// Verified correctness properties
+    verified_properties: Vec<String>,
+    /// Runtime complexity (e.g., "O(n)", "O(log n)")
+    runtime_complexity: String,
+    /// Quality gate passed
+    quality_gate_passed: bool,
+    /// Optimization opportunities
+    optimization_opportunities: Vec<String>,
+    /// Memory safety guarantees
+    memory_safety_guarantees: Vec<String>,
 }
 
 /// Statistical performance measurements

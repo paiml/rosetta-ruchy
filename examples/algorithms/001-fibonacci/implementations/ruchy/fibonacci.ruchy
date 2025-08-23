@@ -1,0 +1,77 @@
+// Fibonacci sequence implementations in Ruchy
+// Reference implementation for Rosetta Ruchy benchmarks
+
+// Recursive Fibonacci (exponential complexity)
+fun fib_recursive(n: i32) -> i32 {
+    if n <= 1 {
+        n
+    } else {
+        fib_recursive(n - 1) + fib_recursive(n - 2)
+    }
+}
+
+// Iterative Fibonacci (linear complexity)
+fun fib_iterative(n: i32) -> i32 {
+    if n <= 1 {
+        return n
+    }
+    
+    let prev = 0;
+    let curr = 1;
+    let next = 0;
+    
+    for i in 2..=n {
+        next = prev + curr;
+        prev = curr;
+        curr = next;
+    }
+    
+    curr
+}
+
+// Tail-recursive Fibonacci
+fun fib_tail_recursive(n: i32) -> i32 {
+    fun helper(n: i32, prev: i32, curr: i32) -> i32 {
+        if n == 0 {
+            prev
+        } else {
+            helper(n - 1, curr, prev + curr)
+        }
+    }
+    
+    helper(n, 0, 1)
+}
+
+// Pattern matching Fibonacci
+fun fib_pattern(n: i32) -> i32 {
+    match n {
+        0 => 0,
+        1 => 1,
+        _ => fib_pattern(n - 1) + fib_pattern(n - 2)
+    }
+}
+
+// Run demonstrations of all variants
+// Test n=10 (expected: 55) and n=20 (expected: 6765)
+
+let n = 10;
+
+// Test all implementations
+let r1 = fib_recursive(n);
+let r2 = fib_iterative(n);
+let r3 = fib_tail_recursive(n);
+let r4 = fib_pattern(n);
+
+// Verify all give same result (55)
+if r1 == 55 && r2 == 55 && r3 == 55 && r4 == 55 {
+    // Test larger value with iterative (faster)
+    let r20 = fib_iterative(20);
+    if r20 == 6765 {
+        // All tests passed, return success
+        6765
+    } else {
+        -1
+    }
+} else {
+    -2
+}

@@ -1,0 +1,13 @@
+// Basic Fibonacci implementation in Ruchy
+
+fun fibonacci(n: i32) -> i32 {
+    if n <= 1 {
+        n
+    } else {
+        fibonacci(n - 1) + fibonacci(n - 2)
+    }
+}
+
+// Test with n = 10, expected result is 55
+let result = fibonacci(10);
+result

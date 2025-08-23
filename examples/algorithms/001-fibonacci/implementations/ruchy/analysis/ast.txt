@@ -1,0 +1,1891 @@
+→ AST for fibonacci.ruchy
+Expr {
+    kind: Block(
+        [
+            Expr {
+                kind: Function {
+                    name: "fib_recursive",
+                    type_params: [],
+                    params: [
+                        Param {
+                            pattern: Identifier(
+                                "n",
+                            ),
+                            ty: Type {
+                                kind: Named(
+                                    "i32",
+                                ),
+                                span: Span {
+                                    start: 0,
+                                    end: 0,
+                                },
+                            },
+                            span: Span {
+                                start: 0,
+                                end: 0,
+                            },
+                            is_mutable: false,
+                            default_value: None,
+                        },
+                    ],
+                    return_type: Some(
+                        Type {
+                            kind: Named(
+                                "i32",
+                            ),
+                            span: Span {
+                                start: 0,
+                                end: 0,
+                            },
+                        },
+                    ),
+                    body: Expr {
+                        kind: Block(
+                            [
+                                Expr {
+                                    kind: If {
+                                        condition: Expr {
+                                            kind: Binary {
+                                                left: Expr {
+                                                    kind: Identifier(
+                                                        "n",
+                                                    ),
+                                                    span: Span {
+                                                        start: 195,
+                                                        end: 196,
+                                                    },
+                                                    attributes: [],
+                                                },
+                                                op: LessEqual,
+                                                right: Expr {
+                                                    kind: Literal(
+                                                        Integer(
+                                                            1,
+                                                        ),
+                                                    ),
+                                                    span: Span {
+                                                        start: 200,
+                                                        end: 201,
+                                                    },
+                                                    attributes: [],
+                                                },
+                                            },
+                                            span: Span {
+                                                start: 0,
+                                                end: 0,
+                                            },
+                                            attributes: [],
+                                        },
+                                        then_branch: Expr {
+                                            kind: Block(
+                                                [
+                                                    Expr {
+                                                        kind: Identifier(
+                                                            "n",
+                                                        ),
+                                                        span: Span {
+                                                            start: 212,
+                                                            end: 213,
+                                                        },
+                                                        attributes: [],
+                                                    },
+                                                ],
+                                            ),
+                                            span: Span {
+                                                start: 202,
+                                                end: 203,
+                                            },
+                                            attributes: [],
+                                        },
+                                        else_branch: Some(
+                                            Expr {
+                                                kind: Block(
+                                                    [
+                                                        Expr {
+                                                            kind: Binary {
+                                                                left: Expr {
+                                                                    kind: Call {
+                                                                        func: Expr {
+                                                                            kind: Identifier(
+                                                                                "fib_recursive",
+                                                                            ),
+                                                                            span: Span {
+                                                                                start: 235,
+                                                                                end: 248,
+                                                                            },
+                                                                            attributes: [],
+                                                                        },
+                                                                        args: [
+                                                                            Expr {
+                                                                                kind: Binary {
+                                                                                    left: Expr {
+                                                                                        kind: Identifier(
+                                                                                            "n",
+                                                                                        ),
+                                                                                        span: Span {
+                                                                                            start: 249,
+                                                                                            end: 250,
+                                                                                        },
+                                                                                        attributes: [],
+                                                                                    },
+                                                                                    op: Subtract,
+                                                                                    right: Expr {
+                                                                                        kind: Literal(
+                                                                                            Integer(
+                                                                                                1,
+                                                                                            ),
+                                                                                        ),
+                                                                                        span: Span {
+                                                                                            start: 253,
+                                                                                            end: 254,
+                                                                                        },
+                                                                                        attributes: [],
+                                                                                    },
+                                                                                },
+                                                                                span: Span {
+                                                                                    start: 0,
+                                                                                    end: 0,
+                                                                                },
+                                                                                attributes: [],
+                                                                            },
+                                                                        ],
+                                                                    },
+                                                                    span: Span {
+                                                                        start: 0,
+                                                                        end: 0,
+                                                                    },
+                                                                    attributes: [],
+                                                                },
+                                                                op: Add,
+                                                                right: Expr {
+                                                                    kind: Call {
+                                                                        func: Expr {
+                                                                            kind: Identifier(
+                                                                                "fib_recursive",
+                                                                            ),
+                                                                            span: Span {
+                                                                                start: 258,
+                                                                                end: 271,
+                                                                            },
+                                                                            attributes: [],
+                                                                        },
+                                                                        args: [
+                                                                            Expr {
+                                                                                kind: Binary {
+                                                                                    left: Expr {
+                                                                                        kind: Identifier(
+                                                                                            "n",
+                                                                                        ),
+                                                                                        span: Span {
+                                                                                            start: 272,
+                                                                                            end: 273,
+                                                                                        },
+                                                                                        attributes: [],
+                                                                                    },
+                                                                                    op: Subtract,
+                                                                                    right: Expr {
+                                                                                        kind: Literal(
+                                                                                            Integer(
+                                                                                                2,
+                                                                                            ),
+                                                                                        ),
+                                                                                        span: Span {
+                                                                                            start: 276,
+                                                                                            end: 277,
+                                                                                        },
+                                                                                        attributes: [],
+                                                                                    },
+                                                                                },
+                                                                                span: Span {
+                                                                                    start: 0,
+                                                                                    end: 0,
+                                                                                },
+                                                                                attributes: [],
+                                                                            },
+                                                                        ],
+                                                                    },
+                                                                    span: Span {
+                                                                        start: 0,
+                                                                        end: 0,
+                                                                    },
+                                                                    attributes: [],
+                                                                },
+                                                            },
+                                                            span: Span {
+                                                                start: 0,
+                                                                end: 0,
+                                                            },
+                                                            attributes: [],
+                                                        },
+                                                    ],
+                                                ),
+                                                span: Span {
+                                                    start: 225,
+                                                    end: 226,
+                                                },
+                                                attributes: [],
+                                            },
+                                        ),
+                                    },
+                                    span: Span {
+                                        start: 192,
+                                        end: 194,
+                                    },
+                                    attributes: [],
+                                },
+                            ],
+                        ),
+                        span: Span {
+                            start: 186,
+                            end: 187,
+                        },
+                        attributes: [],
+                    },
+                    is_async: false,
+                    is_pub: false,
+                },
+                span: Span {
+                    start: 153,
+                    end: 156,
+                },
+                attributes: [],
+            },
+            Expr {
+                kind: Function {
+                    name: "fib_iterative",
+                    type_params: [],
+                    params: [
+                        Param {
+                            pattern: Identifier(
+                                "n",
+                            ),
+                            ty: Type {
+                                kind: Named(
+                                    "i32",
+                                ),
+                                span: Span {
+                                    start: 0,
+                                    end: 0,
+                                },
+                            },
+                            span: Span {
+                                start: 0,
+                                end: 0,
+                            },
+                            is_mutable: false,
+                            default_value: None,
+                        },
+                    ],
+                    return_type: Some(
+                        Type {
+                            kind: Named(
+                                "i32",
+                            ),
+                            span: Span {
+                                start: 0,
+                                end: 0,
+                            },
+                        },
+                    ),
+                    body: Expr {
+                        kind: Block(
+                            [
+                                Expr {
+                                    kind: If {
+                                        condition: Expr {
+                                            kind: Binary {
+                                                left: Expr {
+                                                    kind: Identifier(
+                                                        "n",
+                                                    ),
+                                                    span: Span {
+                                                        start: 373,
+                                                        end: 374,
+                                                    },
+                                                    attributes: [],
+                                                },
+                                                op: LessEqual,
+                                                right: Expr {
+                                                    kind: Literal(
+                                                        Integer(
+                                                            1,
+                                                        ),
+                                                    ),
+                                                    span: Span {
+                                                        start: 378,
+                                                        end: 379,
+                                                    },
+                                                    attributes: [],
+                                                },
+                                            },
+                                            span: Span {
+                                                start: 0,
+                                                end: 0,
+                                            },
+                                            attributes: [],
+                                        },
+                                        then_branch: Expr {
+                                            kind: Block(
+                                                [
+                                                    Expr {
+                                                        kind: Return {
+                                                            value: Some(
+                                                                Expr {
+                                                                    kind: Identifier(
+                                                                        "n",
+                                                                    ),
+                                                                    span: Span {
+                                                                        start: 397,
+                                                                        end: 398,
+                                                                    },
+                                                                    attributes: [],
+                                                                },
+                                                            ),
+                                                        },
+                                                        span: Span {
+                                                            start: 390,
+                                                            end: 396,
+                                                        },
+                                                        attributes: [],
+                                                    },
+                                                ],
+                                            ),
+                                            span: Span {
+                                                start: 380,
+                                                end: 381,
+                                            },
+                                            attributes: [],
+                                        },
+                                        else_branch: None,
+                                    },
+                                    span: Span {
+                                        start: 370,
+                                        end: 372,
+                                    },
+                                    attributes: [],
+                                },
+                                Expr {
+                                    kind: Let {
+                                        name: "prev",
+                                        type_annotation: None,
+                                        value: Expr {
+                                            kind: Literal(
+                                                Integer(
+                                                    0,
+                                                ),
+                                            ),
+                                            span: Span {
+                                                start: 425,
+                                                end: 426,
+                                            },
+                                            attributes: [],
+                                        },
+                                        body: Expr {
+                                            kind: Block(
+                                                [
+                                                    Expr {
+                                                        kind: Let {
+                                                            name: "curr",
+                                                            type_annotation: None,
+                                                            value: Expr {
+                                                                kind: Literal(
+                                                                    Integer(
+                                                                        1,
+                                                                    ),
+                                                                ),
+                                                                span: Span {
+                                                                    start: 443,
+                                                                    end: 444,
+                                                                },
+                                                                attributes: [],
+                                                            },
+                                                            body: Expr {
+                                                                kind: Literal(
+                                                                    Unit,
+                                                                ),
+                                                                span: Span {
+                                                                    start: 0,
+                                                                    end: 0,
+                                                                },
+                                                                attributes: [],
+                                                            },
+                                                            is_mutable: false,
+                                                        },
+                                                        span: Span {
+                                                            start: 432,
+                                                            end: 435,
+                                                        },
+                                                        attributes: [],
+                                                    },
+                                                    Expr {
+                                                        kind: Let {
+                                                            name: "next",
+                                                            type_annotation: None,
+                                                            value: Expr {
+                                                                kind: Literal(
+                                                                    Integer(
+                                                                        0,
+                                                                    ),
+                                                                ),
+                                                                span: Span {
+                                                                    start: 461,
+                                                                    end: 462,
+                                                                },
+                                                                attributes: [],
+                                                            },
+                                                            body: Expr {
+                                                                kind: Literal(
+                                                                    Unit,
+                                                                ),
+                                                                span: Span {
+                                                                    start: 0,
+                                                                    end: 0,
+                                                                },
+                                                                attributes: [],
+                                                            },
+                                                            is_mutable: false,
+                                                        },
+                                                        span: Span {
+                                                            start: 450,
+                                                            end: 453,
+                                                        },
+                                                        attributes: [],
+                                                    },
+                                                    Expr {
+                                                        kind: For {
+                                                            var: "i",
+                                                            iter: Expr {
+                                                                kind: Range {
+                                                                    start: Expr {
+                                                                        kind: Literal(
+                                                                            Integer(
+                                                                                2,
+                                                                            ),
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 482,
+                                                                            end: 483,
+                                                                        },
+                                                                        attributes: [],
+                                                                    },
+                                                                    end: Expr {
+                                                                        kind: Identifier(
+                                                                            "n",
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 486,
+                                                                            end: 487,
+                                                                        },
+                                                                        attributes: [],
+                                                                    },
+                                                                    inclusive: true,
+                                                                },
+                                                                span: Span {
+                                                                    start: 0,
+                                                                    end: 0,
+                                                                },
+                                                                attributes: [],
+                                                            },
+                                                            body: Expr {
+                                                                kind: Block(
+                                                                    [
+                                                                        Expr {
+                                                                            kind: Assign {
+                                                                                target: Expr {
+                                                                                    kind: Identifier(
+                                                                                        "next",
+                                                                                    ),
+                                                                                    span: Span {
+                                                                                        start: 498,
+                                                                                        end: 502,
+                                                                                    },
+                                                                                    attributes: [],
+                                                                                },
+                                                                                value: Expr {
+                                                                                    kind: Binary {
+                                                                                        left: Expr {
+                                                                                            kind: Identifier(
+                                                                                                "prev",
+                                                                                            ),
+                                                                                            span: Span {
+                                                                                                start: 505,
+                                                                                                end: 509,
+                                                                                            },
+                                                                                            attributes: [],
+                                                                                        },
+                                                                                        op: Add,
+                                                                                        right: Expr {
+                                                                                            kind: Identifier(
+                                                                                                "curr",
+                                                                                            ),
+                                                                                            span: Span {
+                                                                                                start: 512,
+                                                                                                end: 516,
+                                                                                            },
+                                                                                            attributes: [],
+                                                                                        },
+                                                                                    },
+                                                                                    span: Span {
+                                                                                        start: 0,
+                                                                                        end: 0,
+                                                                                    },
+                                                                                    attributes: [],
+                                                                                },
+                                                                            },
+                                                                            span: Span {
+                                                                                start: 0,
+                                                                                end: 0,
+                                                                            },
+                                                                            attributes: [],
+                                                                        },
+                                                                        Expr {
+                                                                            kind: Assign {
+                                                                                target: Expr {
+                                                                                    kind: Identifier(
+                                                                                        "prev",
+                                                                                    ),
+                                                                                    span: Span {
+                                                                                        start: 526,
+                                                                                        end: 530,
+                                                                                    },
+                                                                                    attributes: [],
+                                                                                },
+                                                                                value: Expr {
+                                                                                    kind: Identifier(
+                                                                                        "curr",
+                                                                                    ),
+                                                                                    span: Span {
+                                                                                        start: 533,
+                                                                                        end: 537,
+                                                                                    },
+                                                                                    attributes: [],
+                                                                                },
+                                                                            },
+                                                                            span: Span {
+                                                                                start: 0,
+                                                                                end: 0,
+                                                                            },
+                                                                            attributes: [],
+                                                                        },
+                                                                        Expr {
+                                                                            kind: Assign {
+                                                                                target: Expr {
+                                                                                    kind: Identifier(
+                                                                                        "curr",
+                                                                                    ),
+                                                                                    span: Span {
+                                                                                        start: 547,
+                                                                                        end: 551,
+                                                                                    },
+                                                                                    attributes: [],
+                                                                                },
+                                                                                value: Expr {
+                                                                                    kind: Identifier(
+                                                                                        "next",
+                                                                                    ),
+                                                                                    span: Span {
+                                                                                        start: 554,
+                                                                                        end: 558,
+                                                                                    },
+                                                                                    attributes: [],
+                                                                                },
+                                                                            },
+                                                                            span: Span {
+                                                                                start: 0,
+                                                                                end: 0,
+                                                                            },
+                                                                            attributes: [],
+                                                                        },
+                                                                    ],
+                                                                ),
+                                                                span: Span {
+                                                                    start: 488,
+                                                                    end: 489,
+                                                                },
+                                                                attributes: [],
+                                                            },
+                                                        },
+                                                        span: Span {
+                                                            start: 473,
+                                                            end: 476,
+                                                        },
+                                                        attributes: [],
+                                                    },
+                                                    Expr {
+                                                        kind: Identifier(
+                                                            "curr",
+                                                        ),
+                                                        span: Span {
+                                                            start: 575,
+                                                            end: 579,
+                                                        },
+                                                        attributes: [],
+                                                    },
+                                                ],
+                                            ),
+                                            span: Span {
+                                                start: 364,
+                                                end: 365,
+                                            },
+                                            attributes: [],
+                                        },
+                                        is_mutable: false,
+                                    },
+                                    span: Span {
+                                        start: 364,
+                                        end: 365,
+                                    },
+                                    attributes: [],
+                                },
+                            ],
+                        ),
+                        span: Span {
+                            start: 364,
+                            end: 365,
+                        },
+                        attributes: [],
+                    },
+                    is_async: false,
+                    is_pub: false,
+                },
+                span: Span {
+                    start: 331,
+                    end: 334,
+                },
+                attributes: [],
+            },
+            Expr {
+                kind: Function {
+                    name: "fib_tail_recursive",
+                    type_params: [],
+                    params: [
+                        Param {
+                            pattern: Identifier(
+                                "n",
+                            ),
+                            ty: Type {
+                                kind: Named(
+                                    "i32",
+                                ),
+                                span: Span {
+                                    start: 0,
+                                    end: 0,
+                                },
+                            },
+                            span: Span {
+                                start: 0,
+                                end: 0,
+                            },
+                            is_mutable: false,
+                            default_value: None,
+                        },
+                    ],
+                    return_type: Some(
+                        Type {
+                            kind: Named(
+                                "i32",
+                            ),
+                            span: Span {
+                                start: 0,
+                                end: 0,
+                            },
+                        },
+                    ),
+                    body: Expr {
+                        kind: Block(
+                            [
+                                Expr {
+                                    kind: Function {
+                                        name: "helper",
+                                        type_params: [],
+                                        params: [
+                                            Param {
+                                                pattern: Identifier(
+                                                    "n",
+                                                ),
+                                                ty: Type {
+                                                    kind: Named(
+                                                        "i32",
+                                                    ),
+                                                    span: Span {
+                                                        start: 0,
+                                                        end: 0,
+                                                    },
+                                                },
+                                                span: Span {
+                                                    start: 0,
+                                                    end: 0,
+                                                },
+                                                is_mutable: false,
+                                                default_value: None,
+                                            },
+                                            Param {
+                                                pattern: Identifier(
+                                                    "prev",
+                                                ),
+                                                ty: Type {
+                                                    kind: Named(
+                                                        "i32",
+                                                    ),
+                                                    span: Span {
+                                                        start: 0,
+                                                        end: 0,
+                                                    },
+                                                },
+                                                span: Span {
+                                                    start: 0,
+                                                    end: 0,
+                                                },
+                                                is_mutable: false,
+                                                default_value: None,
+                                            },
+                                            Param {
+                                                pattern: Identifier(
+                                                    "curr",
+                                                ),
+                                                ty: Type {
+                                                    kind: Named(
+                                                        "i32",
+                                                    ),
+                                                    span: Span {
+                                                        start: 0,
+                                                        end: 0,
+                                                    },
+                                                },
+                                                span: Span {
+                                                    start: 0,
+                                                    end: 0,
+                                                },
+                                                is_mutable: false,
+                                                default_value: None,
+                                            },
+                                        ],
+                                        return_type: Some(
+                                            Type {
+                                                kind: Named(
+                                                    "i32",
+                                                ),
+                                                span: Span {
+                                                    start: 0,
+                                                    end: 0,
+                                                },
+                                            },
+                                        ),
+                                        body: Expr {
+                                            kind: Block(
+                                                [
+                                                    Expr {
+                                                        kind: If {
+                                                            condition: Expr {
+                                                                kind: Binary {
+                                                                    left: Expr {
+                                                                        kind: Identifier(
+                                                                            "n",
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 716,
+                                                                            end: 717,
+                                                                        },
+                                                                        attributes: [],
+                                                                    },
+                                                                    op: Equal,
+                                                                    right: Expr {
+                                                                        kind: Literal(
+                                                                            Integer(
+                                                                                0,
+                                                                            ),
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 721,
+                                                                            end: 722,
+                                                                        },
+                                                                        attributes: [],
+                                                                    },
+                                                                },
+                                                                span: Span {
+                                                                    start: 0,
+                                                                    end: 0,
+                                                                },
+                                                                attributes: [],
+                                                            },
+                                                            then_branch: Expr {
+                                                                kind: Block(
+                                                                    [
+                                                                        Expr {
+                                                                            kind: Identifier(
+                                                                                "prev",
+                                                                            ),
+                                                                            span: Span {
+                                                                                start: 737,
+                                                                                end: 741,
+                                                                            },
+                                                                            attributes: [],
+                                                                        },
+                                                                    ],
+                                                                ),
+                                                                span: Span {
+                                                                    start: 723,
+                                                                    end: 724,
+                                                                },
+                                                                attributes: [],
+                                                            },
+                                                            else_branch: Some(
+                                                                Expr {
+                                                                    kind: Block(
+                                                                        [
+                                                                            Expr {
+                                                                                kind: Call {
+                                                                                    func: Expr {
+                                                                                        kind: Identifier(
+                                                                                            "helper",
+                                                                                        ),
+                                                                                        span: Span {
+                                                                                            start: 771,
+                                                                                            end: 777,
+                                                                                        },
+                                                                                        attributes: [],
+                                                                                    },
+                                                                                    args: [
+                                                                                        Expr {
+                                                                                            kind: Binary {
+                                                                                                left: Expr {
+                                                                                                    kind: Identifier(
+                                                                                                        "n",
+                                                                                                    ),
+                                                                                                    span: Span {
+                                                                                                        start: 778,
+                                                                                                        end: 779,
+                                                                                                    },
+                                                                                                    attributes: [],
+                                                                                                },
+                                                                                                op: Subtract,
+                                                                                                right: Expr {
+                                                                                                    kind: Literal(
+                                                                                                        Integer(
+                                                                                                            1,
+                                                                                                        ),
+                                                                                                    ),
+                                                                                                    span: Span {
+                                                                                                        start: 782,
+                                                                                                        end: 783,
+                                                                                                    },
+                                                                                                    attributes: [],
+                                                                                                },
+                                                                                            },
+                                                                                            span: Span {
+                                                                                                start: 0,
+                                                                                                end: 0,
+                                                                                            },
+                                                                                            attributes: [],
+                                                                                        },
+                                                                                        Expr {
+                                                                                            kind: Identifier(
+                                                                                                "curr",
+                                                                                            ),
+                                                                                            span: Span {
+                                                                                                start: 785,
+                                                                                                end: 789,
+                                                                                            },
+                                                                                            attributes: [],
+                                                                                        },
+                                                                                        Expr {
+                                                                                            kind: Binary {
+                                                                                                left: Expr {
+                                                                                                    kind: Identifier(
+                                                                                                        "prev",
+                                                                                                    ),
+                                                                                                    span: Span {
+                                                                                                        start: 791,
+                                                                                                        end: 795,
+                                                                                                    },
+                                                                                                    attributes: [],
+                                                                                                },
+                                                                                                op: Add,
+                                                                                                right: Expr {
+                                                                                                    kind: Identifier(
+                                                                                                        "curr",
+                                                                                                    ),
+                                                                                                    span: Span {
+                                                                                                        start: 798,
+                                                                                                        end: 802,
+                                                                                                    },
+                                                                                                    attributes: [],
+                                                                                                },
+                                                                                            },
+                                                                                            span: Span {
+                                                                                                start: 0,
+                                                                                                end: 0,
+                                                                                            },
+                                                                                            attributes: [],
+                                                                                        },
+                                                                                    ],
+                                                                                },
+                                                                                span: Span {
+                                                                                    start: 0,
+                                                                                    end: 0,
+                                                                                },
+                                                                                attributes: [],
+                                                                            },
+                                                                        ],
+                                                                    ),
+                                                                    span: Span {
+                                                                        start: 757,
+                                                                        end: 758,
+                                                                    },
+                                                                    attributes: [],
+                                                                },
+                                                            ),
+                                                        },
+                                                        span: Span {
+                                                            start: 713,
+                                                            end: 715,
+                                                        },
+                                                        attributes: [],
+                                                    },
+                                                ],
+                                            ),
+                                            span: Span {
+                                                start: 703,
+                                                end: 704,
+                                            },
+                                            attributes: [],
+                                        },
+                                        is_async: false,
+                                        is_pub: false,
+                                    },
+                                    span: Span {
+                                        start: 655,
+                                        end: 658,
+                                    },
+                                    attributes: [],
+                                },
+                                Expr {
+                                    kind: Call {
+                                        func: Expr {
+                                            kind: Identifier(
+                                                "helper",
+                                            ),
+                                            span: Span {
+                                                start: 829,
+                                                end: 835,
+                                            },
+                                            attributes: [],
+                                        },
+                                        args: [
+                                            Expr {
+                                                kind: Identifier(
+                                                    "n",
+                                                ),
+                                                span: Span {
+                                                    start: 836,
+                                                    end: 837,
+                                                },
+                                                attributes: [],
+                                            },
+                                            Expr {
+                                                kind: Literal(
+                                                    Integer(
+                                                        0,
+                                                    ),
+                                                ),
+                                                span: Span {
+                                                    start: 839,
+                                                    end: 840,
+                                                },
+                                                attributes: [],
+                                            },
+                                            Expr {
+                                                kind: Literal(
+                                                    Integer(
+                                                        1,
+                                                    ),
+                                                ),
+                                                span: Span {
+                                                    start: 842,
+                                                    end: 843,
+                                                },
+                                                attributes: [],
+                                            },
+                                        ],
+                                    },
+                                    span: Span {
+                                        start: 0,
+                                        end: 0,
+                                    },
+                                    attributes: [],
+                                },
+                            ],
+                        ),
+                        span: Span {
+                            start: 649,
+                            end: 650,
+                        },
+                        attributes: [],
+                    },
+                    is_async: false,
+                    is_pub: false,
+                },
+                span: Span {
+                    start: 611,
+                    end: 614,
+                },
+                attributes: [],
+            },
+            Expr {
+                kind: Function {
+                    name: "fib_pattern",
+                    type_params: [],
+                    params: [
+                        Param {
+                            pattern: Identifier(
+                                "n",
+                            ),
+                            ty: Type {
+                                kind: Named(
+                                    "i32",
+                                ),
+                                span: Span {
+                                    start: 0,
+                                    end: 0,
+                                },
+                            },
+                            span: Span {
+                                start: 0,
+                                end: 0,
+                            },
+                            is_mutable: false,
+                            default_value: None,
+                        },
+                    ],
+                    return_type: Some(
+                        Type {
+                            kind: Named(
+                                "i32",
+                            ),
+                            span: Span {
+                                start: 0,
+                                end: 0,
+                            },
+                        },
+                    ),
+                    body: Expr {
+                        kind: Block(
+                            [
+                                Expr {
+                                    kind: Match {
+                                        expr: Expr {
+                                            kind: Identifier(
+                                                "n",
+                                            ),
+                                            span: Span {
+                                                start: 921,
+                                                end: 922,
+                                            },
+                                            attributes: [],
+                                        },
+                                        arms: [
+                                            MatchArm {
+                                                pattern: Literal(
+                                                    Integer(
+                                                        0,
+                                                    ),
+                                                ),
+                                                body: Expr {
+                                                    kind: Literal(
+                                                        Integer(
+                                                            0,
+                                                        ),
+                                                    ),
+                                                    span: Span {
+                                                        start: 938,
+                                                        end: 939,
+                                                    },
+                                                    attributes: [],
+                                                },
+                                                span: Span {
+                                                    start: 938,
+                                                    end: 939,
+                                                },
+                                            },
+                                            MatchArm {
+                                                pattern: Literal(
+                                                    Integer(
+                                                        1,
+                                                    ),
+                                                ),
+                                                body: Expr {
+                                                    kind: Literal(
+                                                        Integer(
+                                                            1,
+                                                        ),
+                                                    ),
+                                                    span: Span {
+                                                        start: 954,
+                                                        end: 955,
+                                                    },
+                                                    attributes: [],
+                                                },
+                                                span: Span {
+                                                    start: 954,
+                                                    end: 955,
+                                                },
+                                            },
+                                            MatchArm {
+                                                pattern: Wildcard,
+                                                body: Expr {
+                                                    kind: Binary {
+                                                        left: Expr {
+                                                            kind: Call {
+                                                                func: Expr {
+                                                                    kind: Identifier(
+                                                                        "fib_pattern",
+                                                                    ),
+                                                                    span: Span {
+                                                                        start: 970,
+                                                                        end: 981,
+                                                                    },
+                                                                    attributes: [],
+                                                                },
+                                                                args: [
+                                                                    Expr {
+                                                                        kind: Binary {
+                                                                            left: Expr {
+                                                                                kind: Identifier(
+                                                                                    "n",
+                                                                                ),
+                                                                                span: Span {
+                                                                                    start: 982,
+                                                                                    end: 983,
+                                                                                },
+                                                                                attributes: [],
+                                                                            },
+                                                                            op: Subtract,
+                                                                            right: Expr {
+                                                                                kind: Literal(
+                                                                                    Integer(
+                                                                                        1,
+                                                                                    ),
+                                                                                ),
+                                                                                span: Span {
+                                                                                    start: 986,
+                                                                                    end: 987,
+                                                                                },
+                                                                                attributes: [],
+                                                                            },
+                                                                        },
+                                                                        span: Span {
+                                                                            start: 0,
+                                                                            end: 0,
+                                                                        },
+                                                                        attributes: [],
+                                                                    },
+                                                                ],
+                                                            },
+                                                            span: Span {
+                                                                start: 0,
+                                                                end: 0,
+                                                            },
+                                                            attributes: [],
+                                                        },
+                                                        op: Add,
+                                                        right: Expr {
+                                                            kind: Call {
+                                                                func: Expr {
+                                                                    kind: Identifier(
+                                                                        "fib_pattern",
+                                                                    ),
+                                                                    span: Span {
+                                                                        start: 991,
+                                                                        end: 1002,
+                                                                    },
+                                                                    attributes: [],
+                                                                },
+                                                                args: [
+                                                                    Expr {
+                                                                        kind: Binary {
+                                                                            left: Expr {
+                                                                                kind: Identifier(
+                                                                                    "n",
+                                                                                ),
+                                                                                span: Span {
+                                                                                    start: 1003,
+                                                                                    end: 1004,
+                                                                                },
+                                                                                attributes: [],
+                                                                            },
+                                                                            op: Subtract,
+                                                                            right: Expr {
+                                                                                kind: Literal(
+                                                                                    Integer(
+                                                                                        2,
+                                                                                    ),
+                                                                                ),
+                                                                                span: Span {
+                                                                                    start: 1007,
+                                                                                    end: 1008,
+                                                                                },
+                                                                                attributes: [],
+                                                                            },
+                                                                        },
+                                                                        span: Span {
+                                                                            start: 0,
+                                                                            end: 0,
+                                                                        },
+                                                                        attributes: [],
+                                                                    },
+                                                                ],
+                                                            },
+                                                            span: Span {
+                                                                start: 0,
+                                                                end: 0,
+                                                            },
+                                                            attributes: [],
+                                                        },
+                                                    },
+                                                    span: Span {
+                                                        start: 0,
+                                                        end: 0,
+                                                    },
+                                                    attributes: [],
+                                                },
+                                                span: Span {
+                                                    start: 0,
+                                                    end: 0,
+                                                },
+                                            },
+                                        ],
+                                    },
+                                    span: Span {
+                                        start: 915,
+                                        end: 920,
+                                    },
+                                    attributes: [],
+                                },
+                            ],
+                        ),
+                        span: Span {
+                            start: 909,
+                            end: 910,
+                        },
+                        attributes: [],
+                    },
+                    is_async: false,
+                    is_pub: false,
+                },
+                span: Span {
+                    start: 878,
+                    end: 881,
+                },
+                attributes: [],
+            },
+            Expr {
+                kind: Let {
+                    name: "n",
+                    type_annotation: None,
+                    value: Expr {
+                        kind: Literal(
+                            Integer(
+                                10,
+                            ),
+                        ),
+                        span: Span {
+                            start: 1120,
+                            end: 1122,
+                        },
+                        attributes: [],
+                    },
+                    body: Expr {
+                        kind: Literal(
+                            Unit,
+                        ),
+                        span: Span {
+                            start: 0,
+                            end: 0,
+                        },
+                        attributes: [],
+                    },
+                    is_mutable: false,
+                },
+                span: Span {
+                    start: 1112,
+                    end: 1115,
+                },
+                attributes: [],
+            },
+            Expr {
+                kind: Let {
+                    name: "r1",
+                    type_annotation: None,
+                    value: Expr {
+                        kind: Call {
+                            func: Expr {
+                                kind: Identifier(
+                                    "fib_recursive",
+                                ),
+                                span: Span {
+                                    start: 1162,
+                                    end: 1175,
+                                },
+                                attributes: [],
+                            },
+                            args: [
+                                Expr {
+                                    kind: Identifier(
+                                        "n",
+                                    ),
+                                    span: Span {
+                                        start: 1176,
+                                        end: 1177,
+                                    },
+                                    attributes: [],
+                                },
+                            ],
+                        },
+                        span: Span {
+                            start: 0,
+                            end: 0,
+                        },
+                        attributes: [],
+                    },
+                    body: Expr {
+                        kind: Literal(
+                            Unit,
+                        ),
+                        span: Span {
+                            start: 0,
+                            end: 0,
+                        },
+                        attributes: [],
+                    },
+                    is_mutable: false,
+                },
+                span: Span {
+                    start: 1153,
+                    end: 1156,
+                },
+                attributes: [],
+            },
+            Expr {
+                kind: Let {
+                    name: "r2",
+                    type_annotation: None,
+                    value: Expr {
+                        kind: Call {
+                            func: Expr {
+                                kind: Identifier(
+                                    "fib_iterative",
+                                ),
+                                span: Span {
+                                    start: 1189,
+                                    end: 1202,
+                                },
+                                attributes: [],
+                            },
+                            args: [
+                                Expr {
+                                    kind: Identifier(
+                                        "n",
+                                    ),
+                                    span: Span {
+                                        start: 1203,
+                                        end: 1204,
+                                    },
+                                    attributes: [],
+                                },
+                            ],
+                        },
+                        span: Span {
+                            start: 0,
+                            end: 0,
+                        },
+                        attributes: [],
+                    },
+                    body: Expr {
+                        kind: Literal(
+                            Unit,
+                        ),
+                        span: Span {
+                            start: 0,
+                            end: 0,
+                        },
+                        attributes: [],
+                    },
+                    is_mutable: false,
+                },
+                span: Span {
+                    start: 1180,
+                    end: 1183,
+                },
+                attributes: [],
+            },
+            Expr {
+                kind: Let {
+                    name: "r3",
+                    type_annotation: None,
+                    value: Expr {
+                        kind: Call {
+                            func: Expr {
+                                kind: Identifier(
+                                    "fib_tail_recursive",
+                                ),
+                                span: Span {
+                                    start: 1216,
+                                    end: 1234,
+                                },
+                                attributes: [],
+                            },
+                            args: [
+                                Expr {
+                                    kind: Identifier(
+                                        "n",
+                                    ),
+                                    span: Span {
+                                        start: 1235,
+                                        end: 1236,
+                                    },
+                                    attributes: [],
+                                },
+                            ],
+                        },
+                        span: Span {
+                            start: 0,
+                            end: 0,
+                        },
+                        attributes: [],
+                    },
+                    body: Expr {
+                        kind: Literal(
+                            Unit,
+                        ),
+                        span: Span {
+                            start: 0,
+                            end: 0,
+                        },
+                        attributes: [],
+                    },
+                    is_mutable: false,
+                },
+                span: Span {
+                    start: 1207,
+                    end: 1210,
+                },
+                attributes: [],
+            },
+            Expr {
+                kind: Let {
+                    name: "r4",
+                    type_annotation: None,
+                    value: Expr {
+                        kind: Call {
+                            func: Expr {
+                                kind: Identifier(
+                                    "fib_pattern",
+                                ),
+                                span: Span {
+                                    start: 1248,
+                                    end: 1259,
+                                },
+                                attributes: [],
+                            },
+                            args: [
+                                Expr {
+                                    kind: Identifier(
+                                        "n",
+                                    ),
+                                    span: Span {
+                                        start: 1260,
+                                        end: 1261,
+                                    },
+                                    attributes: [],
+                                },
+                            ],
+                        },
+                        span: Span {
+                            start: 0,
+                            end: 0,
+                        },
+                        attributes: [],
+                    },
+                    body: Expr {
+                        kind: Literal(
+                            Unit,
+                        ),
+                        span: Span {
+                            start: 0,
+                            end: 0,
+                        },
+                        attributes: [],
+                    },
+                    is_mutable: false,
+                },
+                span: Span {
+                    start: 1239,
+                    end: 1242,
+                },
+                attributes: [],
+            },
+            Expr {
+                kind: If {
+                    condition: Expr {
+                        kind: Binary {
+                            left: Expr {
+                                kind: Binary {
+                                    left: Expr {
+                                        kind: Binary {
+                                            left: Expr {
+                                                kind: Binary {
+                                                    left: Expr {
+                                                        kind: Identifier(
+                                                            "r1",
+                                                        ),
+                                                        span: Span {
+                                                            start: 1304,
+                                                            end: 1306,
+                                                        },
+                                                        attributes: [],
+                                                    },
+                                                    op: Equal,
+                                                    right: Expr {
+                                                        kind: Literal(
+                                                            Integer(
+                                                                55,
+                                                            ),
+                                                        ),
+                                                        span: Span {
+                                                            start: 1310,
+                                                            end: 1312,
+                                                        },
+                                                        attributes: [],
+                                                    },
+                                                },
+                                                span: Span {
+                                                    start: 0,
+                                                    end: 0,
+                                                },
+                                                attributes: [],
+                                            },
+                                            op: And,
+                                            right: Expr {
+                                                kind: Binary {
+                                                    left: Expr {
+                                                        kind: Identifier(
+                                                            "r2",
+                                                        ),
+                                                        span: Span {
+                                                            start: 1316,
+                                                            end: 1318,
+                                                        },
+                                                        attributes: [],
+                                                    },
+                                                    op: Equal,
+                                                    right: Expr {
+                                                        kind: Literal(
+                                                            Integer(
+                                                                55,
+                                                            ),
+                                                        ),
+                                                        span: Span {
+                                                            start: 1322,
+                                                            end: 1324,
+                                                        },
+                                                        attributes: [],
+                                                    },
+                                                },
+                                                span: Span {
+                                                    start: 0,
+                                                    end: 0,
+                                                },
+                                                attributes: [],
+                                            },
+                                        },
+                                        span: Span {
+                                            start: 0,
+                                            end: 0,
+                                        },
+                                        attributes: [],
+                                    },
+                                    op: And,
+                                    right: Expr {
+                                        kind: Binary {
+                                            left: Expr {
+                                                kind: Identifier(
+                                                    "r3",
+                                                ),
+                                                span: Span {
+                                                    start: 1328,
+                                                    end: 1330,
+                                                },
+                                                attributes: [],
+                                            },
+                                            op: Equal,
+                                            right: Expr {
+                                                kind: Literal(
+                                                    Integer(
+                                                        55,
+                                                    ),
+                                                ),
+                                                span: Span {
+                                                    start: 1334,
+                                                    end: 1336,
+                                                },
+                                                attributes: [],
+                                            },
+                                        },
+                                        span: Span {
+                                            start: 0,
+                                            end: 0,
+                                        },
+                                        attributes: [],
+                                    },
+                                },
+                                span: Span {
+                                    start: 0,
+                                    end: 0,
+                                },
+                                attributes: [],
+                            },
+                            op: And,
+                            right: Expr {
+                                kind: Binary {
+                                    left: Expr {
+                                        kind: Identifier(
+                                            "r4",
+                                        ),
+                                        span: Span {
+                                            start: 1340,
+                                            end: 1342,
+                                        },
+                                        attributes: [],
+                                    },
+                                    op: Equal,
+                                    right: Expr {
+                                        kind: Literal(
+                                            Integer(
+                                                55,
+                                            ),
+                                        ),
+                                        span: Span {
+                                            start: 1346,
+                                            end: 1348,
+                                        },
+                                        attributes: [],
+                                    },
+                                },
+                                span: Span {
+                                    start: 0,
+                                    end: 0,
+                                },
+                                attributes: [],
+                            },
+                        },
+                        span: Span {
+                            start: 0,
+                            end: 0,
+                        },
+                        attributes: [],
+                    },
+                    then_branch: Expr {
+                        kind: Block(
+                            [
+                                Expr {
+                                    kind: Let {
+                                        name: "r20",
+                                        type_annotation: None,
+                                        value: Expr {
+                                            kind: Call {
+                                                func: Expr {
+                                                    kind: Identifier(
+                                                        "fib_iterative",
+                                                    ),
+                                                    span: Span {
+                                                        start: 1414,
+                                                        end: 1427,
+                                                    },
+                                                    attributes: [],
+                                                },
+                                                args: [
+                                                    Expr {
+                                                        kind: Literal(
+                                                            Integer(
+                                                                20,
+                                                            ),
+                                                        ),
+                                                        span: Span {
+                                                            start: 1428,
+                                                            end: 1430,
+                                                        },
+                                                        attributes: [],
+                                                    },
+                                                ],
+                                            },
+                                            span: Span {
+                                                start: 0,
+                                                end: 0,
+                                            },
+                                            attributes: [],
+                                        },
+                                        body: Expr {
+                                            kind: If {
+                                                condition: Expr {
+                                                    kind: Binary {
+                                                        left: Expr {
+                                                            kind: Identifier(
+                                                                "r20",
+                                                            ),
+                                                            span: Span {
+                                                                start: 1440,
+                                                                end: 1443,
+                                                            },
+                                                            attributes: [],
+                                                        },
+                                                        op: Equal,
+                                                        right: Expr {
+                                                            kind: Literal(
+                                                                Integer(
+                                                                    6765,
+                                                                ),
+                                                            ),
+                                                            span: Span {
+                                                                start: 1447,
+                                                                end: 1451,
+                                                            },
+                                                            attributes: [],
+                                                        },
+                                                    },
+                                                    span: Span {
+                                                        start: 0,
+                                                        end: 0,
+                                                    },
+                                                    attributes: [],
+                                                },
+                                                then_branch: Expr {
+                                                    kind: Block(
+                                                        [
+                                                            Expr {
+                                                                kind: Literal(
+                                                                    Integer(
+                                                                        6765,
+                                                                    ),
+                                                                ),
+                                                                span: Span {
+                                                                    start: 1506,
+                                                                    end: 1510,
+                                                                },
+                                                                attributes: [],
+                                                            },
+                                                        ],
+                                                    ),
+                                                    span: Span {
+                                                        start: 1452,
+                                                        end: 1453,
+                                                    },
+                                                    attributes: [],
+                                                },
+                                                else_branch: Some(
+                                                    Expr {
+                                                        kind: Block(
+                                                            [
+                                                                Expr {
+                                                                    kind: Unary {
+                                                                        op: Negate,
+                                                                        operand: Expr {
+                                                                            kind: Literal(
+                                                                                Integer(
+                                                                                    1,
+                                                                                ),
+                                                                            ),
+                                                                            span: Span {
+                                                                                start: 1533,
+                                                                                end: 1534,
+                                                                            },
+                                                                            attributes: [],
+                                                                        },
+                                                                    },
+                                                                    span: Span {
+                                                                        start: 1532,
+                                                                        end: 1533,
+                                                                    },
+                                                                    attributes: [],
+                                                                },
+                                                            ],
+                                                        ),
+                                                        span: Span {
+                                                            start: 1522,
+                                                            end: 1523,
+                                                        },
+                                                        attributes: [],
+                                                    },
+                                                ),
+                                            },
+                                            span: Span {
+                                                start: 1437,
+                                                end: 1439,
+                                            },
+                                            attributes: [],
+                                        },
+                                        is_mutable: false,
+                                    },
+                                    span: Span {
+                                        start: 1349,
+                                        end: 1350,
+                                    },
+                                    attributes: [],
+                                },
+                            ],
+                        ),
+                        span: Span {
+                            start: 1349,
+                            end: 1350,
+                        },
+                        attributes: [],
+                    },
+                    else_branch: Some(
+                        Expr {
+                            kind: Block(
+                                [
+                                    Expr {
+                                        kind: Unary {
+                                            op: Negate,
+                                            operand: Expr {
+                                                kind: Literal(
+                                                    Integer(
+                                                        2,
+                                                    ),
+                                                ),
+                                                span: Span {
+                                                    start: 1555,
+                                                    end: 1556,
+                                                },
+                                                attributes: [],
+                                            },
+                                        },
+                                        span: Span {
+                                            start: 1554,
+                                            end: 1555,
+                                        },
+                                        attributes: [],
+                                    },
+                                ],
+                            ),
+                            span: Span {
+                                start: 1548,
+                                end: 1549,
+                            },
+                            attributes: [],
+                        },
+                    ),
+                },
+                span: Span {
+                    start: 1301,
+                    end: 1303,
+                },
+                attributes: [],
+            },
+        ],
+    ),
+    span: Span {
+        start: 0,
+        end: 0,
+    },
+    attributes: [],
+}

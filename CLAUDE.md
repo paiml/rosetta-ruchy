@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is rosetta-ruchy, a polyglot benchmark suite designed to demonstrate Ruchy's performance parity with Rust while maintaining Python-like ergonomics. The repository provides empirical evidence of zero-cost abstractions through systematic comparison across production workloads.
 
+**CRITICAL P0 REQUIREMENT**: Every Ruchy example MUST showcase the language's advanced tooling capabilities (AST analysis, provability checking, formal verification, hardware-aware optimization). This is Ruchy's defining trait and primary competitive advantage. The tooling creates opportunities for optimization, reliability, and safety that surpass any other language.
+
 ## Repository Status
 
 **Current State**: Initial setup phase
@@ -53,14 +55,34 @@ rosetta-ruchy/
 - `make compare-performance` - Generate performance comparisons
 - `make validate-spec` - Validate example specification
 
-### Language-Specific Commands (Ruchy)
-- `ruchy build --edition 2025` - Build Ruchy code
-- `ruchy test --property-tests 1000` - Run tests with property testing
-- `ruchy bench --export json` - Run benchmarks with JSON output
-- `ruchy verify --smt-solver z3 --spec spec.toml` - Formal verification
-- `ruchy mutate --min-score 0.85` - Mutation testing
-- `ruchy clippy -- -W clippy::all` - Linting
-- `ruchy fmt` - Code formatting
+### Language-Specific Commands (Ruchy) - ALWAYS USE THESE
+```bash
+# STEP 1: Analysis (MANDATORY for every Ruchy file)
+ruchy ast fibonacci.ruchy --format json      # AST structure analysis
+ruchy provability fibonacci.ruchy             # Formal correctness verification
+ruchy runtime fibonacci.ruchy                 # Complexity and performance analysis
+ruchy score fibonacci.ruchy                   # Unified quality score
+
+# STEP 2: Verification (REQUIRED before benchmarking)
+ruchy quality-gate fibonacci.ruchy --threshold 0.95
+ruchy provability fibonacci.ruchy --verify-correctness
+ruchy provability fibonacci.ruchy --verify-termination
+
+# STEP 3: Optimization (SHOWCASE Ruchy's advantage)
+ruchy optimize fibonacci.ruchy --target-cpu native
+ruchy optimize fibonacci.ruchy --vectorize
+ruchy transpile fibonacci.ruchy --optimize-level 3
+
+# STEP 4: Testing and Benchmarking
+ruchy test --property-tests 10000 --mutation-testing
+ruchy bench --verify-complexity O(n) --compare-languages rust,c
+
+# STEP 5: Quality Reporting (ALWAYS generate these)
+ruchy mcp --analyze fibonacci.ruchy          # Real-time quality dashboard
+ruchy doc fibonacci.ruchy --include-proofs   # Documentation with formal proofs
+```
+
+**IMPORTANT**: Never run Ruchy code without first running the analysis and verification steps. This is what differentiates Ruchy from other languages.
 
 ## Implementation Constraints
 
