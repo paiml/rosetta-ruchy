@@ -41,7 +41,7 @@
 - [x] Implement Rust fibonacci (performance baseline)
 - [x] Implement Python fibonacci (ergonomics baseline)
 - [x] Implement JavaScript fibonacci (ecosystem comparison)
-- [ ] Implement Go fibonacci (concurrency patterns)
+- [x] Implement Go fibonacci (concurrency patterns)
 - [ ] Implement Ruchy fibonacci (reference implementation)
 
 ### ROSETTA-006: Language-Specific Makefiles
