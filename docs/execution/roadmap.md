@@ -54,25 +54,25 @@
 ## Phase 2: Quality & Validation (Weeks 5-6)
 
 ### ROSETTA-007: Statistical Benchmarking
-- [ ] Implement minimum 1000 iterations with std dev analysis
-- [ ] Create percentile analysis (P50, P95, P99)
-- [ ] Add warmup period and measurement isolation
-- [ ] Implement outlier detection and filtering
-- [ ] Create confidence interval calculations
+- [x] Implement minimum 1000 iterations with std dev analysis
+- [x] Create percentile analysis (P50, P95, P99)
+- [x] Add warmup period and measurement isolation
+- [x] Implement outlier detection and filtering
+- [x] Create confidence interval calculations
 
 ### ROSETTA-008: Formal Verification (Ruchy Only)
-- [ ] Integrate SMT solver (Z3) verification
-- [ ] Create spec.toml compliance checking
-- [ ] Implement correctness property verification
-- [ ] Add mutation testing with 85% threshold
-- [ ] Create formal specification language
+- [x] Integrate SMT solver (Z3) verification
+- [x] Create spec.toml compliance checking
+- [x] Implement correctness property verification
+- [x] Add mutation testing with 85% threshold
+- [x] Create formal specification language
 
 ### ROSETTA-009: Performance Regression System
-- [ ] Implement baseline storage and comparison
-- [ ] Create GitHub Actions benchmark runner
-- [ ] Set up performance history tracking
-- [ ] Implement automated regression alerts
-- [ ] Create performance dashboard
+- [x] Implement baseline storage and comparison
+- [x] Create GitHub Actions benchmark runner (replaced with Ruchy CI)
+- [x] Set up performance history tracking
+- [x] Implement automated regression alerts
+- [x] Create performance dashboard
 
 ## Phase 3: Algorithm Library Expansion (Weeks 7-12)
 
