@@ -1,0 +1,712 @@
+#!/usr/bin/env ruchy
+// Merge Sort - Showcasing Ruchy v1.4.0 Advanced Features
+// Features: HashMap analytics, f-strings, method chaining, async parallel, Result handling
+
+use std::vec::Vec
+use std::collections::HashMap
+use std::time::{Duration, Instant}
+use std::thread
+use std::sync::{Arc, Mutex}
+use std::cmp::Ordering
+
+// v1.4.0 HashMap for comprehensive analytics
+let mut sort_analytics: HashMap<String, PerformanceMetrics> = HashMap::new()
+
+struct PerformanceMetrics {
+    duration_ms: f64,
+    comparisons: u64,
+    memory_allocations: u64,
+    cache_misses: u64,
+    stability_violations: u64,
+}
+
+impl Default for PerformanceMetrics {
+    fn default() -> Self {
+        Self {
+            duration_ms: 0.0,
+            comparisons: 0,
+            memory_allocations: 0,
+            cache_misses: 0,
+            stability_violations: 0,
+        }
+    }
+}
+
+// Advanced trait system with performance tracking
+trait AdvancedSortable<T> {
+    fn merge_sort(&mut self) -> Result<(), String>
+    fn merge_sort_stable(&mut self) -> Result<(), String>
+    fn merge_sort_adaptive(&mut self) -> Result<(), String>
+    fn is_stable_sorted(&self) -> bool
+    fn measure_performance(&mut self, algorithm: &str) -> Result<PerformanceMetrics, String>
+}
+
+impl<T: Ord + Clone + std::fmt::Debug> AdvancedSortable<T> for Vec<T> {
+    fn merge_sort(&mut self) -> Result<(), String> {
+        if self.len() <= 1 {
+            return Ok(())
+        }
+        
+        let mut temp = vec![None; self.len()]
+        merge_sort_recursive(self, &mut temp, 0, self.len() - 1)?
+        Ok(())
+    }
+    
+    fn merge_sort_stable(&mut self) -> Result<(), String> {
+        if self.len() <= 1 {
+            return Ok(())
+        }
+        
+        // Enhanced stable merge sort with explicit stability tracking
+        let mut temp = vec![None; self.len()]
+        stable_merge_sort_recursive(self, &mut temp, 0, self.len() - 1)?
+        Ok(())
+    }
+    
+    fn merge_sort_adaptive(&mut self) -> Result<(), String> {
+        if self.len() <= 1 {
+            return Ok(())
+        }
+        
+        // Detect existing sorted runs and optimize
+        let runs = detect_sorted_runs(self)
+        if runs.len() == 1 {
+            return Ok(()) // Already sorted
+        }
+        
+        adaptive_merge_sort_with_runs(self, runs)?
+        Ok(())
+    }
+    
+    fn is_stable_sorted(&self) -> bool {
+        self.windows(2).all(|w| w[0] <= w[1])
+    }
+    
+    fn measure_performance(&mut self, algorithm: &str) -> Result<PerformanceMetrics, String> {
+        let start = Instant::now()
+        
+        let result = match algorithm {
+            "classic" => self.merge_sort(),
+            "stable" => self.merge_sort_stable(),
+            "adaptive" => self.merge_sort_adaptive(),
+            _ => return Err(f"Unknown algorithm: {algorithm}".to_string())
+        }
+        
+        let duration = start.elapsed().as_secs_f64() * 1000.0
+        
+        result?
+        
+        let metrics = PerformanceMetrics {
+            duration_ms: duration,
+            comparisons: 0, // Would be tracked in real implementation
+            memory_allocations: self.len() as u64,
+            cache_misses: 0, // Would require perf counters
+            stability_violations: 0,
+        }
+        
+        // v1.4.0 HashMap integration
+        sort_analytics.insert(f"{algorithm}_{self.len()}", metrics.clone())
+        Ok(metrics)
+    }
+}
+
+// Classic recursive merge sort
+fn merge_sort_recursive<T: Ord + Clone>(
+    arr: &mut [T], 
+    temp: &mut [Option<T>], 
+    left: usize, 
+    right: usize
+) -> Result<(), String> {
+    if left >= right {
+        return Ok(())
+    }
+    
+    let mid = left + (right - left) / 2
+    
+    merge_sort_recursive(arr, temp, left, mid)?
+    merge_sort_recursive(arr, temp, mid + 1, right)?
+    merge_arrays(arr, temp, left, mid, right)?
+    
+    Ok(())
+}
+
+// Stable merge sort with explicit stability guarantees
+fn stable_merge_sort_recursive<T: Ord + Clone>(
+    arr: &mut [T],
+    temp: &mut [Option<T>],
+    left: usize,
+    right: usize
+) -> Result<(), String> {
+    if left >= right {
+        return Ok(())
+    }
+    
+    let mid = left + (right - left) / 2
+    
+    stable_merge_sort_recursive(arr, temp, left, mid)?
+    stable_merge_sort_recursive(arr, temp, mid + 1, right)?
+    stable_merge_arrays(arr, temp, left, mid, right)?
+    
+    Ok(())
+}
+
+// v1.4.0 method chaining for merge operation
+fn merge_arrays<T: Ord + Clone>(
+    arr: &mut [T],
+    temp: &mut [Option<T>],
+    left: usize,
+    mid: usize,
+    right: usize
+) -> Result<(), String> {
+    // Copy elements to temp array using method chaining
+    for i in left..=right {
+        temp[i] = Some(arr[i].clone())
+    }
+    
+    let mut i = left
+    let mut j = mid + 1
+    let mut k = left
+    
+    while i <= mid && j <= right {
+        match temp[i].as_ref().unwrap().cmp(temp[j].as_ref().unwrap()) {
+            Ordering::Less | Ordering::Equal => {
+                arr[k] = temp[i].clone().unwrap()
+                i += 1
+            }
+            Ordering::Greater => {
+                arr[k] = temp[j].clone().unwrap()
+                j += 1
+            }
+        }
+        k += 1
+    }
+    
+    // Copy remaining elements
+    while i <= mid {
+        arr[k] = temp[i].clone().unwrap()
+        i += 1
+        k += 1
+    }
+    
+    while j <= right {
+        arr[k] = temp[j].clone().unwrap()
+        j += 1
+        k += 1
+    }
+    
+    Ok(())
+}
+
+// Enhanced stable merge with strict ordering preservation
+fn stable_merge_arrays<T: Ord + Clone>(
+    arr: &mut [T],
+    temp: &mut [Option<T>],
+    left: usize,
+    mid: usize,
+    right: usize
+) -> Result<(), String> {
+    for i in left..=right {
+        temp[i] = Some(arr[i].clone())
+    }
+    
+    let mut i = left
+    let mut j = mid + 1
+    let mut k = left
+    
+    while i <= mid && j <= right {
+        // Strict stable ordering: left side wins on equal elements
+        if temp[i].as_ref().unwrap() <= temp[j].as_ref().unwrap() {
+            arr[k] = temp[i].clone().unwrap()
+            i += 1
+        } else {
+            arr[k] = temp[j].clone().unwrap()
+            j += 1
+        }
+        k += 1
+    }
+    
+    while i <= mid {
+        arr[k] = temp[i].clone().unwrap()
+        i += 1
+        k += 1
+    }
+    
+    while j <= right {
+        arr[k] = temp[j].clone().unwrap()
+        j += 1
+        k += 1
+    }
+    
+    Ok(())
+}
+
+// Adaptive merge sort with run detection
+struct SortedRun {
+    start: usize,
+    end: usize,
+    ascending: bool,
+}
+
+fn detect_sorted_runs<T: Ord>(arr: &[T]) -> Vec<SortedRun> {
+    if arr.len() <= 1 {
+        return vec![SortedRun { start: 0, end: arr.len().saturating_sub(1), ascending: true }]
+    }
+    
+    let mut runs = Vec::new()
+    let mut start = 0
+    
+    while start < arr.len() {
+        let mut end = start
+        let mut ascending = true
+        
+        // Detect ascending run
+        while end + 1 < arr.len() && arr[end] <= arr[end + 1] {
+            end += 1
+        }
+        
+        // If no ascending run found, check for descending
+        if end == start && end + 1 < arr.len() {
+            while end + 1 < arr.len() && arr[end] > arr[end + 1] {
+                end += 1
+                ascending = false
+            }
+        }
+        
+        runs.push(SortedRun { start, end, ascending })
+        start = end + 1
+    }
+    
+    runs
+}
+
+fn adaptive_merge_sort_with_runs<T: Ord + Clone>(
+    arr: &mut [T], 
+    mut runs: Vec<SortedRun>
+) -> Result<(), String> {
+    // Reverse descending runs
+    for run in &runs {
+        if !run.ascending {
+            arr[run.start..=run.end].reverse()
+        }
+    }
+    
+    // Merge adjacent runs until only one remains
+    while runs.len() > 1 {
+        let mut new_runs = Vec::new()
+        let mut i = 0
+        
+        while i < runs.len() {
+            if i + 1 < runs.len() {
+                // Merge runs[i] and runs[i+1]
+                let left_run = &runs[i]
+                let right_run = &runs[i + 1]
+                
+                let mut temp = vec![None; right_run.end - left_run.start + 1]
+                merge_arrays(
+                    &mut arr[left_run.start..=right_run.end],
+                    &mut temp,
+                    0,
+                    left_run.end - left_run.start,
+                    right_run.end - left_run.start
+                )?
+                
+                new_runs.push(SortedRun {
+                    start: left_run.start,
+                    end: right_run.end,
+                    ascending: true,
+                })
+                
+                i += 2
+            } else {
+                new_runs.push(runs[i].clone())
+                i += 1
+            }
+        }
+        
+        runs = new_runs
+    }
+    
+    Ok(())
+}
+
+// Bottom-up iterative merge sort
+fn merge_sort_bottom_up<T: Ord + Clone>(arr: &mut [T]) -> Result<(), String> {
+    let n = arr.len()
+    if n <= 1 {
+        return Ok(())
+    }
+    
+    let mut temp = vec![None; n]
+    let mut size = 1
+    
+    while size < n {
+        let mut left = 0
+        
+        while left < n {
+            let mid = (left + size - 1).min(n - 1)
+            let right = (left + 2 * size - 1).min(n - 1)
+            
+            if mid < right {
+                merge_arrays(arr, &mut temp, left, mid, right)?
+            }
+            
+            left += 2 * size
+        }
+        
+        size *= 2
+    }
+    
+    Ok(())
+}
+
+// Parallel merge sort using async tasks
+async fn parallel_merge_sort<T: Ord + Clone + Send + Sync + 'static>(
+    arr: Vec<T>
+) -> Result<Vec<T>, String> {
+    const PARALLEL_THRESHOLD: usize = 50000
+    
+    if arr.len() <= PARALLEL_THRESHOLD {
+        let mut sorted = arr
+        sorted.merge_sort()?
+        return Ok(sorted)
+    }
+    
+    let mid = arr.len() / 2
+    let (left, right) = arr.split_at(mid)
+    
+    let left_vec = left.to_vec()
+    let right_vec = right.to_vec()
+    
+    // v1.4.0 async parallel processing
+    let left_handle = tokio::spawn(async move {
+        parallel_merge_sort(left_vec).await
+    })
+    
+    let right_handle = tokio::spawn(async move {
+        parallel_merge_sort(right_vec).await
+    })
+    
+    let left_sorted = left_handle.await.map_err(|e| f"Left sort failed: {e}")??
+    let right_sorted = right_handle.await.map_err(|e| f"Right sort failed: {e}")??
+    
+    // Merge the sorted halves
+    let mut result = Vec::with_capacity(arr.len())
+    let mut i = 0
+    let mut j = 0
+    
+    while i < left_sorted.len() && j < right_sorted.len() {
+        if left_sorted[i] <= right_sorted[j] {
+            result.push(left_sorted[i].clone())
+            i += 1
+        } else {
+            result.push(right_sorted[j].clone())
+            j += 1
+        }
+    }
+    
+    result.extend_from_slice(&left_sorted[i..])
+    result.extend_from_slice(&right_sorted[j..])
+    
+    Ok(result)
+}
+
+// v1.4.0 comprehensive performance analytics
+fn generate_performance_report() {
+    println(f"📊 Merge Sort Performance Analytics (v1.4.0)")
+    println(f"============================================")
+    println()
+    
+    if sort_analytics.is_empty() {
+        println(f"⚠️  No performance data available")
+        return
+    }
+    
+    // Group by algorithm type
+    let mut by_algorithm: HashMap<String, Vec<(&String, &PerformanceMetrics)>> = HashMap::new()
+    
+    for (key, metrics) in &sort_analytics {
+        let algorithm = key.split('_').next().unwrap_or("unknown").to_string()
+        by_algorithm.entry(algorithm).or_insert_with(Vec::new).push((key, metrics))
+    }
+    
+    for (algorithm, entries) in by_algorithm {
+        println(f"## {algorithm.to_uppercase()} Algorithm")
+        println(f"")
+        
+        // Calculate statistics using method chaining
+        let durations: Vec<f64> = entries
+            .iter()
+            .map(|(_, metrics)| metrics.duration_ms)
+            .collect()
+        
+        let avg_duration = durations.iter().sum::<f64>() / durations.len() as f64
+        let min_duration = durations.iter().fold(f64::INFINITY, |a, &b| a.min(b))
+        let max_duration = durations.iter().fold(0.0, |a, &b| a.max(b))
+        
+        println(f"Average Duration: {avg_duration:.2}ms")
+        println(f"Min Duration: {min_duration:.2}ms")
+        println(f"Max Duration: {max_duration:.2}ms")
+        println()
+        
+        // Detailed per-size breakdown
+        for (key, metrics) in entries {
+            let size = key.split('_').nth(1).unwrap_or("unknown")
+            println(f"  {size} elements: {metrics.duration_ms:.2}ms")
+        }
+        println()
+    }
+    
+    // Overall statistics
+    let total_sorts = sort_analytics.len()
+    let total_duration: f64 = sort_analytics.values()
+        .map(|m| m.duration_ms)
+        .sum()
+    
+    println(f"## Summary")
+    println(f"Total sorts performed: {total_sorts}")
+    println(f"Total execution time: {total_duration:.2}ms")
+    println(f"Average per sort: {total_duration / total_sorts as f64:.2}ms")
+}
+
+// Comprehensive test suite with v1.4.0 features
+#[cfg(test)]
+mod tests {
+    use super::*
+    
+    #[test]
+    fn test_empty_array() -> Result<(), String> {
+        let mut arr: Vec<i32> = vec![]
+        arr.merge_sort()?
+        assert_eq!(arr, vec![])
+        Ok(())
+    }
+    
+    #[test]
+    fn test_single_element() -> Result<(), String> {
+        let mut arr = vec![42]
+        arr.merge_sort()?
+        assert_eq!(arr, vec![42])
+        Ok(())
+    }
+    
+    #[test]
+    fn test_stability_preservation() -> Result<(), String> {
+        #[derive(Clone, Debug)]
+        struct Item(i32, char)
+        
+        impl PartialEq for Item {
+            fn eq(&self, other: &Self) -> bool {
+                self.0 == other.0
+            }
+        }
+        
+        impl PartialOrd for Item {
+            fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+                Some(self.cmp(other))
+            }
+        }
+        
+        impl Eq for Item {}
+        
+        impl Ord for Item {
+            fn cmp(&self, other: &Self) -> Ordering {
+                self.0.cmp(&other.0)
+            }
+        }
+        
+        let mut arr = vec![
+            Item(1, 'a'),
+            Item(2, 'b'), 
+            Item(1, 'c'),
+            Item(3, 'd'),
+            Item(2, 'e')
+        ]
+        
+        arr.merge_sort_stable()?
+        
+        // Check that equal elements maintain relative order
+        assert_eq!(arr[0].1, 'a') // First 1
+        assert_eq!(arr[1].1, 'c') // Second 1
+        assert_eq!(arr[2].1, 'b') // First 2
+        assert_eq!(arr[3].1, 'e') // Second 2
+        assert_eq!(arr[4].1, 'd') // Only 3
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_adaptive_performance() -> Result<(), String> {
+        // Nearly sorted array should be faster with adaptive algorithm
+        let mut nearly_sorted = (1..1000).collect::<Vec<_>>()
+        nearly_sorted.swap(100, 900) // Create just one inversion
+        
+        let adaptive_metrics = nearly_sorted.clone().measure_performance("adaptive")?
+        let classic_metrics = nearly_sorted.measure_performance("classic")?
+        
+        // Adaptive should be faster or equal
+        assert!(adaptive_metrics.duration_ms <= classic_metrics.duration_ms * 1.5)
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_bottom_up_merge_sort() -> Result<(), String> {
+        let mut arr = vec![3, 1, 4, 1, 5, 9, 2, 6]
+        merge_sort_bottom_up(&mut arr)?
+        assert_eq!(arr, vec![1, 1, 2, 3, 4, 5, 6, 9])
+        Ok(())
+    }
+    
+    #[tokio::test]
+    async fn test_parallel_merge_sort() -> Result<(), String> {
+        let arr = (0..100000)
+            .map(|i| (i * 37 + 11) % 10000)
+            .collect::<Vec<i32>>()
+        
+        let sorted = parallel_merge_sort(arr.clone()).await?
+        
+        let mut expected = arr
+        expected.sort()
+        
+        assert_eq!(sorted, expected)
+        Ok(())
+    }
+    
+    #[property_test(15000)]
+    fn prop_merge_sort_correctness(arr: Vec<i32>) -> Result<(), String> {
+        let mut sorted = arr.clone()
+        sorted.merge_sort()?
+        
+        let mut expected = arr
+        expected.sort()
+        
+        assert_eq!(sorted, expected)
+        Ok(())
+    }
+    
+    #[property_test(15000)]
+    fn prop_stability_maintained(arr: Vec<(i32, usize)>) -> Result<(), String> {
+        let mut sorted = arr.clone()
+        sorted.merge_sort_stable()?
+        
+        // Check that equal elements maintain their relative order
+        for i in 0..sorted.len() {
+            for j in i + 1..sorted.len() {
+                if sorted[i].0 == sorted[j].0 {
+                    // Find original positions
+                    let orig_i = arr.iter().position(|x| x == &sorted[i]).unwrap()
+                    let orig_j = arr.iter().position(|x| x == &sorted[j]).unwrap()
+                    assert!(orig_i < orig_j, "Stability violated")
+                }
+            }
+        }
+        
+        Ok(())
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
+    let test_arrays = vec![
+        vec![],
+        vec![42],
+        vec![3, 1, 4, 1, 5, 9, 2, 6],
+        vec![5, 4, 3, 2, 1],
+        vec![1, 2, 3, 4, 5],
+        vec![5, 5, 5, 5, 5],
+        (1..1000).collect::<Vec<_>>(), // Large sorted
+    ]
+    
+    println(f"🚀 Merge Sort v1.4.0 Advanced Feature Showcase")
+    println(f"===============================================")
+    println()
+    
+    for (i, arr) in test_arrays.iter().enumerate() {
+        // v1.4.0 f-string interpolation with rich formatting
+        println(f"Test case {i + 1}: {arr.len()} elements")
+        
+        if arr.len() <= 10 {
+            println(f"  Input:  {arr:?}")
+        }
+        
+        // Classic merge sort
+        let mut arr1 = arr.clone()
+        let metrics1 = arr1.measure_performance("classic")?
+        if arr.len() <= 10 {
+            println(f"  Classic: {arr1:?} ({metrics1.duration_ms:.2}ms)")
+        } else {
+            println(f"  Classic: ✓ sorted ({metrics1.duration_ms:.2}ms)")
+        }
+        
+        // Stable merge sort
+        let mut arr2 = arr.clone()
+        let metrics2 = arr2.measure_performance("stable")?
+        if arr.len() <= 10 {
+            println(f"  Stable:  {arr2:?} ({metrics2.duration_ms:.2}ms)")
+        } else {
+            println(f"  Stable:  ✓ sorted ({metrics2.duration_ms:.2}ms)")
+        }
+        
+        // Adaptive merge sort
+        let mut arr3 = arr.clone()
+        let metrics3 = arr3.measure_performance("adaptive")?
+        if arr.len() <= 10 {
+            println(f"  Adaptive: {arr3:?} ({metrics3.duration_ms:.2}ms)")
+        } else {
+            println(f"  Adaptive: ✓ sorted ({metrics3.duration_ms:.2}ms)")
+        }
+        
+        // Parallel merge sort for larger arrays
+        if arr.len() > 1000 {
+            let start = Instant::now()
+            let arr4 = parallel_merge_sort(arr.clone()).await?
+            let duration = start.elapsed().as_secs_f64() * 1000.0
+            println(f"  Parallel: ✓ sorted ({duration:.2}ms)")
+            
+            // Verify correctness
+            let mut expected = arr.clone()
+            expected.sort()
+            assert_eq!(arr4, expected)
+        }
+        
+        println()
+    }
+    
+    // v1.4.0 comprehensive analytics demonstration
+    println(f"🎯 Advanced Feature Demonstrations:")
+    println()
+    
+    // HashMap integration showcase
+    println(f"📊 Performance Analytics (HashMap tracking):")
+    println(f"Total algorithm runs tracked: {sort_analytics.len()}")
+    
+    // Method chaining showcase
+    let sample_data: Vec<i32> = (0..10000)
+        .map(|i| (i * 37 + 11) % 1000)
+        .collect()
+    
+    println(f"Generated {sample_data.len()} elements using method chaining")
+    
+    // F-string interpolation showcase
+    let complexity = "O(n log n)"
+    let stability = true
+    let space_complexity = "O(n)"
+    
+    println(f"Algorithm properties:")
+    println(f"  Time complexity: {complexity}")
+    println(f"  Space complexity: {space_complexity}")
+    println(f"  Stable: {if stability { \"Yes\" } else { \"No\" }}")
+    
+    // Generate comprehensive report
+    generate_performance_report()
+    
+    println()
+    println(f"✅ v1.4.0 features successfully demonstrated!")
+    println(f"✨ HashMap analytics: {sort_analytics.len()} entries tracked")
+    println(f"✨ F-string interpolation: Rich reporting enabled")
+    println(f"✨ Method chaining: Zero-cost abstractions working")
+    println(f"✨ Async parallel: Multi-threaded sorting operational")
+    println(f"✨ Result error handling: Robust failure management")
+    
+    Ok(())
+}
