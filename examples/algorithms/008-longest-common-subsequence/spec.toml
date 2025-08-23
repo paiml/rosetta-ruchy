@@ -1,0 +1,210 @@
+[metadata]
+name = "longest-common-subsequence"
+category = "dynamic-programming"
+difficulty = "medium"
+tags = ["dp", "strings", "optimization", "memoization", "sequence-alignment"]
+
+[complexity]
+time_standard = "O(m * n)"
+time_space_optimized = "O(m * n)"
+space_standard = "O(m * n)"
+space_optimized = "O(min(m, n))"
+preprocessing = "O(1)"
+
+[test_cases.basic]
+empty_strings = {
+    input1 = "",
+    input2 = "",
+    expected_length = 0,
+    expected_lcs = ""
+}
+
+one_empty = {
+    input1 = "ABC",
+    input2 = "",
+    expected_length = 0,
+    expected_lcs = ""
+}
+
+identical_strings = {
+    input1 = "HELLO",
+    input2 = "HELLO",
+    expected_length = 5,
+    expected_lcs = "HELLO"
+}
+
+no_common_chars = {
+    input1 = "ABC",
+    input2 = "DEF",
+    expected_length = 0,
+    expected_lcs = ""
+}
+
+single_char_match = {
+    input1 = "A",
+    input2 = "A",
+    expected_length = 1,
+    expected_lcs = "A"
+}
+
+[test_cases.standard]
+classic_example = {
+    input1 = "ABCDGH",
+    input2 = "AEDFHR",
+    expected_length = 3,
+    expected_lcs = "ADH"
+}
+
+dna_sequences = {
+    input1 = "AGGTAB",
+    input2 = "GXTXAYB",
+    expected_length = 4,
+    expected_lcs = "GTAB"
+}
+
+overlapping_patterns = {
+    input1 = "ABCDEF",
+    input2 = "ACBDFE",
+    expected_length = 4,
+    expected_lcs = "ABDE"
+}
+
+repeated_characters = {
+    input1 = "AAABBBCCC",
+    input2 = "ABCABCABC",
+    expected_length = 6,
+    expected_lcs = "ABABCC"
+}
+
+[test_cases.edge_cases]
+all_same_char = {
+    input1 = "AAAA",
+    input2 = "AAA",
+    expected_length = 3,
+    expected_lcs = "AAA"
+}
+
+reversed_strings = {
+    input1 = "ABCDE",
+    input2 = "EDCBA",
+    expected_length = 1,
+    expected_lcs_possible = ["A", "B", "C", "D", "E"]
+}
+
+substring_relationship = {
+    input1 = "programming",
+    input2 = "program",
+    expected_length = 7,
+    expected_lcs = "program"
+}
+
+long_divergent = {
+    input1 = "ABCDEFGHIJKLMNOP",
+    input2 = "AQWERTYUIOPASDFG",
+    expected_length = 4,  # A, I, O, P (example)
+    verify_optimality = true
+}
+
+[test_cases.performance]
+large_similar = {
+    input1 = { generate = "random_dna", length = 1000, seed = 42 },
+    input2 = { generate = "mutate", base = "input1", mutation_rate = 0.1 },
+    measure_time = true,
+    space_optimized_required = true
+}
+
+pathological_case = {
+    input1 = { generate = "pattern", pattern = "A", length = 1000 },
+    input2 = { generate = "pattern", pattern = "A", length = 1000 },
+    expected_length = 1000,
+    verify_performance = true
+}
+
+worst_case_mismatch = {
+    input1 = { generate = "pattern", pattern = "AB", length = 1000 },
+    input2 = { generate = "pattern", pattern = "BA", length = 1000 },
+    expected_length = 0,
+    measure_memory = true
+}
+
+[test_cases.biological]
+protein_alignment = {
+    input1 = "MFVFLVLLPLVSSQCVNLTTRTQLPPAYTNSFTRGVYYPDKVFRSSVLHS",
+    input2 = "MFVFLVLLPLVSSQCVNLRTRTQLPPAYTNSFTRGVYYPDKVFRSSVLQT",
+    biological_significance = true,
+    score_similarity = true
+}
+
+genome_comparison = {
+    input1 = { generate = "random_genome", length = 5000, gc_content = 0.4 },
+    input2 = { generate = "random_genome", length = 5000, gc_content = 0.4 },
+    measure_alignment_quality = true
+}
+
+[algorithms.variants]
+standard_dp = { 
+    implemented = true,
+    time = "O(mn)",
+    space = "O(mn)"
+}
+
+space_optimized = {
+    implemented = true,
+    time = "O(mn)",
+    space = "O(min(m,n))"
+}
+
+memoized_recursive = {
+    implemented = true,
+    time = "O(mn)",
+    space = "O(mn + recursion_depth)"
+}
+
+hirschberg = {
+    implemented = false,
+    time = "O(mn)",
+    space = "O(min(m,n))",
+    divide_and_conquer = true
+}
+
+[benchmark]
+iterations = 1000
+warmup = 100
+string_lengths = [10, 100, 500, 1000, 2000]
+similarity_ratios = [0.0, 0.3, 0.5, 0.7, 0.9, 1.0]
+alphabet_sizes = [2, 4, 26]  # Binary, DNA, English
+
+[performance_targets]
+"1000x1000_chars" = 0.1  # seconds
+"memory_efficiency_ratio" = 0.5  # space-optimized vs standard
+"cache_hit_rate" = 0.95
+"memoization_speedup" = 10.0  # vs naive recursion
+
+[visualization]
+show_dp_table = true
+highlight_lcs_path = true
+animate_construction = true
+show_recurrence_tree = true
+export_formats = ["ascii", "html", "svg"]
+
+[validation]
+property_tests = 15000
+verify_optimality = true
+cross_validate_variants = true
+benchmark_consistency = true
+
+[applications]
+diff_tools = true
+version_control = true
+dna_analysis = true
+plagiarism_detection = true
+file_synchronization = true
+
+[ruchy_features]
+# v1.5.0 specific features this example demonstrates
+self_hosting_dp_generation = true       # Generate DP recurrence code at runtime
+memoization_code_synthesis = true       # Synthesize memoization logic
+algorithm_w_recursive_inference = true  # Complex recursive type inference  
+pattern_matching_dp_states = true       # Exhaustive DP state matching
+concurrent_subsequence_finding = true   # Parallel LCS computation
+formal_correctness_verification = true  # Prove DP correctness with SMT

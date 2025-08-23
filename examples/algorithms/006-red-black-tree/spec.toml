@@ -1,0 +1,144 @@
+[metadata]
+name = "red-black-tree"
+category = "data-structures"
+difficulty = "hard"
+tags = ["self-balancing", "binary-search-tree", "rotations", "invariants", "2-3-4-tree"]
+
+[complexity]
+time_insert = "O(log n)"
+time_delete = "O(log n)"
+time_search = "O(log n)"
+time_traverse = "O(n)"
+space = "O(n)"
+height_guarantee = "≤ 2 * log₂(n + 1)"
+
+[invariants]
+root_is_black = true
+red_node_has_black_children = true
+all_paths_same_black_height = true
+nil_nodes_are_black = true
+no_consecutive_red_nodes = true
+
+[test_cases.basic]
+empty_tree = { operations = [], expected_height = 0, expected_black_height = 0 }
+single_insert = { operations = [["insert", 10]], expected_height = 1, expected_color = "black" }
+three_node_tree = { 
+    operations = [["insert", 10], ["insert", 5], ["insert", 15]],
+    expected_structure = "10(B) -> [5(R), 15(R)]"
+}
+
+[test_cases.rotations]
+left_rotation = {
+    initial = "5(B) -> [nil, 10(R) -> [nil, 15(R)]]",
+    operation = ["insert", 20],
+    expected = "10(B) -> [5(R), 15(R) -> [nil, 20(R)]]"
+}
+
+right_rotation = {
+    initial = "15(B) -> [10(R) -> [5(R), nil], nil]",
+    operation = ["insert", 3],
+    expected = "10(B) -> [5(R) -> [3(R), nil], 15(R)]"
+}
+
+double_rotation = {
+    operations = [["insert", 10], ["insert", 5], ["insert", 15], ["insert", 3], ["insert", 7]],
+    expected_valid = true,
+    verify_invariants = true
+}
+
+[test_cases.deletion]
+delete_red_leaf = {
+    setup = [["insert", 10], ["insert", 5], ["insert", 15], ["insert", 3]],
+    operation = ["delete", 3],
+    expected_valid = true
+}
+
+delete_black_node_with_red_child = {
+    setup = [["insert", 10], ["insert", 5], ["insert", 15], ["insert", 12]],
+    operation = ["delete", 15],
+    expected_valid = true
+}
+
+delete_double_black_fix = {
+    # Complex case requiring rebalancing
+    setup = [["insert", i] for i in [10, 5, 20, 3, 7, 15, 25, 1, 4]],
+    operation = ["delete", 1],
+    verify_all_invariants = true
+}
+
+[test_cases.sequential]
+ascending_order = {
+    operations = [["insert", i] for i in range(1, 101)],
+    expected_height_max = 14,  # 2 * log₂(101) ≈ 13.3
+    verify_balanced = true
+}
+
+descending_order = {
+    operations = [["insert", i] for i in range(100, 0, -1)],
+    expected_height_max = 14,
+    verify_balanced = true
+}
+
+[test_cases.stress]
+large_random = { 
+    generate = "random", 
+    count = 100000, 
+    seed = 42,
+    operations = ["insert", "delete", "search"],
+    verify_invariants_periodically = true
+}
+
+pathological_pattern = {
+    # Alternating insert/delete to stress rebalancing
+    operations = "alternating_stress",
+    count = 50000,
+    verify_final_state = true
+}
+
+[test_cases.comparison]
+vs_avl_tree = {
+    operations = "same_sequence",
+    measure = ["height", "rotations", "recolors"],
+    expected_fewer_rotations = true
+}
+
+vs_unbalanced_bst = {
+    operations = "worst_case_sequence",
+    measure = ["height", "search_time"],
+    expected_height_ratio = "< 0.5"  # RB tree should be less than half the height
+}
+
+[benchmark]
+iterations = 10000
+warmup = 1000
+operations = ["insert", "search", "delete", "traverse_inorder", "min", "max"]
+data_sizes = [100, 1000, 10000, 100000, 1000000]
+patterns = ["random", "ascending", "descending", "alternating"]
+
+[performance_targets]
+"100k_insertions_per_sec" = 200000
+"100k_searches_per_sec" = 500000
+"height_to_size_ratio" = 1.5  # height ≤ 1.5 * log₂(n)
+"rotation_frequency" = 0.3      # ≤ 30% of insertions require rotation
+
+[visualization]
+show_colors = true
+show_black_height = true
+show_nil_nodes = false
+ascii_art = true
+graphviz_export = true
+
+[validation]
+property_tests = 50000
+invariant_checks = ["after_every_operation", "periodic_full_validation"]
+formal_verification = true
+coverage_target = 95.0
+
+[ruchy_features]
+# v1.5.0 specific features this example demonstrates
+self_hosting_rotation_generation = true  # Generate rotation logic using self-hosting
+algorithm_w_trait_bounds = true          # Complex trait bounds for node types
+minimal_codegen_tree_operations = true   # Optimize tree operations with minimal codegen
+pattern_matching_exhaustiveness = true   # Exhaustive pattern matching for color/rotation
+async_concurrent_operations = true       # Concurrent tree operations with safety
+formal_invariant_proofs = true          # SMT solver verification of RB-tree invariants

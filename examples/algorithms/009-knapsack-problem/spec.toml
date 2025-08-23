@@ -1,0 +1,315 @@
+[metadata]
+name = "knapsack-problem"
+category = "dynamic-programming"
+difficulty = "medium"
+tags = ["dp", "optimization", "combinatorics", "memoization", "greedy", "approximation"]
+
+[complexity]
+time_standard = "O(n * W)"
+time_space_optimized = "O(n * W)"
+time_greedy_approx = "O(n log n)"
+space_standard = "O(n * W)"
+space_optimized = "O(W)"
+space_greedy = "O(1)"
+preprocessing = "O(n log n)"
+
+[test_cases.basic]
+empty_knapsack = {
+    capacity = 10,
+    items = [],
+    expected_value = 0,
+    expected_weight = 0,
+    expected_items = []
+}
+
+single_item_fits = {
+    capacity = 10,
+    items = [{ weight = 5, value = 8, name = "book" }],
+    expected_value = 8,
+    expected_weight = 5,
+    expected_items = ["book"]
+}
+
+single_item_no_fit = {
+    capacity = 3,
+    items = [{ weight = 5, value = 10, name = "laptop" }],
+    expected_value = 0,
+    expected_weight = 0,
+    expected_items = []
+}
+
+all_items_fit = {
+    capacity = 50,
+    items = [
+        { weight = 10, value = 60, name = "book" },
+        { weight = 20, value = 100, name = "laptop" },
+        { weight = 15, value = 120, name = "camera" }
+    ],
+    expected_value = 280,
+    expected_weight = 45,
+    expected_items = ["book", "laptop", "camera"]
+}
+
+[test_cases.standard]
+classic_example = {
+    capacity = 50,
+    items = [
+        { weight = 10, value = 60, name = "item1" },
+        { weight = 20, value = 100, name = "item2" },
+        { weight = 30, value = 120, name = "item3" }
+    ],
+    expected_value = 220,
+    expected_weight = 50,
+    expected_items = ["item2", "item3"]
+}
+
+fractional_weights = {
+    capacity = 15,
+    items = [
+        { weight = 1, value = 1, name = "a" },
+        { weight = 3, value = 4, name = "b" },
+        { weight = 4, value = 5, name = "c" },
+        { weight = 5, value = 7, name = "d" },
+        { weight = 7, value = 9, name = "e" }
+    ],
+    expected_value = 14,
+    expected_weight = 15,
+    expected_items = ["a", "b", "c", "d"]
+}
+
+high_value_density = {
+    capacity = 20,
+    items = [
+        { weight = 2, value = 20, name = "gem" },      # density: 10
+        { weight = 5, value = 30, name = "gold" },     # density: 6
+        { weight = 10, value = 50, name = "silver" },  # density: 5
+        { weight = 15, value = 60, name = "copper" },  # density: 4
+        { weight = 8, value = 24, name = "bronze" }    # density: 3
+    ],
+    expected_value = 74,
+    expected_weight = 17,
+    expected_items = ["gem", "gold", "bronze"]
+}
+
+equal_ratios = {
+    capacity = 10,
+    items = [
+        { weight = 5, value = 10, name = "x" },  # ratio: 2
+        { weight = 4, value = 8, name = "y" },   # ratio: 2
+        { weight = 6, value = 12, name = "z" },  # ratio: 2
+        { weight = 3, value = 6, name = "w" }    # ratio: 2
+    ],
+    expected_value = 16,
+    expected_weight = 9,
+    expected_items = ["y", "w"]
+}
+
+[test_cases.edge_cases]
+zero_capacity = {
+    capacity = 0,
+    items = [
+        { weight = 1, value = 10, name = "tiny" }
+    ],
+    expected_value = 0,
+    expected_weight = 0,
+    expected_items = []
+}
+
+zero_value_items = {
+    capacity = 10,
+    items = [
+        { weight = 2, value = 0, name = "worthless1" },
+        { weight = 3, value = 0, name = "worthless2" },
+        { weight = 5, value = 10, name = "valuable" }
+    ],
+    expected_value = 10,
+    expected_weight = 5,
+    expected_items = ["valuable"]
+}
+
+zero_weight_items = {
+    capacity = 10,
+    items = [
+        { weight = 0, value = 5, name = "weightless1" },
+        { weight = 0, value = 3, name = "weightless2" },
+        { weight = 5, value = 10, name = "normal" }
+    ],
+    expected_value = 18,
+    expected_weight = 5,
+    expected_items = ["weightless1", "weightless2", "normal"]
+}
+
+large_capacity = {
+    capacity = 1000000,
+    items = [
+        { weight = 1, value = 1, name = "small" },
+        { weight = 999999, value = 1000000, name = "huge" }
+    ],
+    expected_value = 1000001,
+    expected_weight = 1000000,
+    expected_items = ["small", "huge"]
+}
+
+identical_items = {
+    capacity = 15,
+    items = [
+        { weight = 5, value = 10, name = "copy1" },
+        { weight = 5, value = 10, name = "copy2" },
+        { weight = 5, value = 10, name = "copy3" },
+        { weight = 5, value = 10, name = "copy4" }
+    ],
+    expected_value = 30,
+    expected_weight = 15,
+    expected_items = ["copy1", "copy2", "copy3"]
+}
+
+[test_cases.performance]
+large_uniform = {
+    capacity = 1000,
+    items = { generate = "uniform", count = 1000, weight_range = [1, 50], value_range = [1, 100] },
+    measure_time = true,
+    space_optimized_required = true
+}
+
+pathological_dp = {
+    capacity = 10000,
+    items = { generate = "fibonacci_weights", count = 20, max_value = 1000 },
+    expected_exponential_naive = true,
+    measure_memory = true
+}
+
+high_capacity_sparse = {
+    capacity = 100000,
+    items = { generate = "sparse", count = 50, density = 0.1 },
+    space_optimized_required = true,
+    verify_optimality = true
+}
+
+approximation_quality = {
+    capacity = { generate = "random", range = [500, 2000] },
+    items = { generate = "random", count = 1000 },
+    measure_approximation_ratio = true,
+    greedy_vs_optimal = true
+}
+
+[test_cases.real_world]
+treasure_hunt = {
+    capacity = 50,  # backpack weight limit
+    items = [
+        { weight = 2, value = 150, name = "diamond_ring" },
+        { weight = 5, value = 200, name = "gold_coins" },
+        { weight = 8, value = 300, name = "ancient_vase" },
+        { weight = 4, value = 180, name = "ruby_necklace" },
+        { weight = 6, value = 220, name = "silver_statue" },
+        { weight = 3, value = 120, name = "emerald_brooch" },
+        { weight = 7, value = 250, name = "pearl_crown" },
+        { weight = 1, value = 80, name = "sapphire_ring" },
+        { weight = 9, value = 320, name = "golden_chalice" },
+        { weight = 12, value = 400, name = "crystal_orb" }
+    ],
+    biological_significance = false,
+    real_world_scenario = "treasure_collection"
+}
+
+portfolio_optimization = {
+    capacity = 10000,  # investment budget in $
+    items = [
+        { weight = 1000, value = 120, name = "tech_stock" },    # 12% return
+        { weight = 2000, value = 200, name = "real_estate" },   # 10% return
+        { weight = 1500, value = 165, name = "bonds" },         # 11% return
+        { weight = 500, value = 75, name = "crypto" },          # 15% return
+        { weight = 3000, value = 270, name = "commodities" },   # 9% return
+        { weight = 800, value = 112, name = "startups" },       # 14% return
+    ],
+    financial_modeling = true,
+    risk_consideration = false  # simplified model
+}
+
+[algorithms.variants]
+standard_dp = { 
+    implemented = true,
+    time = "O(nW)",
+    space = "O(nW)",
+    optimal = true
+}
+
+space_optimized = {
+    implemented = true,
+    time = "O(nW)",
+    space = "O(W)",
+    optimal = true
+}
+
+memoized_recursive = {
+    implemented = true,
+    time = "O(nW)",
+    space = "O(nW + recursion_depth)",
+    optimal = true
+}
+
+greedy_approximation = {
+    implemented = true,
+    time = "O(n log n)",
+    space = "O(1)",
+    optimal = false,
+    approximation_ratio = 0.5
+}
+
+fptas = {
+    implemented = false,
+    time = "O(n^3 / ε)",
+    space = "O(n^2 / ε)",
+    optimal = false,
+    approximation_ratio = "1 - ε"
+}
+
+branch_and_bound = {
+    implemented = false,
+    time = "O(2^n) worst case, much better average",
+    space = "O(n)",
+    optimal = true
+}
+
+[benchmark]
+iterations = 1000
+warmup = 100
+capacities = [10, 50, 100, 500, 1000, 5000]
+item_counts = [5, 10, 25, 50, 100, 250, 500]
+value_distributions = ["uniform", "exponential", "pareto"]
+weight_distributions = ["uniform", "normal"]
+
+[performance_targets]
+"100_items_1000_capacity" = 0.01  # seconds
+"memory_efficiency_ratio" = 0.99  # space-optimized vs standard
+"cache_hit_rate" = 0.90
+"greedy_speed_advantage" = 100.0  # vs optimal DP
+
+[visualization]
+show_dp_table = true
+show_item_selection = true
+animate_construction = true
+show_value_density_chart = true
+export_formats = ["ascii", "html", "svg"]
+
+[validation]
+property_tests = 10000
+verify_optimality = true
+cross_validate_variants = true
+benchmark_consistency = true
+
+[applications]
+resource_allocation = true
+investment_portfolio = true
+cargo_loading = true
+memory_management = true
+job_scheduling = true
+
+[ruchy_features]
+# v1.5.0 specific features this example demonstrates
+self_hosting_dp_generation = true       # Generate DP recurrence code at runtime
+memoization_code_synthesis = true       # Synthesize memoization logic
+algorithm_w_recursive_inference = true  # Complex recursive type inference  
+pattern_matching_dp_states = true       # Exhaustive DP state matching
+concurrent_knapsack_solving = true      # Parallel knapsack computation
+formal_optimality_verification = true   # Prove DP optimality with SMT
+approximation_algorithm_synthesis = true # Auto-generate approximation algorithms
