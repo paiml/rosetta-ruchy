@@ -1,0 +1,24 @@
+{
+  "name": "fibonacci-javascript",
+  "version": "1.0.0",
+  "description": "JavaScript Fibonacci implementations for Rosetta Ruchy benchmarks",
+  "main": "fibonacci.js",
+  "scripts": {
+    "test": "node test.js",
+    "benchmark": "node benchmark.js",
+    "start": "node fibonacci.js"
+  },
+  "keywords": [
+    "fibonacci",
+    "benchmark",
+    "rosetta-ruchy"
+  ],
+  "author": "Rosetta Ruchy Project",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "devDependencies": {
+    "benchmark": "^2.1.4"
+  }
+}
