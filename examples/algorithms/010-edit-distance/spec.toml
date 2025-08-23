@@ -1,0 +1,302 @@
+[metadata]
+name = "edit-distance" 
+category = "dynamic-programming"
+difficulty = "medium"
+tags = ["dp", "strings", "optimization", "alignment", "memoization", "bioinformatics"]
+
+[complexity]
+time_standard = "O(m * n)"
+time_space_optimized = "O(m * n)" 
+time_recursive = "O(3^max(m,n))"
+time_memoized = "O(m * n)"
+space_standard = "O(m * n)"
+space_optimized = "O(min(m, n))"
+space_recursive = "O(max(m, n))"
+preprocessing = "O(1)"
+
+[test_cases.basic]
+empty_strings = {
+    str1 = "",
+    str2 = "",
+    expected_distance = 0,
+    expected_ops = []
+}
+
+one_empty = {
+    str1 = "hello",
+    str2 = "",
+    expected_distance = 5,
+    expected_ops = ["delete h", "delete e", "delete l", "delete l", "delete o"]
+}
+
+both_empty = {
+    str1 = "",
+    str2 = "world", 
+    expected_distance = 5,
+    expected_ops = ["insert w", "insert o", "insert r", "insert l", "insert d"]
+}
+
+identical_strings = {
+    str1 = "same",
+    str2 = "same",
+    expected_distance = 0,
+    expected_ops = []
+}
+
+single_char_diff = {
+    str1 = "a",
+    str2 = "b", 
+    expected_distance = 1,
+    expected_ops = ["substitute a->b"]
+}
+
+[test_cases.standard]
+classic_example = {
+    str1 = "kitten",
+    str2 = "sitting",
+    expected_distance = 3,
+    expected_ops_possible = [
+        ["substitute k->s", "substitute e->i", "insert g"],
+        ["substitute k->s", "substitute e->i", "insert g at end"]
+    ]
+}
+
+dna_mutation = {
+    str1 = "ATCGATCG",
+    str2 = "ATGCATGG", 
+    expected_distance = 3,
+    biological_significance = true
+}
+
+word_transformation = {
+    str1 = "intention",
+    str2 = "execution",
+    expected_distance = 5,
+    linguistic_analysis = true
+}
+
+single_insertion = {
+    str1 = "abc",
+    str2 = "abxc",
+    expected_distance = 1,
+    expected_ops = ["insert x at position 2"]
+}
+
+single_deletion = {
+    str1 = "abxc", 
+    str2 = "abc",
+    expected_distance = 1,
+    expected_ops = ["delete x at position 2"]
+}
+
+single_substitution = {
+    str1 = "abc",
+    str2 = "axc",
+    expected_distance = 1,
+    expected_ops = ["substitute b->x"]
+}
+
+[test_cases.edge_cases]
+repeated_chars = {
+    str1 = "aaaa",
+    str2 = "aaa",
+    expected_distance = 1,
+    expected_ops = ["delete a"]
+}
+
+completely_different = {
+    str1 = "abc",
+    str2 = "xyz", 
+    expected_distance = 3,
+    expected_ops = ["substitute a->x", "substitute b->y", "substitute c->z"]
+}
+
+reverse_strings = {
+    str1 = "abcde",
+    str2 = "edcba",
+    expected_distance = 4,
+    verify_optimality = true
+}
+
+long_vs_short = {
+    str1 = "supercalifragilisticexpialidocious",
+    str2 = "super",
+    expected_distance = 29,
+    measure_performance = true
+}
+
+substring_relationship = {
+    str1 = "programming", 
+    str2 = "program",
+    expected_distance = 4,
+    expected_ops = ["delete m", "delete i", "delete n", "delete g"]
+}
+
+case_sensitivity = {
+    str1 = "Hello",
+    str2 = "hello",
+    expected_distance = 1,
+    expected_ops = ["substitute H->h"]
+}
+
+[test_cases.performance]
+large_similar = {
+    str1 = { generate = "random_string", length = 1000, alphabet = "ATCG", seed = 42 },
+    str2 = { generate = "mutate", base = "str1", mutation_rate = 0.1 },
+    measure_time = true,
+    space_optimized_required = true
+}
+
+pathological_case = {
+    str1 = { generate = "pattern", pattern = "ab", repeats = 500 },
+    str2 = { generate = "pattern", pattern = "ba", repeats = 500 }, 
+    expected_high_distance = true,
+    measure_memory = true
+}
+
+worst_case_recursive = {
+    str1 = { generate = "fibonacci_string", length = 20 },
+    str2 = { generate = "fibonacci_string", length = 20, offset = 1 },
+    exponential_blowup = true,
+    memoization_required = true
+}
+
+ascii_vs_unicode = {
+    str1 = "café",
+    str2 = "cafe", 
+    unicode_handling = true,
+    encoding_considerations = true
+}
+
+[test_cases.biological]
+dna_alignment = {
+    str1 = "ATCGATCGATCGATCG",
+    str2 = "ATCGATCAATCGATCG",
+    biological_context = "point_mutation",
+    scoring_matrix = "simple"
+}
+
+protein_sequences = {
+    str1 = "MFVFLVLLPLVSSQC", 
+    str2 = "MFVFLVLLPLASSQC",
+    biological_context = "amino_acid_substitution",
+    blosum_scoring = false  # simplified for this example
+}
+
+gene_insertion = {
+    str1 = "ATCGATCG",
+    str2 = "ATCGTTTGATCG", 
+    biological_context = "insertion_mutation",
+    indel_analysis = true
+}
+
+[test_cases.linguistic]
+spelling_correction = {
+    str1 = "seperate",
+    str2 = "separate", 
+    expected_distance = 1,
+    linguistic_context = "common_misspelling"
+}
+
+phonetic_similarity = {
+    str1 = "there",
+    str2 = "their",
+    expected_distance = 1,
+    phonetic_analysis = true
+}
+
+morphological_changes = {
+    str1 = "run",
+    str2 = "running",
+    expected_distance = 4,
+    linguistic_context = "inflection"
+}
+
+[algorithms.variants]
+standard_dp = {
+    implemented = true,
+    time = "O(mn)",
+    space = "O(mn)",
+    optimal = true
+}
+
+space_optimized = {
+    implemented = true, 
+    time = "O(mn)",
+    space = "O(min(m,n))",
+    optimal = true
+}
+
+memoized_recursive = {
+    implemented = true,
+    time = "O(mn)",
+    space = "O(mn + recursion_depth)",
+    optimal = true
+}
+
+naive_recursive = {
+    implemented = true,
+    time = "O(3^max(m,n))",
+    space = "O(max(m,n))", 
+    optimal = true,
+    educational_only = true
+}
+
+myers_algorithm = {
+    implemented = false,
+    time = "O((m+n)D)", 
+    space = "O(m+n)",
+    optimal = true,
+    where_D_is = "edit_distance"
+}
+
+ukkonen_algorithm = {
+    implemented = false,
+    time = "O(min(mn, n + d^2))",
+    space = "O(min(mn, d^2))",
+    optimal = true,
+    cutoff_optimization = true
+}
+
+[benchmark]
+iterations = 1000
+warmup = 100
+string_lengths = [5, 10, 20, 50, 100, 200, 500, 1000]
+alphabet_sizes = [2, 4, 26, 128]  # Binary, DNA, English, ASCII
+similarity_ratios = [0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0]
+
+[performance_targets]
+"100x100_chars" = 0.001  # seconds
+"memory_efficiency_ratio" = 0.95  # space-optimized vs standard 
+"cache_hit_rate" = 0.85
+"memoization_speedup" = 1000.0  # vs naive recursion
+
+[visualization] 
+show_dp_table = true
+show_alignment = true
+animate_construction = true
+show_operation_sequence = true
+export_formats = ["ascii", "html", "svg"]
+
+[validation]
+property_tests = 12000
+verify_optimality = true 
+cross_validate_variants = true
+benchmark_consistency = true
+
+[applications]
+spell_checkers = true
+dna_sequencing = true
+version_control = true
+plagiarism_detection = true
+machine_translation = true
+
+[ruchy_features]
+# v1.5.0 specific features this example demonstrates
+self_hosting_dp_generation = true       # Generate DP recurrence code at runtime
+memoization_code_synthesis = true       # Synthesize memoization logic
+algorithm_w_recursive_inference = true  # Complex recursive type inference
+pattern_matching_dp_states = true       # Exhaustive DP state matching
+concurrent_edit_distance_computation = true  # Parallel edit distance computation
+formal_correctness_verification = true  # Prove DP correctness with SMT
+string_algorithm_optimization = true    # Specialized string algorithm optimizations
