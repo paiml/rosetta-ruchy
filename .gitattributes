@@ -1,0 +1,10 @@
+# Ruchy language files
+*.ruchy linguist-language=Ruchy
+*.ruc linguist-language=Ruchy
+
+# Documentation
+*.md linguist-detectable=true
+
+# Binary files
+target/ linguist-generated=true
+*.lock linguist-generated=true
