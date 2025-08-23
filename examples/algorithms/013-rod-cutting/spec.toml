@@ -1,0 +1,283 @@
+[metadata]
+name = "rod-cutting"
+category = "dynamic-programming"
+difficulty = "medium"
+tags = ["dp", "optimization", "unbounded-knapsack", "memoization", "cut-reconstruction"]
+
+[complexity]
+time_dp = "O(n^2)"
+time_memoized = "O(n^2)"
+time_naive_recursive = "O(2^n)"
+space_dp = "O(n)"
+space_memoized = "O(n)"
+space_recursive = "O(n)"
+preprocessing = "O(1)"
+
+[test_cases.basic]
+no_cuts = {
+    rod_length = 1,
+    prices = [1],
+    expected_revenue = 1,
+    expected_cuts = [1],
+    note = "Single piece, no cutting needed"
+}
+
+simple_cut = {
+    rod_length = 2,
+    prices = [1, 5],
+    expected_revenue = 5,
+    expected_cuts = [2],
+    note = "Better to sell as single piece of length 2"
+}
+
+two_pieces = {
+    rod_length = 4,
+    prices = [1, 5, 8, 9],
+    expected_revenue = 10,
+    expected_cuts = [2, 2],
+    note = "Two pieces of length 2 each"
+}
+
+no_cutting_optimal = {
+    rod_length = 3,
+    prices = [1, 5, 8],
+    expected_revenue = 8,
+    expected_cuts = [3],
+    note = "Single piece gives maximum revenue"
+}
+
+zero_length = {
+    rod_length = 0,
+    prices = [],
+    expected_revenue = 0,
+    expected_cuts = [],
+    trivial_case = true
+}
+
+[test_cases.standard]
+classic_example = {
+    rod_length = 8,
+    prices = [1, 5, 8, 9, 10, 17, 17, 20],
+    expected_revenue = 22,
+    expected_cuts = [2, 6],
+    all_possible_cuts = [
+        { cuts = [1, 1, 1, 1, 1, 1, 1, 1], revenue = 8 },
+        { cuts = [2, 2, 2, 2], revenue = 20 },
+        { cuts = [2, 6], revenue = 22 },
+        { cuts = [8], revenue = 20 }
+    ]
+}
+
+textbook_case = {
+    rod_length = 10,
+    prices = [1, 5, 8, 9, 10, 17, 17, 20, 24, 30],
+    expected_revenue = 30,
+    expected_cuts = [10],
+    note = "Textbook example demonstrating optimal substructure"
+}
+
+increasing_values = {
+    rod_length = 6,
+    prices = [1, 2, 3, 4, 5, 6],
+    expected_revenue = 6,
+    expected_cuts = [6],
+    pattern = "linear_increasing"
+}
+
+decreasing_efficiency = {
+    rod_length = 5,
+    prices = [10, 15, 18, 20, 21],
+    expected_revenue = 50,
+    expected_cuts = [1, 1, 1, 1, 1],
+    note = "Many small pieces more valuable than few large"
+}
+
+fibonacci_prices = {
+    rod_length = 7,
+    prices = [1, 1, 2, 3, 5, 8, 13],
+    expected_revenue = 13,
+    expected_cuts = [7],
+    pattern = "fibonacci_sequence"
+}
+
+geometric_prices = {
+    rod_length = 6,
+    prices = [1, 2, 4, 8, 16, 32],
+    expected_revenue = 32,
+    expected_cuts = [6],
+    pattern = "geometric_progression"
+}
+
+[test_cases.edge_cases]
+all_same_price = {
+    rod_length = 5,
+    prices = [3, 3, 3, 3, 3],
+    expected_revenue = 15,
+    expected_cuts = [1, 1, 1, 1, 1],
+    note = "All pieces have same value per unit"
+}
+
+prime_lengths_only = {
+    rod_length = 10,
+    prices = [0, 2, 3, 0, 5, 0, 7, 0, 0, 0],
+    expected_revenue = 14,
+    expected_cuts = [2, 3, 5],
+    note = "Only prime-length pieces have value"
+}
+
+exponential_growth = {
+    rod_length = 8,
+    prices = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000],
+    expected_revenue = 10000000,
+    expected_cuts = [8],
+    pattern = "exponential_growth"
+}
+
+zero_value_pieces = {
+    rod_length = 4,
+    prices = [0, 5, 0, 9],
+    expected_revenue = 10,
+    expected_cuts = [2, 2],
+    note = "Some piece lengths have zero value"
+}
+
+very_long_rod = {
+    rod_length = 100,
+    prices = { generate = "random", min = 1, max = 50, seed = 42 },
+    measure_performance = true,
+    stress_test = true
+}
+
+[test_cases.performance]
+moderate_length = {
+    rod_length = 50,
+    prices = { generate = "linear", base = 1, increment = 2 },
+    measure_time = true,
+    dp_vs_naive_comparison = true
+}
+
+large_rod = {
+    rod_length = 200,
+    prices = { generate = "random", min = 1, max = 100, seed = 123 },
+    exponential_blowup_naive = true,
+    dp_required = true
+}
+
+pathological_recursive = {
+    rod_length = 30,
+    prices = { generate = "fibonacci_like", growth_factor = 1.1 },
+    recursive_explosion = true,
+    memoization_critical = true
+}
+
+real_world_pricing = {
+    rod_length = 20,
+    prices = [5, 8, 12, 15, 18, 20, 22, 24, 25, 26, 27, 28, 28, 29, 29, 30, 30, 30, 31, 31],
+    economic_model = "diminishing_returns",
+    practical_scenario = true
+}
+
+[test_cases.mathematical]
+optimal_substructure_demo = {
+    rod_length = 5,
+    prices = [2, 5, 7, 8, 10],
+    subproblems = {
+        "length_1" = 2,
+        "length_2" = 5, 
+        "length_3" = 7,
+        "length_4" = 10,  # max(8, 2+5, 5+2, 7+2) = 10
+        "length_5" = 12   # max(10, 2+10, 5+7, 7+5, 8+2) = 12
+    }
+}
+
+greedy_fails = {
+    rod_length = 4,
+    prices = [1, 4, 6, 7],
+    expected_revenue = 8,
+    expected_cuts = [2, 2],
+    greedy_result = 7,
+    greedy_cuts = [4],
+    demonstrates_greedy_suboptimal = true
+}
+
+[algorithms.variants]
+dp_bottom_up = {
+    implemented = true,
+    time = "O(n^2)",
+    space = "O(n)",
+    optimal = true
+}
+
+dp_top_down = {
+    implemented = true,
+    time = "O(n^2)",
+    space = "O(n + recursion_depth)",
+    optimal = true
+}
+
+naive_recursive = {
+    implemented = true,
+    time = "O(2^n)",
+    space = "O(n)",
+    optimal = true,
+    educational_only = true
+}
+
+greedy_by_unit_price = {
+    implemented = true,
+    time = "O(n log n)",
+    space = "O(1)",
+    optimal = false,
+    heuristic = true
+}
+
+space_optimized = {
+    implemented = false,
+    time = "O(n^2)",
+    space = "O(1)",
+    optimal = true,
+    advanced_technique = true
+}
+
+[benchmark]
+iterations = 1000
+warmup = 100
+rod_lengths = [10, 20, 50, 100, 200]
+price_patterns = ["linear", "quadratic", "fibonacci", "random"]
+algorithms = ["dp_bottom_up", "dp_top_down", "naive_recursive", "greedy"]
+
+[performance_targets]
+"length_100" = 0.01  # seconds
+"dp_vs_naive_speedup" = 1000.0
+"greedy_speed_advantage" = 50.0
+"cache_hit_rate" = 0.85
+
+[visualization]
+show_dp_table = true
+show_cut_sequence = true
+animate_construction = true
+show_revenue_analysis = true
+export_formats = ["ascii", "html", "svg"]
+
+[validation]
+property_tests = 10000
+verify_optimality = true
+cross_validate_variants = true
+benchmark_consistency = true
+
+[applications]
+manufacturing = true
+resource_allocation = true
+inventory_management = true
+profit_maximization = true
+operations_research = true
+
+[ruchy_features]
+# v1.5.0 specific features this example demonstrates
+self_hosting_dp_generation = true       # Generate DP recurrence code at runtime
+memoization_code_synthesis = true       # Synthesize memoization logic
+algorithm_w_recursive_inference = true  # Complex recursive type inference
+pattern_matching_dp_states = true       # Exhaustive DP state matching
+concurrent_rod_optimization = true      # Parallel rod cutting computation
+formal_correctness_verification = true  # Prove DP correctness with SMT
+profit_optimization_analysis = true     # Economic modeling and optimization
