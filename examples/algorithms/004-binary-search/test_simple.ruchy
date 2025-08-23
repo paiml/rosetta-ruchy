@@ -1,0 +1,4 @@
+fn main() {
+    let data = vec![1, 3, 5, 7, 9];
+    println!("Testing Ruchy v1.5.0: {:?}", data);
+}

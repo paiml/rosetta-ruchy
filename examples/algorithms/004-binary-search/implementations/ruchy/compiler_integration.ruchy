@@ -27,28 +27,28 @@ mod compiler {
         
         // v1.5.0 feature: compile Ruchy code using Ruchy compiler
         fun compile_ruchy_code(&self, source: &str) -> Result<String, String> {
-            println(f"🚀 Self-hosting: Compiling Ruchy code with Ruchy v{self.version}")
+            println(f"🚀 Self-hosting: Compiling Ruchy code with Ruchy v{self.version}");
             
             // Write source to temporary file
             let temp_file = "/tmp/ruchy_generated.ruchy"
             fs::write(temp_file, source)
-                .map_err(|e| f"Failed to write temp file: {e}")?
+                .map_err(|e| f"Failed to write temp file: {e}")?;
             
             // Use ruchy compiler to transpile with minimal codegen
             let output = Command::new("ruchy")
                 .args(&["transpile", temp_file, "--minimal"])
                 .output()
-                .map_err(|e| f"Compiler invocation failed: {e}")?
+                .map_err(|e| f"Compiler invocation failed: {e}")?;
             
             if output.status.success() {
                 let rust_code = String::from_utf8(output.stdout)
-                    .map_err(|e| f"Invalid UTF-8 in output: {e}")?
+                    .map_err(|e| f"Invalid UTF-8 in output: {e}")?;
                 
-                println(f"✅ Self-hosting compilation successful")
-                Ok(rust_code)
+                println(f"✅ Self-hosting compilation successful");
+                Ok(rust_code);
             } else {
                 let error = String::from_utf8_lossy(&output.stderr)
-                Err(f"Compilation failed: {error}")
+                Err(f"Compilation failed: {error}");
             }
         }
         
