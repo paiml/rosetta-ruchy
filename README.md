@@ -164,7 +164,8 @@ def fib_iterative(n: int) -> int:
 </td>
 <td>
 
-```ruchy
+```rust
+/* 🔥 RUCHY - Advanced Systems Language */
 // Recursive with pattern matching
 fun fib_pattern(n: i32) -> i32 {
     match n {
@@ -174,7 +175,7 @@ fun fib_pattern(n: i32) -> i32 {
     }
 }
 
-// Iterative with range syntax
+// Iterative with range syntax  
 fun fib_iterative(n: i32) -> i32 {
     if n <= 1 { return n }
     let prev = 0; let curr = 1; let next = 0;
@@ -220,7 +221,7 @@ cargo run --manifest-path rust/Cargo.toml 30 iterative
 # JavaScript version  
 node javascript/fibonacci.js 30 iterative
 
-# Ruchy version (when available)
+# Ruchy version (🔥 Advanced formal verification)
 ruchy run ruchy/fibonacci.ruchy 
 ```
 
@@ -255,6 +256,12 @@ ruchy score examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci.ru
 # → Performance predictions
 # → Refactoring suggestions
 ```
+
+### 🎨 Syntax Highlighting Note
+
+> **📝 Developer Note**: Ruchy code blocks in this README use `rust` syntax highlighting for better readability until GitHub adds native Ruchy support. The [ruchy-book](https://github.com/paiml/ruchy-book) project includes full **highlight.js** integration with proper Ruchy syntax highlighting for documentation sites.
+>
+> **Contribute**: Help us get Ruchy added to [GitHub Linguist](https://github.com/github/linguist) for official syntax highlighting support!
 
 ## 📈 Current Status
 
