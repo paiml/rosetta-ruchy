@@ -230,31 +230,48 @@ ruchy run ruchy/fibonacci.ruchy
 **Example: AST Analysis reveals optimization opportunities**
 
 ```bash
-ruchy ast examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci.ruchy
+# Comprehensive AST inspection with metrics
+ruchy ast examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci.ruchy --metrics
 # → Complete syntax tree with complexity metrics
-# → Function purity analysis
-# → Dead code detection
-# → Optimization suggestions
+# → Cyclomatic complexity calculation  
+# → Symbol usage analysis with unused detection
+# → Module dependency tracking
+
+# JSON output for tooling integration
+ruchy ast examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci.ruchy --json --output ast.json
+# → Machine-readable AST for CI/CD pipelines
 ```
 
 **Example: Formal Verification proves correctness**
 
 ```bash  
+# Basic provability analysis (v0.11.3)
 ruchy provability examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci.ruchy
+# → Function purity detection with side-effect analysis
+# → Recursive function identification and complexity scoring
+# → Provability scoring (0-100) with visual indicators
+
+# Full formal verification with contracts
+ruchy provability examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci.ruchy --verify --contracts --termination
 # → Mathematical proof of termination
-# → Memory safety guarantees  
-# → Integer overflow detection
-# → Performance bounds verification
+# → Memory safety & bounds checking
+# → Loop invariant checking
 ```
 
-**Example: Quality Scoring for continuous improvement**
+**Example: Performance Analysis with BigO detection**
 
 ```bash
-ruchy score examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci.ruchy  
-# → Overall quality score: 0.95/1.0
-# → Maintainability metrics
-# → Performance predictions
-# → Refactoring suggestions
+# Automatic BigO algorithmic complexity detection (v0.11.3)
+ruchy runtime examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci.ruchy --bigo
+# → Automatic BigO detection (O(1), O(n), O(n²), O(n³))
+# → Nested loop complexity analysis with worst-case scenarios
+# → Function-level profiling with execution timing
+
+# Performance bottleneck identification
+ruchy runtime examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci.ruchy --profile --memory
+# → Performance bottleneck identification
+# → Memory usage analysis
+# → Optimization scoring with specific recommendations
 ```
 
 ### 🎨 Syntax Highlighting Note
@@ -289,8 +306,11 @@ ruchy score examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci.ru
 **Real-time code translation service with formal verification:**
 
 ```bash
-# Install MCP server
-curl -fsSL https://rosetta-ruchy.org/install.sh | sh
+# Install MCP server (from GitHub releases)
+curl -fsSL https://github.com/paiml/rosetta-ruchy/releases/download/v1.0.0/install.sh | sh
+
+# Or install ruchy compiler directly from crates.io
+cargo install ruchy
 
 # Start translation server
 rosetta-ruchy-mcp --host 127.0.0.1 --port 8080
