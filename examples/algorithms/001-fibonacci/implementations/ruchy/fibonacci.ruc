@@ -1,0 +1,160 @@
+// Ruchy Fibonacci Implementation
+// Reference implementation for Rosetta Ruchy benchmarks
+//
+// NOTE: Ruchy is a hypothetical language for this benchmark suite
+// This file demonstrates the expected syntax and features
+
+use std::collections::HashMap
+use std::time::Instant
+
+// Recursive Fibonacci (exponential complexity)
+fn fib_recursive(n: u32) -> u64 {
+    match n {
+        0 => 0,
+        1 => 1,
+        _ => fib_recursive(n - 1) + fib_recursive(n - 2),
+    }
+}
+
+// Iterative Fibonacci (linear complexity)
+fn fib_iterative(n: u32) -> u64 {
+    if n <= 1 {
+        return n as u64
+    }
+    
+    let mut prev = 0u64
+    let mut curr = 1u64
+    
+    for _ in 2..=n {
+        let next = prev + curr
+        prev = curr
+        curr = next
+    }
+    
+    curr
+}
+
+// Memoized Fibonacci (linear complexity with caching)
+fn fib_memoized(n: u32) -> u64 {
+    let mut cache = HashMap::new()
+    fib_memo_helper(n, &mut cache)
+}
+
+fn fib_memo_helper(n: u32, cache: &mut HashMap<u32, u64>) -> u64 {
+    if let Some(&result) = cache.get(&n) {
+        return result
+    }
+    
+    let result = match n {
+        0 => 0,
+        1 => 1,
+        _ => fib_memo_helper(n - 1, cache) + fib_memo_helper(n - 2, cache),
+    }
+    
+    cache.insert(n, result)
+    result
+}
+
+// Matrix multiplication Fibonacci (logarithmic complexity)
+fn fib_matrix(n: u32) -> u64 {
+    if n == 0 {
+        return 0
+    }
+    
+    fn matrix_mult(a: [[u64; 2]; 2], b: [[u64; 2]; 2]) -> [[u64; 2]; 2] {
+        [
+            [
+                a[0][0] * b[0][0] + a[0][1] * b[1][0],
+                a[0][0] * b[0][1] + a[0][1] * b[1][1],
+            ],
+            [
+                a[1][0] * b[0][0] + a[1][1] * b[1][0],
+                a[1][0] * b[0][1] + a[1][1] * b[1][1],
+            ],
+        ]
+    }
+    
+    fn matrix_pow(mat: [[u64; 2]; 2], n: u32) -> [[u64; 2]; 2] {
+        if n == 1 {
+            return mat
+        }
+        
+        if n % 2 == 0 {
+            let half = matrix_pow(mat, n / 2)
+            matrix_mult(half, half)
+        } else {
+            matrix_mult(mat, matrix_pow(mat, n - 1))
+        }
+    }
+    
+    let base_matrix = [[1, 1], [1, 0]]
+    let result = matrix_pow(base_matrix, n)
+    result[0][1]
+}
+
+// Tail-recursive Fibonacci
+fn fib_tail_recursive(n: u32) -> u64 {
+    fn helper(n: u32, prev: u64, curr: u64) -> u64 {
+        match n {
+            0 => prev,
+            _ => helper(n - 1, curr, prev + curr),
+        }
+    }
+    
+    helper(n, 0, 1)
+}
+
+// Benchmark runner
+fn benchmark(name: &str, n: u32, f: fn(u32) -> u64) {
+    let start = Instant::now()
+    let result = f(n)
+    let duration = start.elapsed()
+    
+    println!("{}: fib({}) = {}, time = {:?}", name, n, result, duration)
+}
+
+// Test suite
+#[test]
+fn test_implementations() {
+    let test_cases = [
+        (0, 0),
+        (1, 1),
+        (5, 5),
+        (10, 55),
+        (20, 6765),
+        (30, 832040),
+    ]
+    
+    for (n, expected) in test_cases {
+        assert_eq!(fib_iterative(n), expected)
+        assert_eq!(fib_memoized(n), expected)
+        assert_eq!(fib_matrix(n), expected)
+        assert_eq!(fib_tail_recursive(n), expected)
+        if n <= 30 {
+            assert_eq!(fib_recursive(n), expected)
+        }
+    }
+}
+
+// Main entry point
+fn main() {
+    let args: Vec<String> = std::env::args().collect()
+    
+    if args.len() < 2 {
+        println!("Usage: {} <n> [variant]", args[0])
+        println!("Variants: recursive, iterative, memoized, matrix, tail")
+        return
+    }
+    
+    let n: u32 = args[1].parse().expect("Invalid number")
+    let variant = args.get(2).map(|s| s.as_str()).unwrap_or("iterative")
+    
+    match variant {
+        "recursive" => benchmark("Recursive", n, fib_recursive),
+        "iterative" => benchmark("Iterative", n, fib_iterative),
+        "memoized" => benchmark("Memoized", n, fib_memoized),
+        "matrix" => benchmark("Matrix", n, fib_matrix),
+        "tail" => benchmark("TailRecursive", n, fib_tail_recursive),
+        _ => println!("Unknown variant: {}", variant),
+    }
+}

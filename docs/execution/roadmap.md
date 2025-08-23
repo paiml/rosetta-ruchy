@@ -42,7 +42,7 @@
 - [x] Implement Python fibonacci (ergonomics baseline)
 - [x] Implement JavaScript fibonacci (ecosystem comparison)
 - [x] Implement Go fibonacci (concurrency patterns)
-- [ ] Implement Ruchy fibonacci (reference implementation)
+- [x] Implement Ruchy fibonacci (reference implementation)
 
 ### ROSETTA-006: Language-Specific Makefiles
 - [ ] Create implementations/rust/Makefile with cargo integration
