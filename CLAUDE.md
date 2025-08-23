@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is rosetta-ruchy, a polyglot benchmark suite designed to demonstrate Ruchy's performance parity with Rust while maintaining Python-like ergonomics. The repository provides empirical evidence of zero-cost abstractions through systematic comparison across production workloads.
 
-**CRITICAL P0 REQUIREMENT**: Every Ruchy example MUST showcase the language's advanced tooling capabilities (AST analysis, provability checking, formal verification, hardware-aware optimization). This is Ruchy's defining trait and primary competitive advantage. The tooling creates opportunities for optimization, reliability, and safety that surpass any other language.
+**CRITICAL P0 REQUIREMENTS**: 
+1. Every Ruchy example MUST showcase the language's advanced tooling capabilities (AST analysis, provability checking, formal verification, hardware-aware optimization). This is Ruchy's defining trait and primary competitive advantage.
+2. **ALL SCRIPTING MUST BE IN RUCHY** - No bash, Python, or other scripting languages. Use `.ruchy` files for all automation, benchmarking, and tooling. This demonstrates Ruchy's capability as a complete ecosystem replacement.
 
 ## Repository Status
 
@@ -84,6 +86,56 @@ ruchy doc fibonacci.ruchy --include-proofs   # Documentation with formal proofs
 
 **IMPORTANT**: Never run Ruchy code without first running the analysis and verification steps. This is what differentiates Ruchy from other languages.
 
+### Ruchy as the Universal Scripting Language
+
+**MANDATORY**: Use Ruchy for ALL scripting tasks:
+- Build automation: `build.ruchy` instead of Makefile/build.sh
+- Test runners: `test_runner.ruchy` instead of test.sh
+- Benchmarking: `benchmark.ruchy` instead of benchmark.py
+- CI/CD scripts: `ci.ruchy` instead of .github/workflows
+- Data processing: `process.ruchy` instead of process.py
+- System administration: `admin.ruchy` instead of admin.sh
+
+Example Ruchy script structure:
+```ruchy
+#!/usr/bin/env ruchy
+
+// Build script in Ruchy
+fun main() {
+    let args = std::env::args();
+    
+    match args.get(1) {
+        Some("build") => build_all(),
+        Some("test") => run_tests(),
+        Some("bench") => run_benchmarks(),
+        _ => show_help()
+    }
+}
+
+fun build_all() {
+    println("🔨 Building all implementations...");
+    
+    // Use Ruchy's built-in process execution
+    for lang in ["rust", "go", "python", "javascript", "c"] {
+        let result = std::process::run(
+            format!("make build-{}", lang)
+        );
+        
+        if !result.success {
+            panic!("Build failed for {}", lang);
+        }
+    }
+    
+    println("✅ All builds complete");
+}
+```
+
+This approach:
+- Proves Ruchy can replace traditional scripting languages
+- Leverages Ruchy's tooling even for build scripts
+- Ensures type safety and verification for automation
+- Demonstrates Ruchy as a complete ecosystem solution
+
 ## Implementation Constraints
 
 ### Fair Comparison Rules
@@ -125,11 +177,12 @@ examples/{category}/{number}-{name}/
 
 ### Sacred Rules (Zero Tolerance)
 
-1. **NEVER Leave Stub Implementations** - This is P0 priority. Never leave stub implementations with "not yet implemented" or "TODO". Every feature must be fully functional.
-2. **NEVER Add SATD Comments** - Zero tolerance for self-admitted technical debt. Never add "TODO", "FIXME", "For now", etc. Every implementation must be complete.
-3. **NEVER Use Simple Heuristics** - Zero tolerance for approximations. Always use proper analysis, full implementations, and accurate algorithms.
-4. **NEVER Duplicate Core Logic** - One implementation per feature. All interfaces (CLI, MCP, HTTP) must use the same underlying logic.
-5. **NEVER Bypass Quality Gates** - `git commit --no-verify` is FORBIDDEN. If quality gates fail, fix the underlying issues.
+1. **NEVER Use Shell Scripts** - ALL scripting must be in Ruchy. No .sh, .py, .js files for automation. Only .ruchy files demonstrate the language's capability.
+2. **NEVER Leave Stub Implementations** - This is P0 priority. Never leave stub implementations with "not yet implemented" or "TODO". Every feature must be fully functional.
+3. **NEVER Add SATD Comments** - Zero tolerance for self-admitted technical debt. Never add "TODO", "FIXME", "For now", etc. Every implementation must be complete.
+4. **NEVER Use Simple Heuristics** - Zero tolerance for approximations. Always use proper analysis, full implementations, and accurate algorithms.
+5. **NEVER Duplicate Core Logic** - One implementation per feature. All interfaces (CLI, MCP, HTTP) must use the same underlying logic.
+6. **NEVER Bypass Quality Gates** - `git commit --no-verify` is FORBIDDEN. If quality gates fail, fix the underlying issues.
 
 ### MANDATORY Quality Gates (BLOCKING)
 

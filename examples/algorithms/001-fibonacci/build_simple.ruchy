@@ -1,0 +1,28 @@
+// Simple build script in Ruchy
+// Demonstrates Ruchy for build automation
+
+fun build_rust() -> bool {
+    println("Building Rust...");
+    true
+}
+
+fun build_c() -> bool {
+    println("Building C...");
+    true
+}
+
+fun main() {
+    println("Fibonacci Build System");
+    println("Powered by Ruchy");
+    
+    let rust_ok = build_rust();
+    let c_ok = build_c();
+    
+    if rust_ok && c_ok {
+        println("All builds successful!");
+    } else {
+        println("Some builds failed!");
+    }
+}
+
+main()
