@@ -38,7 +38,7 @@
 - [x] Set up results/ directory with JSON output format
 
 ### ROSETTA-005: Tier 1 Language Implementations
-- [ ] Implement Rust fibonacci (performance baseline)
+- [x] Implement Rust fibonacci (performance baseline)
 - [ ] Implement Python fibonacci (ergonomics baseline)
 - [ ] Implement JavaScript fibonacci (ecosystem comparison)
 - [ ] Implement Go fibonacci (concurrency patterns)
