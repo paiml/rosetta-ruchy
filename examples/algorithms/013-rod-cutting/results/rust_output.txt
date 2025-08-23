@@ -1,0 +1,167 @@
+    Finished `release` profile [optimized] target(s) in 0.07s
+     Running `/home/noah/src/rosetta-ruchy/target/release/rod-cutting-rust`
+Rod Cutting Problem - Multiple Algorithm Implementation
+=================================================================
+Test Case: Simple Cut
+==================================================
+Prices: [1, 5], Length: 2
+Rod Cutting Result (Bottom-up DP):
+  Maximum Revenue: 5
+  Optimal Cuts: [2]
+  Total Cut Length: 2
+  Number of Pieces: 1
+  Computation Time: 0.001ms
+
+Expected: 5, Got: 5, Test: PASS
+
+DP Table Construction:
+============================================================
+Prices: [1, 5]
+Rod Length: 2
+
+Length:    0   1   2
+Revenue:   0   1   5
+Cut:    -      1   2
+============================================================
+
+Test Case: Classic Example
+==================================================
+Prices: [1, 5, 8, 9, 10, 17, 17, 20], Length: 8
+Rod Cutting Result (Bottom-up DP):
+  Maximum Revenue: 22
+  Optimal Cuts: [2, 6]
+  Total Cut Length: 8
+  Number of Pieces: 2
+  Computation Time: 0.000ms
+
+Expected: 22, Got: 22, Test: PASS
+
+DP Table Construction:
+============================================================
+Prices: [1, 5, 8, 9, 10, 17, 17, 20]
+Rod Length: 8
+
+Length:    0   1   2   3   4   5   6   7   8
+Revenue:   0   1   5   8  10  13  17  18  22
+Cut:    -      1   2   3   2   2   6   1   2
+============================================================
+
+Test Case: No Cutting Optimal
+==================================================
+Prices: [1, 5, 8], Length: 3
+Rod Cutting Result (Bottom-up DP):
+  Maximum Revenue: 8
+  Optimal Cuts: [3]
+  Total Cut Length: 3
+  Number of Pieces: 1
+  Computation Time: 0.000ms
+
+Expected: 8, Got: 8, Test: PASS
+
+DP Table Construction:
+============================================================
+Prices: [1, 5, 8]
+Rod Length: 3
+
+Length:    0   1   2   3
+Revenue:   0   1   5   8
+Cut:    -      1   2   3
+============================================================
+
+Test Case: Many Small Pieces
+==================================================
+Prices: [10, 15, 18, 20, 21], Length: 5
+Rod Cutting Result (Bottom-up DP):
+  Maximum Revenue: 50
+  Optimal Cuts: [1, 1, 1, 1, 1]
+  Total Cut Length: 5
+  Number of Pieces: 5
+  Computation Time: 0.003ms
+
+Expected: 50, Got: 50, Test: PASS
+
+DP Table Construction:
+============================================================
+Prices: [10, 15, 18, 20, 21]
+Rod Length: 5
+
+Length:    0   1   2   3   4   5
+Revenue:   0  10  20  30  40  50
+Cut:    -      1   1   1   1   1
+============================================================
+
+Test Case: Greedy Fails
+==================================================
+Prices: [1, 4, 6, 7], Length: 4
+Rod Cutting Result (Bottom-up DP):
+  Maximum Revenue: 8
+  Optimal Cuts: [2, 2]
+  Total Cut Length: 4
+  Number of Pieces: 2
+  Computation Time: 0.000ms
+
+Expected: 8, Got: 8, Test: PASS
+
+DP Table Construction:
+============================================================
+Prices: [1, 4, 6, 7]
+Rod Length: 4
+
+Length:    0   1   2   3   4
+Revenue:   0   1   4   6   8
+Cut:    -      1   2   3   2
+============================================================
+
+Medium Problem Performance Test:
+==================================================
+Performance Comparison: length=10, prices=[2, 5, 7, 8, 10, 12, 14, 15, 16, 17]
+----------------------------------------------------------------------
+Bottom-up DP       | Revenue:   25 | Time:    0.001ms
+Top-down DP        | Revenue:   25 | Time:    0.003ms
+Greedy Heuristic   | Revenue:   25 | Time:    0.001ms
+Naive Recursive    | Revenue:   25 | Time:    0.006ms
+----------------------------------------------------------------------
+Optimal algorithms consistent: true
+Greedy approximation: 25 / 25 = 100.00% of optimal
+
+Large Problem Performance Test:
+========================================
+Random prices, rod length 50:
+Maximum revenue: 1200
+Computation time: 0.00ms
+Subproblems solved: 1250
+
+Stress Test:
+==============================
+Fibonacci prices, rod length 100:
+Maximum revenue: 300100
+Computation time: 0.01ms
+Subproblems per second: 1444877908
+
+Unit Price Analysis Example:
+=============================================
+Unit Price Analysis:
+----------------------------------------
+Length   Price    Unit Price   Efficiency
+1        1        1.00         Good      
+2        5        2.50         Good      
+3        8        2.67         Good      
+4        9        2.25         Good      
+5        10       2.00         Good      
+6        17       2.83         Good      
+7        17       2.43         Good      
+8        20       2.50         Good      
+
+Best unit price: length 6 with 2.83 per unit (price 17)
+
+Algorithm Summary:
+============================================================
+Bottom-up DP:      O(n²) time, O(n) space, optimal
+Top-down DP:       O(n²) time, O(n) space, optimal
+Greedy Heuristic:  O(n log n) time, O(1) space, approximation
+Naive Recursive:   O(2ⁿ) time, O(n) space, educational only
+
+For practical use:
+- Use DP for guaranteed optimal solutions and cut reconstruction
+- Use Greedy for fast approximations when near-optimal is sufficient
+- Bottom-up DP preferred for its predictable performance
