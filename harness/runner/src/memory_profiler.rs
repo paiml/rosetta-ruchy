@@ -526,8 +526,8 @@ impl MemoryProfiler {
 
         // Detailed metrics
         report.push_str("## Detailed Metrics\n\n");
-        report.push_str(&format!("| Metric | Value |\n"));
-        report.push_str(&format!("|--------|-------|\n"));
+        report.push_str("| Metric | Value |\n");
+        report.push_str("|--------|-------|\n");
         report.push_str(&format!("| Initial Usage | {:.2} MB |\n", profile.initial_usage_bytes as f64 / 1_048_576.0));
         report.push_str(&format!("| Final Usage | {:.2} MB |\n", profile.final_usage_bytes as f64 / 1_048_576.0));
         report.push_str(&format!("| Peak Usage | {:.2} MB |\n", profile.peak_usage_bytes as f64 / 1_048_576.0));

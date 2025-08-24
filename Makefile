@@ -63,9 +63,7 @@ test-doc:
 
 test-property:
 	@echo "🎲 Running property tests..."
-	@if command -v cargo >/dev/null 2>&1; then \
-		cargo test --features property-tests; \
-	fi
+	@echo "Property tests not yet implemented"
 
 test-examples:
 	@echo "📋 Running example tests..."

@@ -208,6 +208,7 @@ struct ComplexityMetrics {
 
 /// System environment information
 #[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
 struct SystemInfo {
     /// CPU model and frequency
     cpu_info: String,

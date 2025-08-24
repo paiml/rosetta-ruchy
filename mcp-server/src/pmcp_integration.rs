@@ -56,6 +56,7 @@ pub struct StepVerificationResult {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[allow(clippy::enum_variant_names)]
 pub enum VerificationType {
     SyntaxCheck,
     TypeCheck,
@@ -437,6 +438,7 @@ impl PMCPIntegration {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 struct TranslationStepResult {
     step_code: String,
     translated_step: String,

@@ -343,7 +343,7 @@ impl RegressionDetector {
             let entry = entry?;
             let path = entry.path();
             
-            if path.extension().map_or(false, |ext| ext == "json") {
+            if path.extension().is_some_and(|ext| ext == "json") {
                 if let Ok(baseline) = self.load_baseline_from_file(&path).await {
                     if baseline.timestamp < cutoff_date {
                         fs::remove_file(&path).with_context(|| {
@@ -567,7 +567,7 @@ mod tests {
     #[tokio::test]
     async fn test_baseline_storage() -> Result<()> {
         let temp_dir = TempDir::new()?;
-        let detector = RegressionDetector::new()
+        let _detector = RegressionDetector::new()
             .with_baselines_dir(temp_dir.path().to_path_buf());
 
         // This test would require actual statistical data to work fully

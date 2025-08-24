@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 use axum::{
-    body::Body,
+    body::{Body, to_bytes},
     http::{Method, Request, StatusCode},
 };
 use rosetta_ruchy_mcp::{
@@ -15,6 +15,7 @@ use serde_json::json;
 use tower::ServiceExt;
 
 // Mock Ruchy toolchain for testing
+#[allow(dead_code)]
 struct MockRuchyToolchain;
 
 #[tokio::test]
@@ -27,7 +28,7 @@ async fn test_health_endpoint() -> Result<()> {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = hyper::body::to_bytes(response.into_body()).await?;
+    let body = to_bytes(response.into_body(), usize::MAX).await?;
     let json: serde_json::Value = serde_json::from_slice(&body)?;
     
     assert_eq!(json["status"], "healthy");
@@ -46,11 +47,11 @@ async fn test_capabilities_endpoint() -> Result<()> {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = hyper::body::to_bytes(response.into_body()).await?;
+    let body = to_bytes(response.into_body(), usize::MAX).await?;
     let json: serde_json::Value = serde_json::from_slice(&body)?;
 
     assert_eq!(json["name"], "rosetta-ruchy-translator");
-    assert!(json["supported_languages"].as_array().unwrap().len() > 0);
+    assert!(!json["supported_languages"].as_array().unwrap().is_empty());
     assert!(json["capabilities"].as_array().unwrap().contains(&json!("code_translation")));
 
     Ok(())
@@ -89,7 +90,7 @@ async fn test_translation_endpoint_rust_to_ruchy() -> Result<()> {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = hyper::body::to_bytes(response.into_body()).await?;
+    let body = to_bytes(response.into_body(), usize::MAX).await?;
     let json: serde_json::Value = serde_json::from_slice(&body)?;
 
     assert!(json["ruchy_code"].as_str().unwrap().contains("fun main"));
@@ -128,7 +129,7 @@ if __name__ == "__main__":
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = hyper::body::to_bytes(response.into_body()).await?;
+    let body = to_bytes(response.into_body(), usize::MAX).await?;
     let json: serde_json::Value = serde_json::from_slice(&body)?;
 
     assert!(json["ruchy_code"].as_str().unwrap().contains("fun hello_world"));
@@ -165,7 +166,7 @@ function main() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = hyper::body::to_bytes(response.into_body()).await?;
+    let body = to_bytes(response.into_body(), usize::MAX).await?;
     let json: serde_json::Value = serde_json::from_slice(&body)?;
 
     assert_eq!(json["source_language"], "javascript");
@@ -217,11 +218,11 @@ async fn test_analysis_endpoint_complexity() -> Result<()> {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = hyper::body::to_bytes(response.into_body()).await?;
+    let body = to_bytes(response.into_body(), usize::MAX).await?;
     let json: serde_json::Value = serde_json::from_slice(&body)?;
 
-    assert!(json["cyclomatic_complexity"].as_u64().unwrap() > 1);
-    assert!(json["lines_of_code"].as_u64().unwrap() > 0);
+    assert!(json["cyclomatic"].as_u64().unwrap() > 1);
+    assert!(json["loc"].as_u64().unwrap() > 0);
 
     Ok(())
 }
@@ -254,7 +255,7 @@ async fn test_verify_endpoint() -> Result<()> {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = hyper::body::to_bytes(response.into_body()).await?;
+    let body = to_bytes(response.into_body(), usize::MAX).await?;
     let json: serde_json::Value = serde_json::from_slice(&body)?;
 
     assert!(json["score"].as_f64().unwrap() >= 0.0);
@@ -324,7 +325,7 @@ async fn test_benchmark_endpoint_not_implemented() -> Result<()> {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = hyper::body::to_bytes(response.into_body()).await?;
+    let body = to_bytes(response.into_body(), usize::MAX).await?;
     let json: serde_json::Value = serde_json::from_slice(&body)?;
 
     assert_eq!(json["status"], "not_implemented");
@@ -342,9 +343,8 @@ async fn create_test_app() -> axum::Router {
         "mock-ruchy".to_string(), // Use mock ruchy path for tests
     );
 
-    // This would need to be adjusted based on the actual MCPServer implementation
-    // The real implementation might need a different way to create the router for testing
-    todo!("Implement test app creation - this needs access to MCPServer::create_router()")
+    // Create the router for testing
+    server.create_router()
 }
 
 // Unit tests for individual components
