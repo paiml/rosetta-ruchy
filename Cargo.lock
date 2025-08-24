@@ -695,7 +695,7 @@ checksum = "b94f61472cee1439c0b966b47e3aca9ae07e45d070759512cd390ea2bebc6675"
 
 [[package]]
 name = "coin-change-rust"
-version = "1.0.0"
+version = "1.2.0"
 
 [[package]]
 name = "colorchoice"
@@ -1042,7 +1042,7 @@ dependencies = [
 
 [[package]]
 name = "dijkstra-rust"
-version = "1.0.0"
+version = "1.2.0"
 
 [[package]]
 name = "dirs"
@@ -1090,7 +1090,7 @@ checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
 
 [[package]]
 name = "edit-distance-rust"
-version = "1.0.0"
+version = "1.2.0"
 
 [[package]]
 name = "either"
@@ -1496,7 +1496,7 @@ dependencies = [
 
 [[package]]
 name = "graph-coloring-rust"
-version = "1.0.0"
+version = "1.2.0"
 
 [[package]]
 name = "h2"
@@ -2233,7 +2233,7 @@ dependencies = [
 
 [[package]]
 name = "knapsack-rust"
-version = "1.0.0"
+version = "1.2.0"
 
 [[package]]
 name = "kqueue"
@@ -2269,7 +2269,7 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "lcs-rust"
-version = "1.0.0"
+version = "1.2.0"
 
 [[package]]
 name = "libc"
@@ -2400,7 +2400,7 @@ checksum = "47e1ffaa40ddd1f3ed91f717a33c8c0ee23fff369e3aa8772b9605cc1d22f4c3"
 
 [[package]]
 name = "matrix-chain-rust"
-version = "1.0.0"
+version = "1.2.0"
 
 [[package]]
 name = "matrixmultiply"
@@ -3521,7 +3521,7 @@ dependencies = [
 
 [[package]]
 name = "red-black-tree-rust"
-version = "1.0.0"
+version = "1.2.0"
 
 [[package]]
 name = "redox_syscall"
@@ -3736,11 +3736,11 @@ dependencies = [
 
 [[package]]
 name = "rod-cutting-rust"
-version = "1.0.0"
+version = "1.2.0"
 
 [[package]]
 name = "rosetta-ruchy-mcp"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -3768,7 +3768,7 @@ dependencies = [
 
 [[package]]
 name = "rosetta-runner"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "anyhow",
  "approx",
@@ -3797,7 +3797,7 @@ dependencies = [
 
 [[package]]
 name = "rust"
-version = "1.0.0"
+version = "1.2.0"
 
 [[package]]
 name = "rustc-demangle"
@@ -4868,6 +4868,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d99f8c9a7727884afe522e9bd5edbfc91a3312b36a77b5fb8926e4c31a41801"
 
 [[package]]
+name = "topological-sort-rust"
+version = "1.1.0"
+
+[[package]]
 name = "tower"
 version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5269,7 +5273,7 @@ dependencies = [
 
 [[package]]
 name = "validation-tools"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
