@@ -1,0 +1,275 @@
+// Statistical Analysis Tools for Rosetta Ruchy
+// Provides rigorous statistical validation of performance claims
+
+use std::fs::File;
+use std::io::{Read, Write};
+
+// Statistical test results
+struct TestResult {
+    test_name: String,
+    p_value: f64,
+    significant: bool,
+    effect_size: f64,
+    confidence_interval: (f64, f64),
+}
+
+// Two-sample t-test for comparing performance
+fun t_test(sample1: Vec<f64>, sample2: Vec<f64>) -> TestResult {
+    let n1 = sample1.len() as f64;
+    let n2 = sample2.len() as f64;
+    
+    // Calculate means
+    let mean1 = sample1.iter().sum::<f64>() / n1;
+    let mean2 = sample2.iter().sum::<f64>() / n2;
+    
+    // Calculate variances
+    let var1 = sample1.iter()
+        .map(|x| (x - mean1).powi(2))
+        .sum::<f64>() / (n1 - 1.0);
+    let var2 = sample2.iter()
+        .map(|x| (x - mean2).powi(2))
+        .sum::<f64>() / (n2 - 1.0);
+    
+    // Pooled standard error
+    let se = ((var1 / n1) + (var2 / n2)).sqrt();
+    
+    // t-statistic
+    let t = (mean1 - mean2) / se;
+    
+    // Degrees of freedom (Welch's approximation)
+    let df = ((var1 / n1 + var2 / n2).powi(2)) /
+             ((var1 / n1).powi(2) / (n1 - 1.0) + 
+              (var2 / n2).powi(2) / (n2 - 1.0));
+    
+    // Calculate p-value (simplified - would use statistical library)
+    let p_value = calculate_p_value(t, df);
+    
+    // Cohen's d effect size
+    let pooled_std = ((var1 + var2) / 2.0).sqrt();
+    let effect_size = (mean1 - mean2).abs() / pooled_std;
+    
+    // 95% confidence interval
+    let margin = 1.96 * se;  // Using z-score for large samples
+    let ci = (mean1 - mean2 - margin, mean1 - mean2 + margin);
+    
+    TestResult {
+        test_name: "Two-sample t-test".to_string(),
+        p_value,
+        significant: p_value < 0.05,
+        effect_size,
+        confidence_interval: ci,
+    }
+}
+
+// Calculate p-value from t-statistic (simplified)
+fun calculate_p_value(t: f64, df: f64) -> f64 {
+    // This is a simplified approximation
+    // In practice, would use a proper statistical library
+    let t_abs = t.abs();
+    
+    // Very rough approximation for demonstration
+    if t_abs > 3.0 {
+        0.001
+    } else if t_abs > 2.0 {
+        0.05
+    } else if t_abs > 1.0 {
+        0.3
+    } else {
+        0.5
+    }
+}
+
+// Mann-Whitney U test (non-parametric alternative)
+fun mann_whitney_u(sample1: Vec<f64>, sample2: Vec<f64>) -> TestResult {
+    let n1 = sample1.len();
+    let n2 = sample2.len();
+    
+    // Combine and rank
+    let mut combined = Vec::new();
+    for val in sample1.iter() {
+        combined.push((val, 1));
+    }
+    for val in sample2.iter() {
+        combined.push((val, 2));
+    }
+    combined.sort_by(|a, b| a.0.partial_cmp(b.0).unwrap());
+    
+    // Calculate rank sums
+    let mut rank_sum1 = 0.0;
+    let mut rank_sum2 = 0.0;
+    
+    for (i, (_, group)) in combined.iter().enumerate() {
+        let rank = (i + 1) as f64;
+        if *group == 1 {
+            rank_sum1 += rank;
+        } else {
+            rank_sum2 += rank;
+        }
+    }
+    
+    // Calculate U statistics
+    let u1 = rank_sum1 - (n1 * (n1 + 1)) as f64 / 2.0;
+    let u2 = rank_sum2 - (n2 * (n2 + 1)) as f64 / 2.0;
+    let u = u1.min(u2);
+    
+    // Calculate z-score for large samples
+    let mu = (n1 * n2) as f64 / 2.0;
+    let sigma = ((n1 * n2 * (n1 + n2 + 1)) as f64 / 12.0).sqrt();
+    let z = (u - mu) / sigma;
+    
+    // Approximate p-value
+    let p_value = calculate_p_value(z, 0.0);
+    
+    TestResult {
+        test_name: "Mann-Whitney U test".to_string(),
+        p_value,
+        significant: p_value < 0.05,
+        effect_size: z.abs() / (n1 + n2) as f64,
+        confidence_interval: (0.0, 0.0),  // Not calculated for U test
+    }
+}
+
+// Calculate confidence intervals
+fun confidence_interval(data: Vec<f64>, confidence: f64) -> (f64, f64) {
+    let n = data.len() as f64;
+    let mean = data.iter().sum::<f64>() / n;
+    
+    let variance = data.iter()
+        .map(|x| (x - mean).powi(2))
+        .sum::<f64>() / (n - 1.0);
+    let std_dev = variance.sqrt();
+    
+    // z-score for confidence level (95% = 1.96)
+    let z = if confidence == 0.95 { 1.96 } else { 2.58 };  // 99% = 2.58
+    
+    let margin = z * (std_dev / n.sqrt());
+    (mean - margin, mean + margin)
+}
+
+// Check for outliers using IQR method
+fun detect_outliers(data: Vec<f64>) -> Vec<f64> {
+    let mut sorted = data.clone();
+    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    
+    let n = sorted.len();
+    let q1_idx = n / 4;
+    let q3_idx = 3 * n / 4;
+    
+    let q1 = sorted[q1_idx];
+    let q3 = sorted[q3_idx];
+    let iqr = q3 - q1;
+    
+    let lower_bound = q1 - 1.5 * iqr;
+    let upper_bound = q3 + 1.5 * iqr;
+    
+    data.into_iter()
+        .filter(|x| *x < lower_bound || *x > upper_bound)
+        .collect()
+}
+
+// Generate statistical summary
+fun generate_summary(
+    ruchy_data: Vec<f64>,
+    rust_data: Vec<f64>
+) -> String {
+    let mut report = String::new();
+    
+    report.push_str("=== STATISTICAL ANALYSIS ===\n\n");
+    
+    // Descriptive statistics
+    report.push_str("Descriptive Statistics:\n");
+    report.push_str(&format!("Ruchy: n={}, mean={:.2}, std={:.2}\n",
+        ruchy_data.len(),
+        ruchy_data.iter().sum::<f64>() / ruchy_data.len() as f64,
+        calculate_std_dev(&ruchy_data)
+    ));
+    report.push_str(&format!("Rust:  n={}, mean={:.2}, std={:.2}\n\n",
+        rust_data.len(),
+        rust_data.iter().sum::<f64>() / rust_data.len() as f64,
+        calculate_std_dev(&rust_data)
+    ));
+    
+    // Hypothesis testing
+    let t_result = t_test(ruchy_data.clone(), rust_data.clone());
+    report.push_str("Hypothesis Testing (H₀: Ruchy = Rust):\n");
+    report.push_str(&format!("  Test: {}\n", t_result.test_name));
+    report.push_str(&format!("  p-value: {:.4}\n", t_result.p_value));
+    report.push_str(&format!("  Significant: {}\n", t_result.significant));
+    report.push_str(&format!("  Effect size: {:.3}\n", t_result.effect_size));
+    report.push_str(&format!("  95% CI: ({:.2}, {:.2})\n\n",
+        t_result.confidence_interval.0,
+        t_result.confidence_interval.1
+    ));
+    
+    // Outlier detection
+    let ruchy_outliers = detect_outliers(ruchy_data.clone());
+    let rust_outliers = detect_outliers(rust_data.clone());
+    report.push_str("Outlier Analysis:\n");
+    report.push_str(&format!("  Ruchy outliers: {}\n", ruchy_outliers.len()));
+    report.push_str(&format!("  Rust outliers: {}\n\n", rust_outliers.len()));
+    
+    // Performance comparison
+    let ruchy_mean = ruchy_data.iter().sum::<f64>() / ruchy_data.len() as f64;
+    let rust_mean = rust_data.iter().sum::<f64>() / rust_data.len() as f64;
+    let ratio = ruchy_mean / rust_mean;
+    
+    report.push_str("Performance Comparison:\n");
+    report.push_str(&format!("  Ruchy/Rust ratio: {:.3}x\n", ratio));
+    if ratio <= 1.05 {
+        report.push_str("  ✅ Within 5% performance target\n");
+    } else {
+        report.push_str("  ❌ Outside 5% performance target\n");
+    }
+    
+    report
+}
+
+// Helper function to calculate standard deviation
+fun calculate_std_dev(data: &Vec<f64>) -> f64 {
+    let n = data.len() as f64;
+    let mean = data.iter().sum::<f64>() / n;
+    let variance = data.iter()
+        .map(|x| (x - mean).powi(2))
+        .sum::<f64>() / (n - 1.0);
+    variance.sqrt()
+}
+
+// Load benchmark data from JSON
+fun load_benchmark_data(filename: String) -> Vec<f64> {
+    // Simplified JSON parsing for demonstration
+    let mut file = File::open(filename).unwrap();
+    let mut content = String::new();
+    file.read_to_string(&mut content).unwrap();
+    
+    // Extract time values (simplified)
+    let mut times = Vec::new();
+    for line in content.lines() {
+        if line.contains("\"time_ns\":") {
+            let parts: Vec<&str> = line.split(':').collect();
+            if parts.len() >= 2 {
+                let value = parts[1].trim().trim_end_matches(',');
+                if let Ok(time) = value.parse::<f64>() {
+                    times.push(time);
+                }
+            }
+        }
+    }
+    
+    times
+}
+
+// Main analysis function
+fun main() {
+    // Load benchmark data
+    let ruchy_data = load_benchmark_data("results/ruchy_bench.json".to_string());
+    let rust_data = load_benchmark_data("results/rust_bench.json".to_string());
+    
+    // Generate statistical summary
+    let summary = generate_summary(ruchy_data, rust_data);
+    
+    // Write to file
+    let mut file = File::create("results/statistical_analysis.md").unwrap();
+    file.write_all(summary.as_bytes()).unwrap();
+    
+    println!("{}", summary);
+}

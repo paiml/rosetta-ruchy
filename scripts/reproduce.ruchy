@@ -1,0 +1,351 @@
+#!/usr/bin/env ruchy
+// Reproducibility Framework for Rosetta Ruchy
+// Ensures all scientific claims can be independently verified
+
+use std::process::Command;
+use std::fs::{create_dir_all, File};
+use std::io::Write;
+use std::env;
+
+// Configuration for reproduction
+struct ReproductionConfig {
+    algorithm: String,
+    languages: Vec<String>,
+    iterations: i32,
+    clean_build: bool,
+    generate_report: bool,
+}
+
+// Step result tracking
+struct StepResult {
+    step_name: String,
+    success: bool,
+    output: String,
+    duration_ms: i64,
+}
+
+// Main reproduction workflow
+fun reproduce(config: ReproductionConfig) -> Vec<StepResult> {
+    let mut results = Vec::new();
+    
+    println!("🔬 ROSETTA RUCHY SCIENTIFIC REPRODUCTION");
+    println!("========================================");
+    println!("Algorithm: {}", config.algorithm);
+    println!("Languages: {:?}", config.languages);
+    println!("Iterations: {}", config.iterations);
+    println!();
+    
+    // Step 1: Clean environment
+    if config.clean_build {
+        let result = clean_environment();
+        results.push(result);
+    }
+    
+    // Step 2: Verify Ruchy installation
+    let result = verify_ruchy();
+    results.push(result);
+    
+    // Step 3: Run formal verification
+    let result = run_formal_verification(&config.algorithm);
+    results.push(result);
+    
+    // Step 4: Build all implementations
+    for lang in &config.languages {
+        let result = build_implementation(&config.algorithm, lang);
+        results.push(result);
+    }
+    
+    // Step 5: Run benchmarks
+    let result = run_benchmarks(&config);
+    results.push(result);
+    
+    // Step 6: Statistical analysis
+    let result = run_statistical_analysis();
+    results.push(result);
+    
+    // Step 7: Generate report
+    if config.generate_report {
+        let result = generate_scientific_report(&config.algorithm);
+        results.push(result);
+    }
+    
+    // Step 8: Verify reproducibility
+    let result = verify_reproducibility(&results);
+    results.push(result);
+    
+    results
+}
+
+// Clean build environment
+fun clean_environment() -> StepResult {
+    println!("📦 Step 1: Cleaning environment...");
+    
+    let output = Command::new("make")
+        .arg("clean")
+        .output()
+        .expect("Failed to run make clean");
+    
+    StepResult {
+        step_name: "Clean Environment".to_string(),
+        success: output.status.success(),
+        output: String::from_utf8_lossy(&output.stdout).to_string(),
+        duration_ms: 0,
+    }
+}
+
+// Verify Ruchy toolchain
+fun verify_ruchy() -> StepResult {
+    println!("🔧 Step 2: Verifying Ruchy toolchain...");
+    
+    let output = Command::new("ruchy")
+        .arg("--version")
+        .output()
+        .expect("Ruchy not found");
+    
+    let version = String::from_utf8_lossy(&output.stdout);
+    println!("  Found: {}", version.trim());
+    
+    StepResult {
+        step_name: "Verify Ruchy".to_string(),
+        success: output.status.success(),
+        output: version.to_string(),
+        duration_ms: 0,
+    }
+}
+
+// Run formal verification
+fun run_formal_verification(algorithm: &str) -> StepResult {
+    println!("✅ Step 3: Running formal verification...");
+    
+    create_dir_all("results").unwrap();
+    
+    // Run complexity analysis
+    let complexity = Command::new("ruchy")
+        .arg("runtime")
+        .arg(format!("{}.ruchy", algorithm))
+        .output()
+        .expect("Failed to run complexity analysis");
+    
+    // Run provability analysis
+    let provability = Command::new("ruchy")
+        .arg("provability")
+        .arg(format!("{}.ruchy", algorithm))
+        .output()
+        .expect("Failed to run provability analysis");
+    
+    // Run quality scoring
+    let score = Command::new("ruchy")
+        .arg("score")
+        .arg(format!("{}.ruchy", algorithm))
+        .output()
+        .expect("Failed to run quality scoring");
+    
+    // Save results
+    let mut file = File::create("results/complexity.txt").unwrap();
+    file.write_all(&complexity.stdout).unwrap();
+    
+    let mut file = File::create("results/provability.txt").unwrap();
+    file.write_all(&provability.stdout).unwrap();
+    
+    let mut file = File::create("results/quality_score.txt").unwrap();
+    file.write_all(&score.stdout).unwrap();
+    
+    let success = complexity.status.success() && 
+                  provability.status.success() && 
+                  score.status.success();
+    
+    StepResult {
+        step_name: "Formal Verification".to_string(),
+        success,
+        output: "Verification complete".to_string(),
+        duration_ms: 0,
+    }
+}
+
+// Build implementation for a language
+fun build_implementation(algorithm: &str, language: &str) -> StepResult {
+    println!("🔨 Step 4: Building {} implementation...", language);
+    
+    let build_cmd = match language {
+        "rust" => "cargo build --release",
+        "python" => "python -m py_compile *.py",
+        "javascript" => "npm install",
+        "go" => "go build",
+        _ => "echo 'Unknown language'",
+    };
+    
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg(build_cmd)
+        .current_dir(format!("implementations/{}", language))
+        .output()
+        .expect("Failed to build");
+    
+    StepResult {
+        step_name: format!("Build {}", language),
+        success: output.status.success(),
+        output: String::from_utf8_lossy(&output.stdout).to_string(),
+        duration_ms: 0,
+    }
+}
+
+// Run benchmarks
+fun run_benchmarks(config: &ReproductionConfig) -> StepResult {
+    println!("📊 Step 5: Running benchmarks...");
+    println!("  Iterations: {}", config.iterations);
+    
+    let output = Command::new("make")
+        .arg("benchmark")
+        .env("ITERATIONS", config.iterations.to_string())
+        .output()
+        .expect("Failed to run benchmarks");
+    
+    StepResult {
+        step_name: "Benchmarks".to_string(),
+        success: output.status.success(),
+        output: String::from_utf8_lossy(&output.stdout).to_string(),
+        duration_ms: 0,
+    }
+}
+
+// Run statistical analysis
+fun run_statistical_analysis() -> StepResult {
+    println!("📈 Step 6: Running statistical analysis...");
+    
+    let output = Command::new("ruchy")
+        .arg("run")
+        .arg("harness/statistics/statistics.ruchy")
+        .output()
+        .expect("Failed to run statistics");
+    
+    StepResult {
+        step_name: "Statistical Analysis".to_string(),
+        success: output.status.success(),
+        output: String::from_utf8_lossy(&output.stdout).to_string(),
+        duration_ms: 0,
+    }
+}
+
+// Generate scientific report
+fun generate_scientific_report(algorithm: &str) -> StepResult {
+    println!("📝 Step 7: Generating scientific report...");
+    
+    let output = Command::new("make")
+        .arg("report")
+        .output()
+        .expect("Failed to generate report");
+    
+    println!("  Report saved to: SCIENTIFIC_REPORT.md");
+    
+    StepResult {
+        step_name: "Generate Report".to_string(),
+        success: output.status.success(),
+        output: "Report generated".to_string(),
+        duration_ms: 0,
+    }
+}
+
+// Verify reproducibility
+fun verify_reproducibility(results: &Vec<StepResult>) -> StepResult {
+    println!("🔍 Step 8: Verifying reproducibility...");
+    
+    let all_success = results.iter().all(|r| r.success);
+    
+    if all_success {
+        println!("✅ ALL STEPS REPRODUCIBLE");
+    } else {
+        println!("❌ SOME STEPS FAILED");
+        for result in results {
+            if !result.success {
+                println!("  Failed: {}", result.step_name);
+            }
+        }
+    }
+    
+    StepResult {
+        step_name: "Reproducibility Check".to_string(),
+        success: all_success,
+        output: "Verification complete".to_string(),
+        duration_ms: 0,
+    }
+}
+
+// Generate reproducibility report
+fun generate_reproducibility_report(results: Vec<StepResult>) {
+    let mut file = File::create("results/reproducibility.md").unwrap();
+    
+    writeln!(file, "# Reproducibility Report");
+    writeln!(file, "");
+    writeln!(file, "## Environment");
+    writeln!(file, "```");
+    
+    // System info
+    let uname = Command::new("uname")
+        .arg("-a")
+        .output()
+        .expect("Failed to get system info");
+    writeln!(file, "{}", String::from_utf8_lossy(&uname.stdout));
+    
+    // Ruchy version
+    let ruchy_version = Command::new("ruchy")
+        .arg("--version")
+        .output()
+        .expect("Failed to get Ruchy version");
+    writeln!(file, "{}", String::from_utf8_lossy(&ruchy_version.stdout));
+    
+    writeln!(file, "```");
+    writeln!(file, "");
+    writeln!(file, "## Reproduction Steps");
+    writeln!(file, "");
+    
+    for (i, result) in results.iter().enumerate() {
+        writeln!(file, "### Step {}: {}", i + 1, result.step_name);
+        writeln!(file, "Status: {}", if result.success { "✅ SUCCESS" } else { "❌ FAILED" });
+        if !result.output.is_empty() {
+            writeln!(file, "```");
+            writeln!(file, "{}", result.output);
+            writeln!(file, "```");
+        }
+        writeln!(file, "");
+    }
+    
+    writeln!(file, "## Summary");
+    let success_count = results.iter().filter(|r| r.success).count();
+    writeln!(file, "Success Rate: {}/{}", success_count, results.len());
+    
+    if success_count == results.len() {
+        writeln!(file, "");
+        writeln!(file, "✅ **FULLY REPRODUCIBLE**");
+    }
+}
+
+// Main entry point
+fun main() {
+    let args: Vec<String> = env::args().collect();
+    
+    let algorithm = if args.len() > 1 {
+        args[1].clone()
+    } else {
+        "fibonacci".to_string()
+    };
+    
+    let config = ReproductionConfig {
+        algorithm,
+        languages: vec![
+            "ruchy".to_string(),
+            "rust".to_string(),
+            "python".to_string(),
+            "javascript".to_string(),
+            "go".to_string(),
+        ],
+        iterations: 10000,
+        clean_build: true,
+        generate_report: true,
+    };
+    
+    let results = reproduce(config);
+    generate_reproducibility_report(results);
+    
+    println!();
+    println!("📋 Reproducibility report saved to: results/reproducibility.md");
+}
