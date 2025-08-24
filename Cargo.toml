@@ -2,13 +2,13 @@
 members = [
     "harness/runner",
     "scripts/validation-tools",
-    "mcp-server", "examples/algorithms/005-hash-table/implementations/rust", "examples/algorithms/006-red-black-tree/implementations/rust", "examples/algorithms/007-dijkstra-shortest-path/implementations/rust", "examples/algorithms/008-longest-common-subsequence/implementations/rust", "examples/algorithms/009-knapsack-problem/implementations/rust", "examples/algorithms/010-edit-distance/implementations/rust", "examples/algorithms/011-matrix-chain-multiplication/implementations/rust", "examples/algorithms/012-coin-change/implementations/rust", "examples/algorithms/013-rod-cutting/implementations/rust", "examples/algorithms/014-graph-coloring/implementations/rust", "examples/algorithms/015-traveling-salesman/implementations/rust", "examples/algorithms/016-topological-sort/implementations/rust", "examples/algorithms/017-binary-search-tree/implementations/rust",
+    "mcp-server", "examples/algorithms/005-hash-table/implementations/rust", "examples/algorithms/006-red-black-tree/implementations/rust", "examples/algorithms/007-dijkstra-shortest-path/implementations/rust", "examples/algorithms/008-longest-common-subsequence/implementations/rust", "examples/algorithms/009-knapsack-problem/implementations/rust", "examples/algorithms/010-edit-distance/implementations/rust", "examples/algorithms/011-matrix-chain-multiplication/implementations/rust", "examples/algorithms/012-coin-change/implementations/rust", "examples/algorithms/013-rod-cutting/implementations/rust", "examples/algorithms/014-graph-coloring/implementations/rust", "examples/algorithms/015-traveling-salesman/implementations/rust", "examples/algorithms/016-topological-sort/implementations/rust", "examples/algorithms/017-binary-search-tree/implementations/rust", "examples/algorithms/018-heap-sort/implementations/rust",
 ]
 default-members = ["harness/runner", "mcp-server"]
 resolver = "2"
 
 [workspace.package]
-version = "1.2.0"
+version = "1.3.0"
 authors = ["Rosetta Ruchy Contributors"]
 license = "MIT"
 repository = "https://github.com/rosetta-ruchy/rosetta-ruchy"
