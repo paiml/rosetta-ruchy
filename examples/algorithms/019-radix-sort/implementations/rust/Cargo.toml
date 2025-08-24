@@ -1,0 +1,15 @@
+[package]
+name = "radix-sort-rust"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Radix Sort algorithm implementation with LSD/MSD variants and comprehensive analysis"
+
+[[bin]]
+name = "radix-sort-rust"
+path = "src/main.rs"
+
+[dependencies]
+# No external dependencies - using only standard library
