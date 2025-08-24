@@ -1,0 +1,61 @@
+// Statistical Analysis Tools for Rosetta Ruchy
+// Simplified version for validation
+
+fun calculate_mean(values: Vec<f64>) -> f64 {
+    let mut sum = 0.0;
+    let count = values.len();
+    for val in values {
+        sum += val;
+    }
+    sum / count
+}
+
+fun calculate_std_dev(values: Vec<f64>, mean: f64) -> f64 {
+    let mut sum_sq = 0.0;
+    let count = values.len();
+    for val in values {
+        let diff = val - mean;
+        sum_sq += diff * diff;
+    }
+    let variance = sum_sq / count;
+    variance.sqrt()
+}
+
+fun t_test_simple(mean1: f64, mean2: f64, std1: f64, std2: f64, n: f64) -> f64 {
+    // Simplified t-test calculation
+    let var1 = std1 * std1 / n;
+    let var2 = std2 * std2 / n;
+    let se = (var1 + var2).sqrt();
+    (mean1 - mean2) / se
+}
+
+fun main() {
+    println!("📈 Statistical Analysis");
+    println!("======================");
+    
+    // Example data
+    let ruchy_times = vec![85.0, 86.0, 84.0, 85.5, 85.2];
+    let rust_times = vec![82.0, 83.0, 82.5, 82.8, 82.5];
+    
+    let ruchy_mean = calculate_mean(ruchy_times.clone());
+    let rust_mean = calculate_mean(rust_times.clone());
+    
+    let ruchy_std = calculate_std_dev(ruchy_times, ruchy_mean);
+    let rust_std = calculate_std_dev(rust_times, rust_mean);
+    
+    println!("Ruchy: mean={:.2}ms, std={:.2}", ruchy_mean, ruchy_std);
+    println!("Rust:  mean={:.2}ms, std={:.2}", rust_mean, rust_std);
+    
+    let t_stat = t_test_simple(ruchy_mean, rust_mean, ruchy_std, rust_std, 5.0);
+    println!("t-statistic: {:.4}", t_stat);
+    
+    // Interpret results
+    if t_stat.abs() < 2.0 {
+        println!("Result: No significant difference (p > 0.05)");
+    } else {
+        println!("Result: Significant difference (p < 0.05)");
+    }
+    
+    println!("");
+    println!("✅ Statistical analysis complete!");
+}

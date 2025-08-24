@@ -1,0 +1,377 @@
+// Data Visualization Generator for Rosetta Ruchy
+// Creates ASCII graphs and charts for scientific reports
+
+use std::fs::File;
+use std::io::Write;
+use std::collections::HashMap;
+
+// Graph types
+enum GraphType {
+    BarChart,
+    LineChart,
+    BoxPlot,
+    Histogram,
+}
+
+// Data point for visualization
+struct DataPoint {
+    label: String,
+    value: f64,
+    error: Option<f64>,
+}
+
+// Performance comparison data
+struct PerformanceData {
+    algorithm: String,
+    languages: Vec<String>,
+    means: Vec<f64>,
+    std_devs: Vec<f64>,
+    input_sizes: Vec<i32>,
+}
+
+// Create ASCII bar chart
+fun create_bar_chart(data: Vec<DataPoint>, width: usize) -> String {
+    let mut chart = String::new();
+    
+    // Find max value for scaling
+    let max_value = data.iter()
+        .map(|d| d.value)
+        .fold(0.0, f64::max);
+    
+    chart.push_str("Performance Comparison (Bar Chart)\n");
+    chart.push_str("=" .repeat(width) + "\n\n");
+    
+    for point in data {
+        let bar_width = ((point.value / max_value) * (width - 20) as f64) as usize;
+        let bar = "█".repeat(bar_width);
+        
+        chart.push_str(&format!("{:12} |{} {:.2}\n", 
+            point.label, 
+            bar,
+            point.value
+        ));
+        
+        // Add error bar if present
+        if let Some(error) = point.error {
+            let error_pos = bar_width;
+            let spaces = " ".repeat(13);
+            chart.push_str(&format!("{}  ±{:.2}\n", spaces, error));
+        }
+    }
+    
+    chart
+}
+
+// Create ASCII line chart for trends
+fun create_line_chart(
+    title: String,
+    x_label: String,
+    y_label: String,
+    data_series: HashMap<String, Vec<(f64, f64)>>
+) -> String {
+    let mut chart = String::new();
+    
+    chart.push_str(&format!("{}\n", title));
+    chart.push_str("=" .repeat(60) + "\n\n");
+    
+    // Find bounds
+    let mut min_x = f64::MAX;
+    let mut max_x = f64::MIN;
+    let mut min_y = f64::MAX;
+    let mut max_y = f64::MIN;
+    
+    for (_, points) in &data_series {
+        for (x, y) in points {
+            min_x = min_x.min(*x);
+            max_x = max_x.max(*x);
+            min_y = min_y.min(*y);
+            max_y = max_y.max(*y);
+        }
+    }
+    
+    // Create grid
+    let height = 20;
+    let width = 50;
+    let mut grid = vec![vec![' '; width]; height];
+    
+    // Plot data points
+    let symbols = vec!['*', '+', 'o', 'x', '#'];
+    let mut symbol_idx = 0;
+    
+    for (series_name, points) in &data_series {
+        let symbol = symbols[symbol_idx % symbols.len()];
+        symbol_idx += 1;
+        
+        for (x, y) in points {
+            let col = (((*x - min_x) / (max_x - min_x)) * (width - 1) as f64) as usize;
+            let row = height - 1 - (((*y - min_y) / (max_y - min_y)) * (height - 1) as f64) as usize;
+            
+            if row < height && col < width {
+                grid[row][col] = symbol;
+            }
+        }
+    }
+    
+    // Draw Y axis
+    chart.push_str(&format!("{:8.2} ┤\n", max_y));
+    
+    for row in 0..height {
+        chart.push_str(&format!("{:8} │", ""));
+        for col in 0..width {
+            chart.push_str(&grid[row][col].to_string());
+        }
+        chart.push_str("\n");
+    }
+    
+    // Draw X axis
+    chart.push_str(&format!("{:8.2} └", min_y));
+    chart.push_str("─".repeat(width));
+    chart.push_str("\n");
+    chart.push_str(&format!("{:8} {:.2}{}{:.2}\n", "", min_x, " ".repeat(width - 10), max_x));
+    chart.push_str(&format!("{:8} {}\n", "", x_label));
+    
+    // Legend
+    chart.push_str("\nLegend:\n");
+    symbol_idx = 0;
+    for (series_name, _) in &data_series {
+        let symbol = symbols[symbol_idx % symbols.len()];
+        chart.push_str(&format!("  {} - {}\n", symbol, series_name));
+        symbol_idx += 1;
+    }
+    
+    chart
+}
+
+// Create box plot for distribution visualization
+fun create_box_plot(
+    title: String,
+    data_sets: Vec<(String, Vec<f64>)>
+) -> String {
+    let mut chart = String::new();
+    
+    chart.push_str(&format!("{}\n", title));
+    chart.push_str("=" .repeat(60) + "\n\n");
+    
+    for (label, data) in data_sets {
+        let mut sorted = data.clone();
+        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        
+        let n = sorted.len();
+        let min = sorted[0];
+        let q1 = sorted[n / 4];
+        let median = sorted[n / 2];
+        let q3 = sorted[3 * n / 4];
+        let max = sorted[n - 1];
+        
+        // Scale to 40 character width
+        let scale = 40.0 / (max - min);
+        let q1_pos = ((q1 - min) * scale) as usize;
+        let median_pos = ((median - min) * scale) as usize;
+        let q3_pos = ((q3 - min) * scale) as usize;
+        
+        // Build box plot
+        let mut plot = " ".repeat(40);
+        
+        // Whiskers
+        for i in 0..q1_pos {
+            plot.replace_range(i..i+1, "─");
+        }
+        for i in q3_pos..40 {
+            plot.replace_range(i..i+1, "─");
+        }
+        
+        // Box
+        for i in q1_pos..q3_pos {
+            plot.replace_range(i..i+1, "█");
+        }
+        
+        // Median
+        if median_pos < 40 {
+            plot.replace_range(median_pos..median_pos+1, "│");
+        }
+        
+        chart.push_str(&format!("{:12} |{}|\n", label, plot));
+        chart.push_str(&format!("{:12}  min={:.2} Q1={:.2} med={:.2} Q3={:.2} max={:.2}\n",
+            "", min, q1, median, q3, max));
+    }
+    
+    chart
+}
+
+// Create histogram for distribution analysis
+fun create_histogram(
+    title: String,
+    data: Vec<f64>,
+    bins: usize
+) -> String {
+    let mut chart = String::new();
+    
+    chart.push_str(&format!("{}\n", title));
+    chart.push_str("=" .repeat(60) + "\n\n");
+    
+    let min = data.iter().fold(f64::MAX, |a, &b| a.min(b));
+    let max = data.iter().fold(f64::MIN, |a, &b| a.max(b));
+    let bin_width = (max - min) / bins as f64;
+    
+    // Count frequencies
+    let mut frequencies = vec![0; bins];
+    for value in &data {
+        let bin = ((value - min) / bin_width).min(bins as f64 - 1.0) as usize;
+        frequencies[bin] += 1;
+    }
+    
+    // Find max frequency for scaling
+    let max_freq = *frequencies.iter().max().unwrap_or(&1);
+    let scale = 40.0 / max_freq as f64;
+    
+    // Draw histogram
+    for i in 0..bins {
+        let bin_start = min + i as f64 * bin_width;
+        let bin_end = bin_start + bin_width;
+        let bar_width = (frequencies[i] as f64 * scale) as usize;
+        let bar = "█".repeat(bar_width);
+        
+        chart.push_str(&format!("[{:6.2}-{:6.2}] |{} {}\n",
+            bin_start, bin_end, bar, frequencies[i]));
+    }
+    
+    chart.push_str(&format!("\nTotal samples: {}\n", data.len()));
+    chart.push_str(&format!("Mean: {:.2}\n", data.iter().sum::<f64>() / data.len() as f64));
+    
+    chart
+}
+
+// Create performance comparison table
+fun create_comparison_table(perf_data: PerformanceData) -> String {
+    let mut table = String::new();
+    
+    table.push_str(&format!("Algorithm: {}\n", perf_data.algorithm));
+    table.push_str("=" .repeat(80) + "\n\n");
+    
+    // Header
+    table.push_str(&format!("{:12} |", "Language"));
+    for size in &perf_data.input_sizes {
+        table.push_str(&format!(" n={:4} |", size));
+    }
+    table.push_str(" vs Ruchy\n");
+    
+    table.push_str("-".repeat(80) + "\n");
+    
+    // Data rows
+    let ruchy_idx = perf_data.languages.iter()
+        .position(|l| l == "ruchy")
+        .unwrap_or(0);
+    
+    for (i, lang) in perf_data.languages.iter().enumerate() {
+        table.push_str(&format!("{:12} |", lang));
+        
+        for (j, _) in perf_data.input_sizes.iter().enumerate() {
+            let idx = i * perf_data.input_sizes.len() + j;
+            let mean = perf_data.means[idx];
+            let std = perf_data.std_devs[idx];
+            
+            table.push_str(&format!(" {:6.1}±{:3.1} |", mean, std));
+        }
+        
+        // Performance ratio
+        if i != ruchy_idx {
+            let ratio = perf_data.means[i * perf_data.input_sizes.len()] / 
+                       perf_data.means[ruchy_idx * perf_data.input_sizes.len()];
+            table.push_str(&format!(" {:.2}x", ratio));
+        } else {
+            table.push_str(" 1.00x");
+        }
+        
+        table.push_str("\n");
+    }
+    
+    table
+}
+
+// Generate complexity growth visualization
+fun visualize_complexity_growth() -> String {
+    let mut chart = String::new();
+    
+    chart.push_str("Complexity Growth Comparison\n");
+    chart.push_str("=" .repeat(60) + "\n\n");
+    chart.push_str("Time\n");
+    chart.push_str("^\n");
+    chart.push_str("|         O(n²)    /\n");
+    chart.push_str("|              __/\n");
+    chart.push_str("|           __/\n");
+    chart.push_str("|        __/  O(n log n)\n");
+    chart.push_str("|     __/    _____/\n");
+    chart.push_str("|  __/  ____/\n");
+    chart.push_str("| / ___/ O(n)\n");
+    chart.push_str("|/_/__________ O(log n)\n");
+    chart.push_str("+------------------------> n\n");
+    chart.push_str("\n");
+    chart.push_str("Legend:\n");
+    chart.push_str("  O(log n) - Binary Search\n");
+    chart.push_str("  O(n)     - Linear Search\n");
+    chart.push_str("  O(n log n) - Merge Sort\n");
+    chart.push_str("  O(n²)    - Bubble Sort\n");
+    
+    chart
+}
+
+// Save visualization to file
+fun save_visualization(content: String, filename: String) {
+    let mut file = File::create(filename).unwrap();
+    file.write_all(content.as_bytes()).unwrap();
+    println!("Visualization saved to: {}", filename);
+}
+
+// Main visualization generation
+fun main() {
+    println!("📊 Generating Visualizations...\n");
+    
+    // Example: Bar chart
+    let bar_data = vec![
+        DataPoint { label: "Ruchy".to_string(), value: 85.2, error: Some(2.1) },
+        DataPoint { label: "Rust".to_string(), value: 82.5, error: Some(1.8) },
+        DataPoint { label: "Python".to_string(), value: 945.3, error: Some(15.2) },
+        DataPoint { label: "JavaScript".to_string(), value: 234.7, error: Some(8.3) },
+        DataPoint { label: "Go".to_string(), value: 91.4, error: Some(3.2) },
+    ];
+    
+    let bar_chart = create_bar_chart(bar_data, 60);
+    save_visualization(bar_chart.clone(), "results/performance_bar.txt");
+    println!("{}", bar_chart);
+    
+    // Example: Line chart
+    let mut line_data = HashMap::new();
+    line_data.insert("Ruchy".to_string(), vec![
+        (10.0, 5.0), (20.0, 12.0), (30.0, 23.0), (40.0, 38.0)
+    ]);
+    line_data.insert("Rust".to_string(), vec![
+        (10.0, 4.8), (20.0, 11.5), (30.0, 22.1), (40.0, 36.5)
+    ]);
+    
+    let line_chart = create_line_chart(
+        "Performance Scaling".to_string(),
+        "Input Size (n)".to_string(),
+        "Time (ms)".to_string(),
+        line_data
+    );
+    save_visualization(line_chart, "results/scaling_line.txt");
+    
+    // Example: Box plot
+    let box_data = vec![
+        ("Ruchy".to_string(), vec![80.0, 82.0, 85.0, 86.0, 88.0, 89.0, 90.0, 92.0]),
+        ("Rust".to_string(), vec![78.0, 80.0, 82.0, 83.0, 84.0, 85.0, 86.0, 88.0]),
+        ("Python".to_string(), vec![900.0, 920.0, 940.0, 945.0, 950.0, 960.0, 980.0, 1000.0]),
+    ];
+    
+    let box_plot = create_box_plot(
+        "Performance Distribution".to_string(),
+        box_data
+    );
+    save_visualization(box_plot, "results/distribution_box.txt");
+    
+    // Complexity visualization
+    let complexity = visualize_complexity_growth();
+    save_visualization(complexity, "results/complexity_growth.txt");
+    
+    println!("\n✅ All visualizations generated successfully!");
+}
