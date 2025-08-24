@@ -221,7 +221,7 @@ def fib_iterative(n: int) -> int:
 </td>
 <td>
 
-```rust
+```ruchy
 /* 🔥 RUCHY - Advanced Systems Language */
 // Recursive with pattern matching
 fun fib_pattern(n: i32) -> i32 {
