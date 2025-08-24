@@ -1,0 +1,15 @@
+[package]
+name = "heap-sort-rust"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Heap Sort algorithm implementation in Rust with comprehensive analysis"
+
+[[bin]]
+name = "heap-sort-rust"
+path = "src/main.rs"
+
+[dependencies]
+# No external dependencies - using only standard library
