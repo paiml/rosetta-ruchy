@@ -76,7 +76,7 @@ Rod Cutting Result (Bottom-up DP):
   Optimal Cuts: [1, 1, 1, 1, 1]
   Total Cut Length: 5
   Number of Pieces: 5
-  Computation Time: 0.002ms
+  Computation Time: 0.001ms
 
 Expected: 50, Got: 50, Test: PASS
 
@@ -136,7 +136,7 @@ Stress Test:
 Fibonacci prices, rod length 100:
 Maximum revenue: 300100
 Computation time: 0.00ms
-Subproblems per second: 2608242045
+Subproblems per second: 2527167046
 
 Unit Price Analysis Example:
 =============================================
