@@ -1,0 +1,15 @@
+[package]
+name = "bucket-sort-rust"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Bucket Sort algorithm implementation with multiple distribution strategies and comprehensive analysis"
+
+[[bin]]
+name = "bucket-sort-rust"
+path = "src/main.rs"
+
+[dependencies]
+# No external dependencies - using only standard library
