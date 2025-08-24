@@ -320,6 +320,98 @@ examples/{category}/{number}-{name}/
 5. **NEVER Duplicate Core Logic** - One implementation per feature. All interfaces (CLI, MCP, HTTP) must use the same underlying logic.
 6. **NEVER Bypass Quality Gates** - `git commit --no-verify` is FORBIDDEN. If quality gates fail, fix the underlying issues.
 
+## 🔬 SCIENTIFIC REPRODUCIBILITY PROTOCOL
+
+### Core Principle: Every Claim Must Be Proven
+We follow the scientific method for all performance and correctness claims:
+1. **Hypothesis**: State what Ruchy can do differently
+2. **Experiment**: Write reproducible benchmarks using Ruchy tooling
+3. **Measurement**: Collect empirical data with statistical rigor
+4. **Analysis**: Use Ruchy's formal verification to prove properties
+5. **Report**: Generate scientific reports with graphs and proofs
+6. **Reproduction**: Anyone can run `make reproduce` to verify
+
+### Sprint-Based Development Process
+**MANDATORY**: Every sprint ends with a commit and push to GitHub
+
+```bash
+# Sprint Structure (2-3 day cycles)
+Sprint N: Algorithm XXX Implementation
+├── Day 1: Implement Makefile and Ruchy proofs
+├── Day 2: Collect benchmark data across languages
+├── Day 3: Generate scientific report and commit
+└── END: git commit && git push (MANDATORY)
+
+# Sprint Commit Message Format
+git commit -m "sprint(N): Complete algorithm XXX with scientific validation
+
+Reproducible Results:
+- Complexity: O(n) formally proven by Ruchy
+- Performance: XXXms (Ruchy) vs YYYms (Rust)
+- Provability Score: 100/100
+- Benchmark: make reproduce
+
+Scientific Report: examples/algorithms/XXX/SCIENTIFIC_REPORT.md"
+```
+
+### Required Deliverables Per Algorithm
+```
+algorithm-XXX/
+├── Makefile                    # All Ruchy commands (reproducible)
+├── SCIENTIFIC_REPORT.md        # Complete analysis with graphs
+├── results/
+│   ├── complexity.txt          # ruchy runtime output
+│   ├── provability.txt         # ruchy provability output
+│   ├── quality_score.txt       # ruchy score output
+│   ├── benchmarks.json         # Performance data (all languages)
+│   └── statistical_analysis.md # Error bars, confidence intervals
+└── implementations/
+    └── ruchy/
+        ├── algorithm.ruchy     # Clean, verified implementation
+        └── benchmark.ruchy     # Benchmark harness in Ruchy
+```
+
+### Makefile Template (MANDATORY for each example)
+```makefile
+# MANDATORY: Every algorithm must have this Makefile
+.PHONY: all verify benchmark report reproduce clean
+
+# Ruchy binary location
+RUCHY := ruchy
+
+all: verify benchmark report
+
+# Step 1: Formal Verification (Ruchy's unique capability)
+verify:
+	@echo "=== FORMAL VERIFICATION ==="
+	$(RUCHY) check algorithm.ruchy
+	$(RUCHY) runtime algorithm.ruchy > results/complexity.txt
+	$(RUCHY) provability algorithm.ruchy > results/provability.txt
+	$(RUCHY) score algorithm.ruchy > results/quality_score.txt
+	$(RUCHY) prove algorithm.ruchy > results/formal_proof.txt
+
+# Step 2: Performance Benchmarking
+benchmark:
+	@echo "=== PERFORMANCE BENCHMARKING ==="
+	$(RUCHY) bench algorithm.ruchy --iterations 1000 > results/ruchy_bench.json
+	cargo bench --bench algorithm > results/rust_bench.json
+	python3 benchmark.py > results/python_bench.json
+	node benchmark.js > results/js_bench.json
+
+# Step 3: Generate Scientific Report
+report:
+	@echo "=== GENERATING SCIENTIFIC REPORT ==="
+	$(RUCHY) run generate_report.ruchy > SCIENTIFIC_REPORT.md
+
+# Step 4: Reproducibility Check
+reproduce: clean all
+	@echo "=== VERIFICATION COMPLETE ==="
+	@echo "Results are reproducible. Check SCIENTIFIC_REPORT.md"
+
+clean:
+	rm -rf results/*.txt results/*.json
+```
+
 ### MANDATORY Quality Gates (BLOCKING)
 
 ```bash
