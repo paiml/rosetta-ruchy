@@ -241,7 +241,7 @@ Rod length 4, prices [1, 4, 6, 7]:
 ## Ruchy v1.5.0 Advanced Features
 
 ### Self-Hosting DP Code Generation
-```ruchy
+```rust
 // Generate optimized DP recurrence at compile-time
 let rod_dp_code = compiler.generate_dp_recurrence("rod_cutting",
     state_space = "rod_length",
@@ -250,7 +250,7 @@ let rod_dp_code = compiler.generate_dp_recurrence("rod_cutting",
 ```
 
 ### Profit Optimization Analysis
-```ruchy
+```rust
 // Economic modeling and optimization analysis
 #[analyze(profit_maximization)]
 fn rod_cutting_economic_model(prices: &[u32], length: usize) -> EconomicAnalysis {
@@ -262,7 +262,7 @@ fn rod_cutting_economic_model(prices: &[u32], length: usize) -> EconomicAnalysis
 ```
 
 ### Concurrent Rod Optimization
-```ruchy
+```rust
 async fn parallel_rod_cutting_multiple<T: AsRef<[u32]>>(
     problems: Vec<(T, usize)>
 ) -> Vec<RodCuttingResult> {
@@ -274,7 +274,7 @@ async fn parallel_rod_cutting_multiple<T: AsRef<[u32]>>(
 ```
 
 ### Formal Correctness Verification
-```ruchy
+```rust
 #[verify(smt_solver = "z3")]
 fn rod_cutting_optimality_property(
     prices: &[u32], length: usize, max_revenue: u32, cuts: &[usize]

@@ -63,14 +63,14 @@ Implement comprehensive hash table data structure with multiple collision resolu
 
 ### Self-Hosting Hash Generation
 Use Ruchy's self-hosting compiler to generate optimized hash functions at runtime:
-```ruchy
+```rust
 // Generate hash function using v1.5.0 self-hosting
 let optimized_hash = compiler.generate_hash_function("string", "djb2")?;
 ```
 
 ### Algorithm W Type Inference
 Complex generic constraints automatically resolved:
-```ruchy
+```rust
 trait HashTable<K, V> where K: Hash + Eq + Clone, V: Clone {
     // Algorithm W infers all constraint propagation automatically
     fn insert_with_analysis(&mut self, key: K, value: V) -> InsertResult<V>;

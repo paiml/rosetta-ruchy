@@ -208,7 +208,7 @@ fn reconstruct_solution(items: &[Item], dp: &[Vec<u32>], capacity: usize) -> Vec
 ## Ruchy v1.5.0 Advanced Features
 
 ### Self-Hosting DP Code Generation
-```ruchy
+```rust
 // Generate optimized DP recurrence at compile-time
 let dp_code = compiler.generate_dp_recurrence("knapsack", 
     dimensions = 2, 
@@ -217,7 +217,7 @@ let dp_code = compiler.generate_dp_recurrence("knapsack",
 ```
 
 ### Memoization Code Synthesis
-```ruchy
+```rust
 // Automatically synthesize memoization logic
 #[memoize(cache_size = 50000)]
 fn knapsack_recursive(items: &[Item], index: usize, remaining_capacity: usize) -> u32 {
@@ -226,7 +226,7 @@ fn knapsack_recursive(items: &[Item], index: usize, remaining_capacity: usize) -
 ```
 
 ### Concurrent Multi-Knapsack Solving
-```ruchy
+```rust
 async fn parallel_knapsack_variants<T: AsRef<[Item]>>(
     problems: Vec<(T, usize)>
 ) -> Vec<KnapsackResult> {
@@ -238,7 +238,7 @@ async fn parallel_knapsack_variants<T: AsRef<[Item]>>(
 ```
 
 ### Approximation Algorithm Synthesis
-```ruchy
+```rust
 #[approximate(ratio = 0.9, time_bound = "O(n log n)")]
 fn knapsack_fptas(items: &[Item], capacity: usize, epsilon: f64) -> KnapsackResult {
     // Ruchy synthesizes FPTAS algorithm automatically
@@ -246,7 +246,7 @@ fn knapsack_fptas(items: &[Item], capacity: usize, epsilon: f64) -> KnapsackResu
 ```
 
 ### Formal Optimality Verification
-```ruchy
+```rust
 #[verify(smt_solver = "z3")]
 fn knapsack_optimality_property(
     items: &[Item], capacity: usize, solution: &[usize]

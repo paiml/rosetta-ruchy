@@ -261,7 +261,7 @@ fn reconstruct_operations(
 ## Ruchy v1.5.0 Advanced Features
 
 ### Self-Hosting DP Code Generation
-```ruchy
+```rust
 // Generate optimized DP recurrence at compile-time
 let edit_dp_code = compiler.generate_dp_recurrence("edit_distance",
     dimensions = 2,
@@ -270,7 +270,7 @@ let edit_dp_code = compiler.generate_dp_recurrence("edit_distance",
 ```
 
 ### String Algorithm Optimization
-```ruchy
+```rust
 // Specialized string processing optimizations
 #[optimize(target = "string_algorithms")]
 fn edit_distance_ruchy(s1: &str, s2: &str) -> EditResult {
@@ -282,7 +282,7 @@ fn edit_distance_ruchy(s1: &str, s2: &str) -> EditResult {
 ```
 
 ### Concurrent Edit Distance Computation
-```ruchy
+```rust
 async fn parallel_edit_distance_multiple<T: AsRef<str>>(
     pairs: Vec<(T, T)>
 ) -> Vec<EditDistanceResult> {
@@ -294,7 +294,7 @@ async fn parallel_edit_distance_multiple<T: AsRef<str>>(
 ```
 
 ### Formal Correctness Verification
-```ruchy
+```rust
 #[verify(smt_solver = "z3")]
 fn edit_distance_correctness_property(
     s1: &str, s2: &str, distance: usize, ops: &[EditOp]

@@ -183,13 +183,13 @@ All variants: **O(m×n)** where m, n are string lengths
 ## Ruchy v1.5.0 Advanced Features
 
 ### Self-Hosting DP Code Generation
-```ruchy
+```rust
 // Generate optimized DP recurrence at compile-time
 let dp_code = compiler.generate_dp_recurrence("lcs", dimensions = 2)?;
 ```
 
 ### Memoization Code Synthesis
-```ruchy
+```rust
 // Automatically synthesize memoization logic
 #[memoize(cache_size = 10000)]
 fn lcs_recursive(s1: &str, i: usize, s2: &str, j: usize) -> usize {
@@ -198,7 +198,7 @@ fn lcs_recursive(s1: &str, i: usize, s2: &str, j: usize) -> usize {
 ```
 
 ### Concurrent LCS Computation
-```ruchy
+```rust
 async fn parallel_lcs_multiple<T: AsRef<str>>(
     pairs: Vec<(T, T)>
 ) -> Vec<LCSResult> {
@@ -210,7 +210,7 @@ async fn parallel_lcs_multiple<T: AsRef<str>>(
 ```
 
 ### Formal Verification
-```ruchy
+```rust
 #[verify(smt_solver = "z3")]
 fn lcs_correctness_property(
     s1: &str, s2: &str, lcs: &str

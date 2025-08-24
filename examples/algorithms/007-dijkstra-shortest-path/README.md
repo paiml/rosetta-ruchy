@@ -106,7 +106,7 @@ F [  ∞  ∞  ∞  ∞  ∞  0 ]
 ## Ruchy v1.5.0 Advanced Features
 
 ### Concurrent Graph Operations
-```ruchy
+```rust
 async fn parallel_dijkstra<G: Graph>(
     graph: &G,
     sources: Vec<NodeId>
@@ -119,13 +119,13 @@ async fn parallel_dijkstra<G: Graph>(
 ```
 
 ### Self-Hosting Heap Generation
-```ruchy
+```rust
 // Generate optimized heap operations at compile-time
 let heap_code = compiler.generate_heap_operations("indexed_binary")?;
 ```
 
 ### Algorithm W Type Inference
-```ruchy
+```rust
 trait GraphAlgorithm<G, N, E> 
 where 
     G: Graph<Node = N, Edge = E>,
@@ -139,7 +139,7 @@ where
 ```
 
 ### Formal Correctness Proofs
-```ruchy
+```rust
 #[verify(smt_solver = "z3")]
 fn dijkstra_maintains_invariant(
     dist: &[Distance],
