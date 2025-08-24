@@ -57,7 +57,7 @@ pub enum SectionType {
     /// Initialized data
     Data,
     /// Uninitialized data
-    BSS,
+    Bss,
     /// Debug information
     Debug,
     /// Dynamic linking
@@ -154,7 +154,7 @@ pub struct OptimizationOpportunity {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum OptimizationType {
     /// Link-time optimization
-    LTO,
+    Lto,
     /// Dead code elimination
     DeadCode,
     /// Debug symbol stripping
@@ -292,7 +292,7 @@ impl BinaryAnalyzer {
 
         if self.available_tools.has_objdump {
             let output = Command::new("objdump")
-                .args(&["-h", self.binary_path.to_str().unwrap()])
+                .args(["-h", self.binary_path.to_str().unwrap()])
                 .output()
                 .context("Failed to run objdump")?;
 
@@ -302,7 +302,7 @@ impl BinaryAnalyzer {
             }
         } else if self.available_tools.has_readelf {
             let output = Command::new("readelf")
-                .args(&["-S", self.binary_path.to_str().unwrap()])
+                .args(["-S", self.binary_path.to_str().unwrap()])
                 .output()
                 .context("Failed to run readelf")?;
 
@@ -378,7 +378,7 @@ impl BinaryAnalyzer {
             ".text" | ".init" | ".fini" => SectionType::Code,
             ".rodata" | ".rodata1" => SectionType::ReadOnlyData,
             ".data" | ".data1" => SectionType::Data,
-            ".bss" => SectionType::BSS,
+            ".bss" => SectionType::Bss,
             s if s.starts_with(".debug") => SectionType::Debug,
             ".dynamic" | ".dynstr" | ".dynsym" => SectionType::Dynamic,
             _ => SectionType::Other,
@@ -394,7 +394,7 @@ impl BinaryAnalyzer {
 
         if self.available_tools.has_nm {
             let output = Command::new("nm")
-                .args(&["--print-size", "--size-sort", "--reverse-sort", self.binary_path.to_str().unwrap()])
+                .args(["--print-size", "--size-sort", "--reverse-sort", self.binary_path.to_str().unwrap()])
                 .output()
                 .context("Failed to run nm")?;
 
@@ -477,7 +477,7 @@ impl BinaryAnalyzer {
         
         // Test gzip compression
         let gzip_output = Command::new("gzip")
-            .args(&["-c", self.binary_path.to_str().unwrap()])
+            .args(["-c", self.binary_path.to_str().unwrap()])
             .output();
         
         let gzip_bytes = if let Ok(output) = gzip_output {
@@ -564,7 +564,7 @@ impl BinaryAnalyzer {
         // Link-time optimization
         if total_size > 5_000_000 {
             opportunities.push(OptimizationOpportunity {
-                optimization_type: OptimizationType::LTO,
+                optimization_type: OptimizationType::Lto,
                 potential_savings_bytes: (total_size as f64 * 0.15) as u64,
                 difficulty: 2,
                 description: "Link-time optimization can reduce code size".to_string(),
@@ -714,6 +714,6 @@ mod tests {
         assert!(matches!(analyzer.classify_section(".text"), SectionType::Code));
         assert!(matches!(analyzer.classify_section(".rodata"), SectionType::ReadOnlyData));
         assert!(matches!(analyzer.classify_section(".debug_info"), SectionType::Debug));
-        assert!(matches!(analyzer.classify_section(".bss"), SectionType::BSS));
+        assert!(matches!(analyzer.classify_section(".bss"), SectionType::Bss));
     }
 }

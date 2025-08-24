@@ -170,13 +170,14 @@ impl CodeAnalyzer {
         let nested_loops = Regex::new(r"for.*\{[^}]*for.*\{")?;
         let triple_nested = Regex::new(r"for.*\{[^}]*for.*\{[^}]*for.*\{")?;
         let single_loops = Regex::new(r"\bfor\b|\bwhile\b")?;
-        let recursive_patterns = Regex::new(r"fn\s+(\w+).*\{[^}]*\1\s*\(")?;
+        // Note: Rust regex doesn't support backreferences, so we check for recursion differently
+        let function_call = Regex::new(r"fn\s+(\w+)")?;
 
         if triple_nested.is_match(code) {
             Ok("O(n³)".to_string())
         } else if nested_loops.is_match(code) {
             Ok("O(n²)".to_string())
-        } else if recursive_patterns.is_match(code) {
+        } else if function_call.is_match(code) && code.contains("recursive") {
             // Very basic recursive detection - would need proper analysis
             if code.contains("fibonacci") || code.contains("fib") {
                 Ok("O(2^n)".to_string())

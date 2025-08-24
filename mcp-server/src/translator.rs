@@ -70,7 +70,7 @@ impl RustToRuchyTranslator {
         ];
 
         Self {
-            patterns: patterns.into_iter().map(|(r, s)| (r, s)).collect(),
+            patterns: patterns.into_iter().collect(),
         }
     }
 }

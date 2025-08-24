@@ -22,6 +22,8 @@ impl LanguageDetector {
             "use std::",
             "match ",
             "Result<",
+            "println!",
+            ": i32",
         ]);
         extensions.insert(".rs".to_string(), "rust".to_string());
 
@@ -72,14 +74,14 @@ impl LanguageDetector {
         extensions.insert(".c".to_string(), "c".to_string());
         extensions.insert(".h".to_string(), "c".to_string());
 
-        // Ruchy patterns
+        // Ruchy patterns (similar to Rust but with 'fun' instead of 'fn')
         patterns.insert("ruchy".to_string(), vec![
             "fun ",
             "let ",
             "use ",
             "impl ",
-            "println(",
-            "main()",
+            "ruchy::",
+            "#[verify",
         ]);
         extensions.insert(".ruchy".to_string(), "ruchy".to_string());
 

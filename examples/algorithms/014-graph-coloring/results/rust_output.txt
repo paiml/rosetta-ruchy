@@ -1,20 +1,3 @@
-warning: unused import: `HashMap`
- --> examples/algorithms/014-graph-coloring/implementations/rust/src/main.rs:9:24
-  |
-9 | use std::collections::{HashMap, HashSet};
-  |                        ^^^^^^^
-  |
-  = note: `#[warn(unused_imports)]` on by default
-
-warning: function `find_chromatic_number` is never used
-   --> examples/algorithms/014-graph-coloring/implementations/rust/src/main.rs:265:4
-    |
-265 | fn find_chromatic_number(graph: &Graph, max_search: usize) -> usize {
-    |    ^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: `#[warn(dead_code)]` on by default
-
-warning: `graph-coloring-rust` (bin "graph-coloring-rust") generated 2 warnings (run `cargo fix --bin "graph-coloring-rust"` to apply 1 suggestion)
     Finished `release` profile [optimized] target(s) in 0.07s
      Running `/home/noah/src/rosetta-ruchy/target/release/graph-coloring-rust`
 Graph Coloring Problem - Multiple Algorithm Implementation
@@ -25,7 +8,7 @@ Graph with 3 vertices:
 Adjacency List:
   0: [2, 1]
   1: [2, 0]
-  2: [0, 1]
+  2: [1, 0]
 
 Expected chromatic number: ≤3
 Algorithm result: 3 colors
@@ -36,14 +19,14 @@ Graph Coloring Visualization:
 Graph structure:
   Vertex 0: connected to [2, 1]
   Vertex 1: connected to [2, 0]
-  Vertex 2: connected to [0, 1]
+  Vertex 2: connected to [1, 0]
 
 Coloring result (Welsh-Powell):
 Vertex   Color  Degree       Neighbors           
 --------------------------------------------------
 0        3      2            2(1),1(2)           
 1        2      2            2(1),0(3)           
-2        1      2            0(3),1(2)           
+2        1      2            1(2),0(3)           
 
 Summary:
   Total colors used: 3
@@ -54,9 +37,9 @@ Test Case: Square (C4)
 ==================================================
 Graph with 4 vertices:
 Adjacency List:
-  0: [3, 1]
-  1: [0, 2]
-  2: [3, 1]
+  0: [1, 3]
+  1: [2, 0]
+  2: [1, 3]
   3: [2, 0]
 
 Expected chromatic number: ≤2
@@ -66,30 +49,30 @@ Test status: PASS
 Graph Coloring Visualization:
 ==================================================
 Graph structure:
-  Vertex 0: connected to [3, 1]
-  Vertex 1: connected to [0, 2]
-  Vertex 2: connected to [3, 1]
+  Vertex 0: connected to [1, 3]
+  Vertex 1: connected to [2, 0]
+  Vertex 2: connected to [1, 3]
   Vertex 3: connected to [2, 0]
 
 Coloring result (Welsh-Powell):
 Vertex   Color  Degree       Neighbors           
 --------------------------------------------------
-0        2      2            3(1),1(1)           
-1        1      2            0(2),2(2)           
-2        2      2            3(1),1(1)           
+0        2      2            1(1),3(1)           
+1        1      2            2(2),0(2)           
+2        2      2            1(1),3(1)           
 3        1      2            2(2),0(2)           
 
 Summary:
   Total colors used: 2
   Valid coloring: true
-  Computation time: 0.001ms
+  Computation time: 0.000ms
 
 Test Case: Pentagon (C5)
 ==================================================
 Graph with 5 vertices:
 Adjacency List:
   0: [4, 1]
-  1: [0, 2]
+  1: [2, 0]
   2: [1, 3]
   3: [2, 4]
   4: [0, 3]
@@ -102,7 +85,7 @@ Graph Coloring Visualization:
 ==================================================
 Graph structure:
   Vertex 0: connected to [4, 1]
-  Vertex 1: connected to [0, 2]
+  Vertex 1: connected to [2, 0]
   Vertex 2: connected to [1, 3]
   Vertex 3: connected to [2, 4]
   Vertex 4: connected to [0, 3]
@@ -111,7 +94,7 @@ Coloring result (Welsh-Powell):
 Vertex   Color  Degree       Neighbors           
 --------------------------------------------------
 0        3      2            4(1),1(2)           
-1        2      2            0(3),2(1)           
+1        2      2            2(1),0(3)           
 2        1      2            1(2),3(2)           
 3        2      2            2(1),4(1)           
 4        1      2            0(3),3(2)           
@@ -119,15 +102,15 @@ Vertex   Color  Degree       Neighbors
 Summary:
   Total colors used: 3
   Valid coloring: true
-  Computation time: 0.001ms
+  Computation time: 0.000ms
 
 Test Case: Bipartite Graph
 ==================================================
 Graph with 6 vertices:
 Adjacency List:
-  0: [4, 3]
-  1: [5, 4]
-  2: [5, 3]
+  0: [3, 4]
+  1: [4, 5]
+  2: [3, 5]
   3: [0, 2]
   4: [0, 1]
   5: [1, 2]
@@ -139,9 +122,9 @@ Test status: PASS
 Graph Coloring Visualization:
 ==================================================
 Graph structure:
-  Vertex 0: connected to [4, 3]
-  Vertex 1: connected to [5, 4]
-  Vertex 2: connected to [5, 3]
+  Vertex 0: connected to [3, 4]
+  Vertex 1: connected to [4, 5]
+  Vertex 2: connected to [3, 5]
   Vertex 3: connected to [0, 2]
   Vertex 4: connected to [0, 1]
   Vertex 5: connected to [1, 2]
@@ -149,9 +132,9 @@ Graph structure:
 Coloring result (Welsh-Powell):
 Vertex   Color  Degree       Neighbors           
 --------------------------------------------------
-0        2      2            4(1),3(1)           
-1        2      2            5(1),4(1)           
-2        2      2            5(1),3(1)           
+0        2      2            3(1),4(1)           
+1        2      2            4(1),5(1)           
+2        2      2            3(1),5(1)           
 3        1      2            0(2),2(2)           
 4        1      2            0(2),1(2)           
 5        1      2            1(2),2(2)           
@@ -159,13 +142,13 @@ Vertex   Color  Degree       Neighbors
 Summary:
   Total colors used: 2
   Valid coloring: true
-  Computation time: 0.001ms
+  Computation time: 0.000ms
 
 Performance Comparison: 6 vertices, 6 edges
 ----------------------------------------------------------------------
-Simple Greedy      | Colors:  2 | Time:    0.001ms | Valid: true
-Welsh-Powell       | Colors:  2 | Time:    0.001ms | Valid: true
-Largest First      | Colors:  2 | Time:    0.001ms | Valid: true
+Simple Greedy      | Colors:  2 | Time:    0.000ms | Valid: true
+Welsh-Powell       | Colors:  2 | Time:    0.000ms | Valid: true
+Largest First      | Colors:  2 | Time:    0.000ms | Valid: true
 Backtracking       | Colors:  2 | Time:    0.000ms | Valid: true
 ----------------------------------------------------------------------
 Graph Properties:
@@ -181,16 +164,16 @@ Test Case: Petersen Graph
 ==================================================
 Graph with 10 vertices:
 Adjacency List:
-  0: [5, 1, 4]
-  1: [0, 6, 2]
-  2: [7, 1, 3]
-  3: [4, 8, 2]
-  4: [0, 9, 3]
-  5: [9, 0, 6]
-  6: [7, 5, 1]
-  7: [8, 2, 6]
-  8: [7, 9, 3]
-  9: [8, 5, 4]
+  0: [1, 4, 5]
+  1: [2, 0, 6]
+  2: [1, 3, 7]
+  3: [2, 4, 8]
+  4: [9, 3, 0]
+  5: [9, 6, 0]
+  6: [7, 1, 5]
+  7: [2, 6, 8]
+  8: [9, 3, 7]
+  9: [5, 4, 8]
 
 Expected chromatic number: ≤3
 Algorithm result: 4 colors
@@ -199,42 +182,42 @@ Test status: FAIL
 Graph Coloring Visualization:
 ==================================================
 Graph structure:
-  Vertex 0: connected to [5, 1, 4]
-  Vertex 1: connected to [0, 6, 2]
-  Vertex 2: connected to [7, 1, 3]
-  Vertex 3: connected to [4, 8, 2]
-  Vertex 4: connected to [0, 9, 3]
-  Vertex 5: connected to [9, 0, 6]
-  Vertex 6: connected to [7, 5, 1]
-  Vertex 7: connected to [8, 2, 6]
-  Vertex 8: connected to [7, 9, 3]
-  Vertex 9: connected to [8, 5, 4]
+  Vertex 0: connected to [1, 4, 5]
+  Vertex 1: connected to [2, 0, 6]
+  Vertex 2: connected to [1, 3, 7]
+  Vertex 3: connected to [2, 4, 8]
+  Vertex 4: connected to [9, 3, 0]
+  Vertex 5: connected to [9, 6, 0]
+  Vertex 6: connected to [7, 1, 5]
+  Vertex 7: connected to [2, 6, 8]
+  Vertex 8: connected to [9, 3, 7]
+  Vertex 9: connected to [5, 4, 8]
 
 Coloring result (Welsh-Powell):
 Vertex   Color  Degree       Neighbors           
 --------------------------------------------------
-0        4      3            5(3),1(1),4(2)      
-1        1      3            0(4),6(2),2(2)      
-2        2      3            7(1),1(1),3(1)      
-3        1      3            4(2),8(2),2(2)      
-4        2      3            0(4),9(1),3(1)      
-5        3      3            9(1),0(4),6(2)      
-6        2      3            7(1),5(3),1(1)      
-7        1      3            8(2),2(2),6(2)      
-8        2      3            7(1),9(1),3(1)      
-9        1      3            8(2),5(3),4(2)      
+0        4      3            1(1),4(2),5(3)      
+1        1      3            2(2),0(4),6(2)      
+2        2      3            1(1),3(1),7(1)      
+3        1      3            2(2),4(2),8(2)      
+4        2      3            9(1),3(1),0(4)      
+5        3      3            9(1),6(2),0(4)      
+6        2      3            7(1),1(1),5(3)      
+7        1      3            2(2),6(2),8(2)      
+8        2      3            9(1),3(1),7(1)      
+9        1      3            5(3),4(2),8(2)      
 
 Summary:
   Total colors used: 4
   Valid coloring: true
-  Computation time: 0.002ms
+  Computation time: 0.001ms
 
 Performance Comparison: 10 vertices, 15 edges
 ----------------------------------------------------------------------
 Simple Greedy      | Colors:  4 | Time:    0.001ms | Valid: true
-Welsh-Powell       | Colors:  4 | Time:    0.001ms | Valid: true
-Largest First      | Colors:  4 | Time:    0.001ms | Valid: true
-Backtracking       | Colors:  4 | Time:    0.001ms | Valid: true
+Welsh-Powell       | Colors:  4 | Time:    0.000ms | Valid: true
+Largest First      | Colors:  4 | Time:    0.000ms | Valid: true
+Backtracking       | Colors:  4 | Time:    0.000ms | Valid: true
 ----------------------------------------------------------------------
 Graph Properties:
   Max Degree (Δ): 3
@@ -249,10 +232,10 @@ Test Case: Complete K4
 ==================================================
 Graph with 4 vertices:
 Adjacency List:
-  0: [1, 3, 2]
-  1: [3, 0, 2]
-  2: [1, 0, 3]
-  3: [1, 0, 2]
+  0: [2, 3, 1]
+  1: [0, 2, 3]
+  2: [0, 3, 1]
+  3: [0, 2, 1]
 
 Expected chromatic number: ≤4
 Algorithm result: 4 colors
@@ -261,31 +244,31 @@ Test status: PASS
 Graph Coloring Visualization:
 ==================================================
 Graph structure:
-  Vertex 0: connected to [1, 3, 2]
-  Vertex 1: connected to [3, 0, 2]
-  Vertex 2: connected to [1, 0, 3]
-  Vertex 3: connected to [1, 0, 2]
+  Vertex 0: connected to [2, 3, 1]
+  Vertex 1: connected to [0, 2, 3]
+  Vertex 2: connected to [0, 3, 1]
+  Vertex 3: connected to [0, 2, 1]
 
 Coloring result (Welsh-Powell):
 Vertex   Color  Degree       Neighbors           
 --------------------------------------------------
-0        4      3            1(3),3(1),2(2)      
-1        3      3            3(1),0(4),2(2)      
-2        2      3            1(3),0(4),3(1)      
-3        1      3            1(3),0(4),2(2)      
+0        4      3            2(2),3(1),1(3)      
+1        3      3            0(4),2(2),3(1)      
+2        2      3            0(4),3(1),1(3)      
+3        1      3            0(4),2(2),1(3)      
 
 Summary:
   Total colors used: 4
   Valid coloring: true
-  Computation time: 0.001ms
+  Computation time: 0.000ms
 
 Medium Random Graph Performance Test:
 ==================================================
 Performance Comparison: 15 vertices, 44 edges
 ----------------------------------------------------------------------
-Simple Greedy      | Colors:  5 | Time:    0.002ms | Valid: true
-Welsh-Powell       | Colors:  5 | Time:    0.003ms | Valid: true
-Largest First      | Colors:  4 | Time:    0.002ms | Valid: true
+Simple Greedy      | Colors:  5 | Time:    0.001ms | Valid: true
+Welsh-Powell       | Colors:  5 | Time:    0.001ms | Valid: true
+Largest First      | Colors:  4 | Time:    0.001ms | Valid: true
 ----------------------------------------------------------------------
 Graph Properties:
   Max Degree (Δ): 9
@@ -296,7 +279,7 @@ Large Graph Stress Test:
 ========================================
 Random graph: 25 vertices, 101 edges
 Welsh-Powell coloring: 5 colors
-Computation time: 0.01ms
+Computation time: 0.00ms
 Graph density: 33.7%
 
 Algorithm Comparison on Different Graph Types:

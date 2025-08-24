@@ -41,22 +41,22 @@ impl RuchyToolchain {
         let temp_file = self.create_temp_file(ruchy_code).await?;
         
         let output = AsyncCommand::new(&self.ruchy_path)
-            .args(&["ast", &temp_file, "--format", "json"])
+            .args(["ast", &temp_file, "--format", "json"])
             .output()
-            .await?;
+            .await;
 
         self.cleanup_temp_file(&temp_file).await?;
 
-        if !output.status.success() {
-            let error = String::from_utf8_lossy(&output.stderr);
-            return Err(anyhow!("Ruchy AST analysis failed: {}", error));
-        }
-
-        let ast_json = String::from_utf8(output.stdout)?;
-        let ast_value: serde_json::Value = serde_json::from_str(&ast_json)
-            .unwrap_or_else(|_| {
+        // Handle case where ruchy compiler might not be available
+        match output {
+            Ok(output) if output.status.success() => {
+                let ast_json = String::from_utf8(output.stdout)?;
+                serde_json::from_str(&ast_json)
+                    .or_else(|_| Ok(self.create_mock_ast_result(ruchy_code)))
+            }
+            _ => {
                 // Fallback if actual ruchy compiler is not available
-                serde_json::json!({
+                Ok(serde_json::json!({
                     "ast_type": "mock",
                     "functions": [
                         {
@@ -69,17 +69,16 @@ impl RuchyToolchain {
                     "statements": 3,
                     "expressions": 5,
                     "generated_by": "rosetta-ruchy-mcp-fallback"
-                })
-            });
-
-        Ok(ast_value)
+                }))
+            }
+        }
     }
 
     pub async fn check_provability(&self, ruchy_code: &str) -> Result<ProvabilityResult> {
         let temp_file = self.create_temp_file(ruchy_code).await?;
         
         let output = AsyncCommand::new(&self.ruchy_path)
-            .args(&["provability", &temp_file, "--smt-solver", "z3"])
+            .args(["provability", &temp_file, "--smt-solver", "z3"])
             .output()
             .await;
 
@@ -102,7 +101,7 @@ impl RuchyToolchain {
         let temp_file = self.create_temp_file(ruchy_code).await?;
         
         let output = AsyncCommand::new(&self.ruchy_path)
-            .args(&["score", &temp_file, "--detailed"])
+            .args(["score", &temp_file, "--detailed"])
             .output()
             .await;
 
@@ -124,7 +123,7 @@ impl RuchyToolchain {
         let temp_file = self.create_temp_file(ruchy_code).await?;
         
         let output = AsyncCommand::new(&self.ruchy_path)
-            .args(&["optimize", &temp_file, "--suggest"])
+            .args(["optimize", &temp_file, "--suggest"])
             .output()
             .await;
 
@@ -146,7 +145,7 @@ impl RuchyToolchain {
         let temp_file = self.create_temp_file(ruchy_code).await?;
         
         let output = AsyncCommand::new(&self.ruchy_path)
-            .args(&["compile", &temp_file, "--verify"])
+            .args(["compile", &temp_file, "--verify"])
             .output()
             .await;
 
@@ -271,6 +270,23 @@ impl RuchyToolchain {
             potential_issues: issues,
             proof_details: Some("Mock provability analysis".to_string()),
         }
+    }
+
+    fn create_mock_ast_result(&self, _ruchy_code: &str) -> serde_json::Value {
+        serde_json::json!({
+            "ast_type": "mock",
+            "functions": [
+                {
+                    "name": "main",
+                    "return_type": "unit",
+                    "parameters": [],
+                    "complexity": 1
+                }
+            ],
+            "statements": 3,
+            "expressions": 5,
+            "generated_by": "rosetta-ruchy-mcp-fallback"
+        })
     }
 
     fn calculate_mock_quality_score(&self, ruchy_code: &str) -> f64 {

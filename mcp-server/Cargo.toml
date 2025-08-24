@@ -12,6 +12,10 @@ categories = ["development-tools", "web-programming::http-server"]
 edition.workspace = true
 rust-version.workspace = true
 
+[lib]
+name = "rosetta_ruchy_mcp"
+path = "src/lib.rs"
+
 [[bin]]
 name = "rosetta-ruchy-mcp"
 path = "src/main.rs"
@@ -51,6 +55,7 @@ subprocess.workspace = true
 tempfile.workspace = true
 assert_cmd.workspace = true
 predicates.workspace = true
+hyper = "0.14"
 
 [features]
 default = []

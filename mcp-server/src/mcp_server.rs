@@ -154,7 +154,7 @@ impl MCPServer {
         Ok(())
     }
 
-    fn create_router(self) -> Router {
+    pub fn create_router(self) -> Router {
         Router::new()
             .route("/", get(root_handler))
             .route("/health", get(health_handler))

@@ -76,7 +76,7 @@ Rod Cutting Result (Bottom-up DP):
   Optimal Cuts: [1, 1, 1, 1, 1]
   Total Cut Length: 5
   Number of Pieces: 5
-  Computation Time: 0.003ms
+  Computation Time: 0.002ms
 
 Expected: 50, Got: 50, Test: PASS
 
@@ -116,10 +116,10 @@ Medium Problem Performance Test:
 ==================================================
 Performance Comparison: length=10, prices=[2, 5, 7, 8, 10, 12, 14, 15, 16, 17]
 ----------------------------------------------------------------------
-Bottom-up DP       | Revenue:   25 | Time:    0.001ms
-Top-down DP        | Revenue:   25 | Time:    0.003ms
-Greedy Heuristic   | Revenue:   25 | Time:    0.001ms
-Naive Recursive    | Revenue:   25 | Time:    0.006ms
+Bottom-up DP       | Revenue:   25 | Time:    0.000ms
+Top-down DP        | Revenue:   25 | Time:    0.002ms
+Greedy Heuristic   | Revenue:   25 | Time:    0.000ms
+Naive Recursive    | Revenue:   25 | Time:    0.002ms
 ----------------------------------------------------------------------
 Optimal algorithms consistent: true
 Greedy approximation: 25 / 25 = 100.00% of optimal
@@ -135,8 +135,8 @@ Stress Test:
 ==============================
 Fibonacci prices, rod length 100:
 Maximum revenue: 300100
-Computation time: 0.01ms
-Subproblems per second: 1444877908
+Computation time: 0.00ms
+Subproblems per second: 2608242045
 
 Unit Price Analysis Example:
 =============================================
