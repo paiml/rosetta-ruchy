@@ -1,0 +1,194 @@
+// Benchmark Harness for Rosetta Ruchy
+// Scientific performance measurement with statistical rigor
+
+use std::time::Instant;
+use std::fs::File;
+use std::io::Write;
+
+// Benchmark configuration
+struct BenchmarkConfig {
+    iterations: i32,
+    warmup: i32,
+    input_sizes: Vec<i32>,
+    output_file: String,
+}
+
+// Benchmark result for a single run
+struct BenchmarkResult {
+    algorithm: String,
+    language: String,
+    input_size: i32,
+    time_ns: i64,
+    memory_bytes: i64,
+}
+
+// Statistical summary
+struct Statistics {
+    mean: f64,
+    std_dev: f64,
+    min: f64,
+    max: f64,
+    p50: f64,
+    p95: f64,
+    p99: f64,
+}
+
+// Main benchmark function
+fun benchmark_algorithm(
+    name: String,
+    f: fn(i32) -> i32,
+    config: BenchmarkConfig
+) -> Vec<BenchmarkResult> {
+    let mut results = Vec::new();
+    
+    // Warmup phase
+    for _ in 0..config.warmup {
+        f(100);  // Small input for warmup
+    }
+    
+    // Benchmark each input size
+    for size in config.input_sizes {
+        let mut times = Vec::new();
+        
+        // Run iterations
+        for _ in 0..config.iterations {
+            let start = Instant::now();
+            f(size);
+            let duration = start.elapsed();
+            times.push(duration.as_nanos() as i64);
+        }
+        
+        // Store results
+        for time in times {
+            results.push(BenchmarkResult {
+                algorithm: name.clone(),
+                language: "ruchy".to_string(),
+                input_size: size,
+                time_ns: time,
+                memory_bytes: 0,  // TODO: Implement memory tracking
+            });
+        }
+    }
+    
+    results
+}
+
+// Calculate statistics from results
+fun calculate_statistics(times: Vec<i64>) -> Statistics {
+    let n = times.len() as f64;
+    
+    // Sort for percentiles
+    let mut sorted = times.clone();
+    sorted.sort();
+    
+    // Calculate mean
+    let sum: i64 = times.iter().sum();
+    let mean = sum as f64 / n;
+    
+    // Calculate standard deviation
+    let variance: f64 = times.iter()
+        .map(|x| (*x as f64 - mean).powi(2))
+        .sum::<f64>() / n;
+    let std_dev = variance.sqrt();
+    
+    // Get percentiles
+    let p50_idx = (n * 0.50) as usize;
+    let p95_idx = (n * 0.95) as usize;
+    let p99_idx = (n * 0.99) as usize;
+    
+    Statistics {
+        mean,
+        std_dev,
+        min: sorted[0] as f64,
+        max: sorted[sorted.len() - 1] as f64,
+        p50: sorted[p50_idx] as f64,
+        p95: sorted[p95_idx] as f64,
+        p99: sorted[p99_idx] as f64,
+    }
+}
+
+// Export results to JSON
+fun export_results(results: Vec<BenchmarkResult>, filename: String) {
+    let mut file = File::create(filename).unwrap();
+    
+    writeln!(file, "[");
+    for (i, result) in results.iter().enumerate() {
+        writeln!(file, "  {{");
+        writeln!(file, "    \"algorithm\": \"{}\",", result.algorithm);
+        writeln!(file, "    \"language\": \"{}\",", result.language);
+        writeln!(file, "    \"input_size\": {},", result.input_size);
+        writeln!(file, "    \"time_ns\": {},", result.time_ns);
+        writeln!(file, "    \"memory_bytes\": {}", result.memory_bytes);
+        
+        if i < results.len() - 1 {
+            writeln!(file, "  }},");
+        } else {
+            writeln!(file, "  }}");
+        }
+    }
+    writeln!(file, "]");
+}
+
+// Generate statistical report
+fun generate_report(results: Vec<BenchmarkResult>) -> String {
+    let mut report = String::new();
+    
+    // Group by input size
+    let mut grouped = std::collections::HashMap::new();
+    for result in results {
+        grouped.entry(result.input_size)
+            .or_insert_with(Vec::new)
+            .push(result.time_ns);
+    }
+    
+    report.push_str("=== BENCHMARK RESULTS ===\n\n");
+    
+    for (size, times) in grouped {
+        let stats = calculate_statistics(times);
+        
+        report.push_str(&format!("Input Size: {}\n", size));
+        report.push_str(&format!("  Mean: {:.2} ns\n", stats.mean));
+        report.push_str(&format!("  Std Dev: {:.2} ns\n", stats.std_dev));
+        report.push_str(&format!("  Min: {:.2} ns\n", stats.min));
+        report.push_str(&format!("  Max: {:.2} ns\n", stats.max));
+        report.push_str(&format!("  P50: {:.2} ns\n", stats.p50));
+        report.push_str(&format!("  P95: {:.2} ns\n", stats.p95));
+        report.push_str(&format!("  P99: {:.2} ns\n", stats.p99));
+        report.push_str("\n");
+    }
+    
+    report
+}
+
+// Example usage
+fun main() {
+    let config = BenchmarkConfig {
+        iterations: 10000,
+        warmup: 100,
+        input_sizes: vec![10, 20, 30, 40],
+        output_file: "results/benchmarks.json".to_string(),
+    };
+    
+    // Example: benchmark fibonacci
+    let results = benchmark_algorithm(
+        "fibonacci".to_string(),
+        |n| fibonacci(n),
+        config
+    );
+    
+    // Export results
+    export_results(results.clone(), config.output_file);
+    
+    // Generate report
+    let report = generate_report(results);
+    println!("{}", report);
+}
+
+// Example fibonacci function to benchmark
+fun fibonacci(n: i32) -> i32 {
+    if n <= 1 {
+        n
+    } else {
+        fibonacci(n - 1) + fibonacci(n - 2)
+    }
+}
