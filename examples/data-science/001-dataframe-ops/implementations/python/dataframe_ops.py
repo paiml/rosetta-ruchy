@@ -166,12 +166,12 @@ def analyze_complexity():
     print("  Operation results: O(k) where k ≤ n")
     print("")
     
-    print("Python/pandas Advantages:")
-    print("  ✓ Optimized C implementations (NumPy)")
-    print("  ✓ Vectorized operations")
+    print("Python Advantages:")
+    print("  ✓ Simple, readable syntax")
     print("  ✓ Rich ecosystem and libraries")
     print("  ✓ Dynamic typing flexibility")
-    print("  ✓ Built-in statistical functions")
+    print("  ✓ Rapid prototyping")
+    print("  ✓ Interactive development")
     print("")
     
     print("Ruchy Advantages:")
@@ -183,8 +183,8 @@ def analyze_complexity():
 
 def main():
     """Main demonstration function"""
-    print("Data Operations Foundation - Python/pandas")
-    print("=========================================")
+    print("Data Operations Foundation - Python")
+    print("===================================")
     print("Performance comparison with Ruchy implementation")
     print("")
     
@@ -200,7 +200,7 @@ def main():
     analyze_complexity()
     print("")
     
-    print("✅ Python/pandas implementation complete")
+    print("✅ Python implementation complete")
     print("📊 Ready for performance comparison with Ruchy")
     print("🎯 SPRINT 23: Cross-language validation in progress")
 
