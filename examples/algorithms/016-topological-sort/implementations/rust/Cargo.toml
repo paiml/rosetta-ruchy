@@ -1,0 +1,10 @@
+[package]
+name = "topological-sort-rust"
+version = "1.1.0"
+edition = "2021"
+
+[dependencies]
+
+[[bin]]
+name = "topological-sort-rust"
+path = "src/main.rs"
