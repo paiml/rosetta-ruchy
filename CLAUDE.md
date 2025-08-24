@@ -12,6 +12,18 @@ This is rosetta-ruchy, a polyglot benchmark suite designed to demonstrate Ruchy'
 1. Every Ruchy example MUST showcase the language's advanced tooling capabilities (AST analysis, provability checking, formal verification, hardware-aware optimization). This is Ruchy's defining trait and primary competitive advantage.
 2. **ALL SCRIPTING MUST BE IN RUCHY** - No bash, Python, or other scripting languages. Use `.ruchy` files for all automation, benchmarking, and tooling. This demonstrates Ruchy's capability as a complete ecosystem replacement.
 
+## Ruchy Integration Tracking
+
+**MANDATORY**: All Ruchy integration work must be documented in [INTEGRATION.md](./INTEGRATION.md) for scientific rigor:
+
+- **Current Version**: Ruchy 1.8.0 (verified working)
+- **Feature Status**: What works, what has limitations, what's unavailable
+- **Version Migration**: When upgrading Ruchy, test and document changes
+- **Feedback Loop**: Report issues to Ruchy team with reproducible examples
+- **Scientific Impact**: Document how limitations affect validation goals
+
+**Core Principle**: This is science. Every version change requires systematic testing and documentation of capabilities to maintain reproducible results and provide valuable feedback to the Ruchy development team.
+
 ## Repository Status
 
 **Current State**: Initial setup phase

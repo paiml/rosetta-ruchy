@@ -12,14 +12,33 @@ Transform Rosetta Ruchy into a **reproducible scientific benchmark suite** that 
 ### 📋 Sprint Process (MANDATORY)
 ```bash
 # Every Sprint:
-1. Implement with scientific rigor
-2. Collect empirical data
-3. Generate formal proofs
-4. Commit and push to GitHub
-5. Create scientific report
+1. Update INTEGRATION.md with current Ruchy version
+2. Test verification tools (ruchy check/runtime/provability/score)
+3. Implement with scientific rigor using documented patterns
+4. Collect empirical data and formal proofs
+5. Document any feature limitations or workarounds
+6. Commit and push to GitHub with version tracking
+7. Create scientific report with reproducible results
 
 # Sprint Duration: 2-3 days
-# Deliverable: Complete, reproducible algorithm validation
+# Deliverable: Complete, version-tracked algorithm validation
+```
+
+### 🔄 Version Management Protocol
+```bash
+# When Ruchy version updates:
+1. Update INTEGRATION.md header with new version
+2. Re-test all verification tools on existing algorithms  
+3. Test previously limited features (format strings, assert!, etc.)
+4. Create new algorithm versions using newly available features
+5. Maintain backward compatibility with previous versions
+6. Update scientific reports with version-specific results
+7. Provide feedback to Ruchy team on resolved/new issues
+
+# File Naming Convention:
+algorithm_v18.ruchy  # Ruchy 1.8.0 compatible version
+algorithm_v19.ruchy  # Ruchy 1.9.0 with new features (future)
+algorithm.ruchy      # Latest version (symlink or copy of newest)
 ```
 
 ---
