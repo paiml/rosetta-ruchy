@@ -5,13 +5,15 @@
 //! detection with configurable thresholds and comprehensive alerting.
 
 use anyhow::{Context, Result};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use chrono::{DateTime, Utc, Duration};
 
-use crate::statistics::{StatisticalAnalysis, ComparisonResult, PerformanceComparator, SignificanceLevel};
+use crate::statistics::{
+    ComparisonResult, PerformanceComparator, SignificanceLevel, StatisticalAnalysis,
+};
 
 /// Performance regression detector with configurable thresholds
 pub struct RegressionDetector {
@@ -106,7 +108,7 @@ pub enum RegressionSeverity {
     None,
     /// Minor regression (< 5% slower)
     Minor,
-    /// Moderate regression (5-15% slower) 
+    /// Moderate regression (5-15% slower)
     Moderate,
     /// Major regression (15-30% slower)
     Major,
@@ -180,13 +182,19 @@ impl RegressionDetector {
             environment_fingerprint: self.generate_environment_fingerprint().await,
         };
 
-        self.save_baseline(&baseline).await
-            .with_context(|| format!("Failed to save baseline for {}/{}", implementation, example))?;
+        self.save_baseline(&baseline).await.with_context(|| {
+            format!("Failed to save baseline for {}/{}", implementation, example)
+        })?;
 
-        println!("📊 Performance baseline established for {}/{}", implementation, example);
-        println!("   Mean: {:.2}ms (±{:.2}ms)", 
-                baseline.statistics.sample_stats.mean / 1_000_000.0,
-                baseline.statistics.sample_stats.std_error / 1_000_000.0);
+        println!(
+            "📊 Performance baseline established for {}/{}",
+            implementation, example
+        );
+        println!(
+            "   Mean: {:.2}ms (±{:.2}ms)",
+            baseline.statistics.sample_stats.mean / 1_000_000.0,
+            baseline.statistics.sample_stats.std_error / 1_000_000.0
+        );
 
         Ok(())
     }
@@ -203,21 +211,23 @@ impl RegressionDetector {
 
         for (implementation, current_stats) in current_results {
             if let Some(baseline) = self.load_baseline(implementation, example).await? {
-                let comparison = PerformanceComparator::compare_performance(
-                    &baseline.statistics,
-                    current_stats,
-                );
+                let comparison =
+                    PerformanceComparator::compare_performance(&baseline.statistics, current_stats);
 
                 let severity = self.classify_regression_severity(&comparison);
                 let quality_gate_violation = self.is_quality_gate_violation(&severity, &comparison);
 
-                if matches!(severity, RegressionSeverity::Major | RegressionSeverity::Critical) {
+                if matches!(
+                    severity,
+                    RegressionSeverity::Major | RegressionSeverity::Critical
+                ) {
                     has_critical_regression = true;
                 } else if matches!(severity, RegressionSeverity::Moderate) {
                     has_warning_regression = true;
                 }
 
-                let recommendations = self.generate_regression_recommendations(&severity, &comparison);
+                let recommendations =
+                    self.generate_regression_recommendations(&severity, &comparison);
 
                 comparisons.push(ImplementationRegression {
                     implementation: implementation.clone(),
@@ -239,7 +249,8 @@ impl RegressionDetector {
             RegressionStatus::Healthy
         };
 
-        let overall_recommendations = self.generate_overall_recommendations(&overall_status, &comparisons);
+        let overall_recommendations =
+            self.generate_overall_recommendations(&overall_status, &comparisons);
 
         let analysis = RegressionAnalysis {
             regression_detected: has_critical_regression || has_warning_regression,
@@ -253,11 +264,17 @@ impl RegressionDetector {
     }
 
     /// Generate regression report
-    pub async fn generate_regression_report(&self, analysis: &RegressionAnalysis) -> Result<String> {
+    pub async fn generate_regression_report(
+        &self,
+        analysis: &RegressionAnalysis,
+    ) -> Result<String> {
         let mut report = String::new();
 
         report.push_str("# Performance Regression Analysis Report\n\n");
-        report.push_str(&format!("Generated: {}\n\n", analysis.analyzed_at.format("%Y-%m-%d %H:%M:%S UTC")));
+        report.push_str(&format!(
+            "Generated: {}\n\n",
+            analysis.analyzed_at.format("%Y-%m-%d %H:%M:%S UTC")
+        ));
 
         // Executive summary
         report.push_str("## Executive Summary\n\n");
@@ -266,27 +283,43 @@ impl RegressionDetector {
                 report.push_str("✅ **Status: HEALTHY** - No performance regressions detected\n");
             }
             RegressionStatus::Warning => {
-                report.push_str("⚠️ **Status: WARNING** - Minor performance degradation detected\n");
+                report
+                    .push_str("⚠️ **Status: WARNING** - Minor performance degradation detected\n");
             }
             RegressionStatus::Critical => {
-                report.push_str("🚨 **Status: CRITICAL** - Significant performance regression detected\n");
-                report.push_str("**RECOMMENDED ACTION**: Halt deployment and investigate performance issues\n");
+                report.push_str(
+                    "🚨 **Status: CRITICAL** - Significant performance regression detected\n",
+                );
+                report.push_str(
+                    "**RECOMMENDED ACTION**: Halt deployment and investigate performance issues\n",
+                );
             }
             RegressionStatus::Inconclusive => {
-                report.push_str("❓ **Status: INCONCLUSIVE** - Insufficient baseline data for analysis\n");
+                report.push_str(
+                    "❓ **Status: INCONCLUSIVE** - Insufficient baseline data for analysis\n",
+                );
             }
         }
 
-        report.push_str(&format!("\n- **Implementations Analyzed**: {}\n", analysis.comparisons.len()));
-        report.push_str(&format!("- **Regression Threshold**: {:.1}%\n\n", self.threshold_percent));
+        report.push_str(&format!(
+            "\n- **Implementations Analyzed**: {}\n",
+            analysis.comparisons.len()
+        ));
+        report.push_str(&format!(
+            "- **Regression Threshold**: {:.1}%\n\n",
+            self.threshold_percent
+        ));
 
         // Detailed analysis
         if !analysis.comparisons.is_empty() {
             report.push_str("## Detailed Analysis\n\n");
-            
+
             for comparison in &analysis.comparisons {
-                report.push_str(&format!("### {} Implementation\n\n", comparison.implementation));
-                
+                report.push_str(&format!(
+                    "### {} Implementation\n\n",
+                    comparison.implementation
+                ));
+
                 let status_emoji = match comparison.severity {
                     RegressionSeverity::None => "✅",
                     RegressionSeverity::Minor => "💚",
@@ -295,12 +328,16 @@ impl RegressionDetector {
                     RegressionSeverity::Critical => "🚨",
                 };
 
-                report.push_str(&format!("{} **Performance Change**: {:.1}%\n", 
-                               status_emoji, comparison.comparison.percent_change));
+                report.push_str(&format!(
+                    "{} **Performance Change**: {:.1}%\n",
+                    status_emoji, comparison.comparison.percent_change
+                ));
                 report.push_str(&format!("- **Severity**: {:?}\n", comparison.severity));
-                report.push_str(&format!("- **Statistical Significance**: {:?}\n", 
-                               comparison.comparison.significance));
-                
+                report.push_str(&format!(
+                    "- **Statistical Significance**: {:?}\n",
+                    comparison.comparison.significance
+                ));
+
                 if comparison.quality_gate_violation {
                     report.push_str("- **Quality Gate**: ❌ VIOLATION\n");
                 } else {
@@ -342,7 +379,7 @@ impl RegressionDetector {
         for entry in fs::read_dir(&self.baselines_dir)? {
             let entry = entry?;
             let path = entry.path();
-            
+
             if path.extension().is_some_and(|ext| ext == "json") {
                 if let Ok(baseline) = self.load_baseline_from_file(&path).await {
                     if baseline.timestamp < cutoff_date {
@@ -364,14 +401,13 @@ impl RegressionDetector {
 
     /// Save baseline to disk
     async fn save_baseline(&self, baseline: &PerformanceBaseline) -> Result<()> {
-        fs::create_dir_all(&self.baselines_dir)
-            .context("Failed to create baselines directory")?;
+        fs::create_dir_all(&self.baselines_dir).context("Failed to create baselines directory")?;
 
         let filename = format!("{}_baseline.json", baseline.implementation);
         let path = self.baselines_dir.join(filename);
 
-        let json = serde_json::to_string_pretty(baseline)
-            .context("Failed to serialize baseline")?;
+        let json =
+            serde_json::to_string_pretty(baseline).context("Failed to serialize baseline")?;
 
         fs::write(&path, json)
             .with_context(|| format!("Failed to write baseline to {}", path.display()))?;
@@ -380,7 +416,11 @@ impl RegressionDetector {
     }
 
     /// Load baseline from disk
-    async fn load_baseline(&self, implementation: &str, _example: &str) -> Result<Option<PerformanceBaseline>> {
+    async fn load_baseline(
+        &self,
+        implementation: &str,
+        _example: &str,
+    ) -> Result<Option<PerformanceBaseline>> {
         let filename = format!("{}_baseline.json", implementation);
         let path = self.baselines_dir.join(filename);
 
@@ -408,7 +448,10 @@ impl RegressionDetector {
     /// Classify regression severity based on performance change
     fn classify_regression_severity(&self, comparison: &ComparisonResult) -> RegressionSeverity {
         // Only consider statistically significant regressions
-        if !matches!(comparison.significance, SignificanceLevel::SignificantRegression) {
+        if !matches!(
+            comparison.significance,
+            SignificanceLevel::SignificantRegression
+        ) {
             return RegressionSeverity::None;
         }
 
@@ -425,18 +468,31 @@ impl RegressionDetector {
     }
 
     /// Check if regression violates quality gates
-    fn is_quality_gate_violation(&self, severity: &RegressionSeverity, comparison: &ComparisonResult) -> bool {
+    fn is_quality_gate_violation(
+        &self,
+        severity: &RegressionSeverity,
+        comparison: &ComparisonResult,
+    ) -> bool {
         // Toyota Way: Any statistically significant regression above threshold violates quality
-        matches!(severity, RegressionSeverity::Moderate | RegressionSeverity::Major | RegressionSeverity::Critical) &&
-        matches!(comparison.significance, SignificanceLevel::SignificantRegression)
+        matches!(
+            severity,
+            RegressionSeverity::Moderate | RegressionSeverity::Major | RegressionSeverity::Critical
+        ) && matches!(
+            comparison.significance,
+            SignificanceLevel::SignificantRegression
+        )
     }
 
     /// Generate recommendations for specific regression
-    fn generate_regression_recommendations(&self, severity: &RegressionSeverity, _comparison: &ComparisonResult) -> Vec<String> {
+    fn generate_regression_recommendations(
+        &self,
+        severity: &RegressionSeverity,
+        _comparison: &ComparisonResult,
+    ) -> Vec<String> {
         match severity {
-            RegressionSeverity::None => vec![
-                "Performance within acceptable bounds - continue monitoring".to_string(),
-            ],
+            RegressionSeverity::None => {
+                vec!["Performance within acceptable bounds - continue monitoring".to_string()]
+            }
             RegressionSeverity::Minor => vec![
                 "Minor performance change detected - monitor for trends".to_string(),
                 "Consider profiling to identify optimization opportunities".to_string(),
@@ -462,27 +518,38 @@ impl RegressionDetector {
     }
 
     /// Generate overall recommendations
-    fn generate_overall_recommendations(&self, status: &RegressionStatus, comparisons: &[ImplementationRegression]) -> Vec<String> {
+    fn generate_overall_recommendations(
+        &self,
+        status: &RegressionStatus,
+        comparisons: &[ImplementationRegression],
+    ) -> Vec<String> {
         let mut recommendations = Vec::new();
 
         match status {
             RegressionStatus::Healthy => {
-                recommendations.push("All implementations performing within expected bounds".to_string());
-                recommendations.push("Continue with deployment - monitoring recommended".to_string());
+                recommendations
+                    .push("All implementations performing within expected bounds".to_string());
+                recommendations
+                    .push("Continue with deployment - monitoring recommended".to_string());
             }
             RegressionStatus::Warning => {
                 recommendations.push("Minor performance degradations detected".to_string());
-                recommendations.push("Schedule performance review for affected implementations".to_string());
-                recommendations.push("Consider additional testing before full deployment".to_string());
+                recommendations
+                    .push("Schedule performance review for affected implementations".to_string());
+                recommendations
+                    .push("Consider additional testing before full deployment".to_string());
             }
             RegressionStatus::Critical => {
                 recommendations.push("CRITICAL: Halt deployment immediately".to_string());
-                recommendations.push("Investigate performance regressions before proceeding".to_string());
-                recommendations.push("Consider rolling back to previous stable version".to_string());
+                recommendations
+                    .push("Investigate performance regressions before proceeding".to_string());
+                recommendations
+                    .push("Consider rolling back to previous stable version".to_string());
                 recommendations.push("Run comprehensive performance analysis".to_string());
             }
             RegressionStatus::Inconclusive => {
-                recommendations.push("Establish performance baselines before regression analysis".to_string());
+                recommendations
+                    .push("Establish performance baselines before regression analysis".to_string());
                 recommendations.push("Run benchmark suite to collect baseline data".to_string());
             }
         }
@@ -494,7 +561,10 @@ impl RegressionDetector {
             .collect();
 
         if !violations.is_empty() {
-            recommendations.push(format!("{} quality gate violations require immediate attention", violations.len()));
+            recommendations.push(format!(
+                "{} quality gate violations require immediate attention",
+                violations.len()
+            ));
         }
 
         recommendations
@@ -524,10 +594,12 @@ impl RegressionDetector {
     async fn generate_environment_fingerprint(&self) -> String {
         // Simple fingerprint based on system characteristics
         // In production, this would include more detailed system information
-        format!("{}-{}-{}", 
-               std::env::consts::OS,
-               std::env::consts::ARCH,
-               chrono::Utc::now().format("%Y%m"))
+        format!(
+            "{}-{}-{}",
+            std::env::consts::OS,
+            std::env::consts::ARCH,
+            chrono::Utc::now().format("%Y%m")
+        )
     }
 }
 
@@ -539,7 +611,7 @@ mod tests {
     #[tokio::test]
     async fn test_regression_severity_classification() {
         let detector = RegressionDetector::new();
-        
+
         // Test different regression levels
         let comparison = ComparisonResult {
             percent_change: 3.0,
@@ -548,7 +620,7 @@ mod tests {
             baseline_mean: 1000000.0,
             current_mean: 1030000.0,
         };
-        
+
         let severity = detector.classify_regression_severity(&comparison);
         assert!(matches!(severity, RegressionSeverity::Minor));
 
@@ -559,7 +631,7 @@ mod tests {
             baseline_mean: 1000000.0,
             current_mean: 1100000.0,
         };
-        
+
         let severity = detector.classify_regression_severity(&comparison);
         assert!(matches!(severity, RegressionSeverity::Moderate));
     }
@@ -567,8 +639,7 @@ mod tests {
     #[tokio::test]
     async fn test_baseline_storage() -> Result<()> {
         let temp_dir = TempDir::new()?;
-        let _detector = RegressionDetector::new()
-            .with_baselines_dir(temp_dir.path().to_path_buf());
+        let _detector = RegressionDetector::new().with_baselines_dir(temp_dir.path().to_path_buf());
 
         // This test would require actual statistical data to work fully
         // but demonstrates the structure

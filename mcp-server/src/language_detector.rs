@@ -15,77 +15,91 @@ impl LanguageDetector {
         let mut extensions = HashMap::new();
 
         // Rust patterns - using simple string contains for now
-        patterns.insert("rust".to_string(), vec![
-            "fn main(",
-            "let mut",
-            "impl ",
-            "use std::",
-            "match ",
-            "Result<",
-            "println!",
-            ": i32",
-        ]);
+        patterns.insert(
+            "rust".to_string(),
+            vec![
+                "fn main(",
+                "let mut",
+                "impl ",
+                "use std::",
+                "match ",
+                "Result<",
+                "println!",
+                ": i32",
+            ],
+        );
         extensions.insert(".rs".to_string(), "rust".to_string());
 
         // Python patterns
-        patterns.insert("python".to_string(), vec![
-            "def ",
-            "import ",
-            "from ",
-            "if __name__",
-            "class ",
-            "print(",
-        ]);
+        patterns.insert(
+            "python".to_string(),
+            vec![
+                "def ",
+                "import ",
+                "from ",
+                "if __name__",
+                "class ",
+                "print(",
+            ],
+        );
         extensions.insert(".py".to_string(), "python".to_string());
 
         // JavaScript patterns
-        patterns.insert("javascript".to_string(), vec![
-            "function ",
-            "const ",
-            "let ",
-            "var ",
-            "=>",
-            "require(",
-            "console.log",
-        ]);
+        patterns.insert(
+            "javascript".to_string(),
+            vec![
+                "function ",
+                "const ",
+                "let ",
+                "var ",
+                "=>",
+                "require(",
+                "console.log",
+            ],
+        );
         extensions.insert(".js".to_string(), "javascript".to_string());
         extensions.insert(".ts".to_string(), "typescript".to_string());
 
         // Go patterns
-        patterns.insert("go".to_string(), vec![
-            "func ",
-            "package ",
-            "import \"",
-            "type ",
-            " struct {",
-            "go ",
-        ]);
+        patterns.insert(
+            "go".to_string(),
+            vec![
+                "func ",
+                "package ",
+                "import \"",
+                "type ",
+                " struct {",
+                "go ",
+            ],
+        );
         extensions.insert(".go".to_string(), "go".to_string());
 
         // C patterns
-        patterns.insert("c".to_string(), vec![
-            "#include",
-            "int main(",
-            "printf(",
-            "malloc(",
-            "void ",
-            "#define",
-        ]);
+        patterns.insert(
+            "c".to_string(),
+            vec![
+                "#include",
+                "int main(",
+                "printf(",
+                "malloc(",
+                "void ",
+                "#define",
+            ],
+        );
         extensions.insert(".c".to_string(), "c".to_string());
         extensions.insert(".h".to_string(), "c".to_string());
 
         // Ruchy patterns (similar to Rust but with 'fun' instead of 'fn')
-        patterns.insert("ruchy".to_string(), vec![
-            "fun ",
-            "let ",
-            "use ",
-            "impl ",
-            "ruchy::",
-            "#[verify",
-        ]);
+        patterns.insert(
+            "ruchy".to_string(),
+            vec!["fun ", "let ", "use ", "impl ", "ruchy::", "#[verify"],
+        );
         extensions.insert(".ruchy".to_string(), "ruchy".to_string());
 
-        Self { patterns, extensions }
+        Self {
+            patterns,
+            extensions,
+        }
     }
 
     pub fn detect(&self, code: &str) -> Result<String> {
@@ -146,7 +160,8 @@ mod tests {
     #[test]
     fn test_python_detection() {
         let detector = LanguageDetector::new();
-        let python_code = "def main():\n    print(\"Hello\")\n\nif __name__ == \"__main__\":\n    main()";
+        let python_code =
+            "def main():\n    print(\"Hello\")\n\nif __name__ == \"__main__\":\n    main()";
         assert_eq!(detector.detect(python_code).unwrap(), "python");
     }
 
@@ -181,12 +196,30 @@ mod tests {
     #[test]
     fn test_extension_detection() {
         let detector = LanguageDetector::new();
-        
-        assert_eq!(detector.detect_by_extension("main.rs"), Some("rust".to_string()));
-        assert_eq!(detector.detect_by_extension("script.py"), Some("python".to_string()));
-        assert_eq!(detector.detect_by_extension("app.js"), Some("javascript".to_string()));
-        assert_eq!(detector.detect_by_extension("main.go"), Some("go".to_string()));
-        assert_eq!(detector.detect_by_extension("program.c"), Some("c".to_string()));
-        assert_eq!(detector.detect_by_extension("example.ruchy"), Some("ruchy".to_string()));
+
+        assert_eq!(
+            detector.detect_by_extension("main.rs"),
+            Some("rust".to_string())
+        );
+        assert_eq!(
+            detector.detect_by_extension("script.py"),
+            Some("python".to_string())
+        );
+        assert_eq!(
+            detector.detect_by_extension("app.js"),
+            Some("javascript".to_string())
+        );
+        assert_eq!(
+            detector.detect_by_extension("main.go"),
+            Some("go".to_string())
+        );
+        assert_eq!(
+            detector.detect_by_extension("program.c"),
+            Some("c".to_string())
+        );
+        assert_eq!(
+            detector.detect_by_extension("example.ruchy"),
+            Some("ruchy".to_string())
+        );
     }
 }

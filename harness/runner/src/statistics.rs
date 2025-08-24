@@ -8,8 +8,8 @@
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use statrs::distribution::{ContinuousCDF, StudentsT};
 use statrs::statistics::Statistics;
-use statrs::distribution::{StudentsT, ContinuousCDF};
 
 /// Statistical analysis results with confidence intervals
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -131,9 +131,9 @@ impl StatisticalAnalyzer {
     /// Create new statistical analyzer with default settings
     pub fn new() -> Self {
         Self {
-            min_sample_size: 30,  // Statistical rule of thumb
+            min_sample_size: 30, // Statistical rule of thumb
             confidence_level: 0.95,
-            remove_outliers: false,  // Conservative approach
+            remove_outliers: false, // Conservative approach
         }
     }
 
@@ -176,13 +176,14 @@ impl StatisticalAnalyzer {
 
         // Basic statistics
         let sample_stats = self.calculate_sample_statistics(&sorted_data)?;
-        
+
         // Confidence intervals
-        let confidence_intervals = self.calculate_confidence_intervals(&sorted_data, &sample_stats)?;
-        
+        let confidence_intervals =
+            self.calculate_confidence_intervals(&sorted_data, &sample_stats)?;
+
         // Outlier analysis
         let outliers = self.detect_outliers(&sorted_data)?;
-        
+
         // Distribution metrics
         let distribution = self.calculate_distribution_metrics(&sorted_data, &sample_stats)?;
 
@@ -245,7 +246,7 @@ impl StatisticalAnalyzer {
         let q1 = calculate_percentile(sorted_data, 25.0);
         let q3 = calculate_percentile(sorted_data, 75.0);
         let iqr = q3 - q1;
-        
+
         let lower_fence = q1 - 1.5 * iqr;
         let upper_fence = q3 + 1.5 * iqr;
 
@@ -282,10 +283,10 @@ impl StatisticalAnalyzer {
     ) -> Result<DistributionMetrics> {
         // Calculate skewness (measure of asymmetry)
         let skewness = self.calculate_skewness(sorted_data, stats.mean, stats.std_dev);
-        
+
         // Calculate kurtosis (measure of tail heaviness)
         let kurtosis = self.calculate_kurtosis(sorted_data, stats.mean, stats.std_dev);
-        
+
         // Coefficient of variation
         let coefficient_of_variation = if stats.mean != 0.0 {
             stats.std_dev / stats.mean.abs()
@@ -318,10 +319,7 @@ impl StatisticalAnalyzer {
         }
 
         let n = data.len() as f64;
-        let sum_cubed_deviations: f64 = data
-            .iter()
-            .map(|&x| ((x - mean) / std_dev).powi(3))
-            .sum();
+        let sum_cubed_deviations: f64 = data.iter().map(|&x| ((x - mean) / std_dev).powi(3)).sum();
 
         (n / ((n - 1.0) * (n - 2.0))) * sum_cubed_deviations
     }
@@ -333,15 +331,13 @@ impl StatisticalAnalyzer {
         }
 
         let n = data.len() as f64;
-        let sum_fourth_deviations: f64 = data
-            .iter()
-            .map(|&x| ((x - mean) / std_dev).powi(4))
-            .sum();
+        let sum_fourth_deviations: f64 = data.iter().map(|&x| ((x - mean) / std_dev).powi(4)).sum();
 
-        let kurtosis_raw = (n * (n + 1.0) / ((n - 1.0) * (n - 2.0) * (n - 3.0))) * sum_fourth_deviations;
+        let kurtosis_raw =
+            (n * (n + 1.0) / ((n - 1.0) * (n - 2.0) * (n - 3.0))) * sum_fourth_deviations;
         let correction = 3.0 * (n - 1.0) * (n - 1.0) / ((n - 2.0) * (n - 3.0));
-        
-        kurtosis_raw - correction  // Excess kurtosis (normal distribution = 0)
+
+        kurtosis_raw - correction // Excess kurtosis (normal distribution = 0)
     }
 }
 
@@ -356,11 +352,11 @@ impl PerformanceComparator {
     ) -> ComparisonResult {
         let mean_diff = current.sample_stats.mean - baseline.sample_stats.mean;
         let percent_change = (mean_diff / baseline.sample_stats.mean) * 100.0;
-        
+
         // Simple confidence interval overlap check
         let baseline_ci = baseline.confidence_intervals.ci_95;
         let current_ci = current.confidence_intervals.ci_95;
-        
+
         let overlaps = baseline_ci.1 >= current_ci.0 && current_ci.1 >= baseline_ci.0;
         let significance = if overlaps {
             SignificanceLevel::NotSignificant
@@ -411,16 +407,16 @@ fn calculate_percentile(sorted_data: &[f64], percentile: f64) -> f64 {
     if sorted_data.is_empty() {
         return 0.0;
     }
-    
+
     if sorted_data.len() == 1 {
         return sorted_data[0];
     }
-    
+
     let percentile_clamped = percentile.clamp(0.0, 100.0);
     let index = (percentile_clamped / 100.0) * (sorted_data.len() - 1) as f64;
     let lower_index = index.floor() as usize;
     let upper_index = index.ceil() as usize;
-    
+
     if lower_index == upper_index {
         sorted_data[lower_index]
     } else {
@@ -438,9 +434,9 @@ mod tests {
     fn test_basic_statistics() {
         let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let analyzer = StatisticalAnalyzer::new().with_min_sample_size(5);
-        
+
         let analysis = analyzer.analyze(&data).expect("Analysis should succeed");
-        
+
         assert_relative_eq!(analysis.sample_stats.mean, 3.0, epsilon = 1e-10);
         assert_relative_eq!(analysis.sample_stats.median, 3.0, epsilon = 1e-10);
         assert_eq!(analysis.sample_stats.count, 5);
@@ -450,10 +446,10 @@ mod tests {
     fn test_outlier_detection() {
         let mut data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         data.push(100.0); // Clear outlier
-        
+
         let analyzer = StatisticalAnalyzer::new().with_min_sample_size(6);
         let analysis = analyzer.analyze(&data).expect("Analysis should succeed");
-        
+
         assert_eq!(analysis.outliers.outlier_count, 1);
         assert!(analysis.outliers.outlier_values.contains(&100.0));
     }
@@ -462,7 +458,7 @@ mod tests {
     fn test_insufficient_sample_size() {
         let data = vec![1.0, 2.0]; // Too small
         let analyzer = StatisticalAnalyzer::new();
-        
+
         assert!(analyzer.analyze(&data).is_err());
     }
 }

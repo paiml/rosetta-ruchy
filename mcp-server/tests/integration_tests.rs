@@ -2,14 +2,14 @@
 
 use anyhow::Result;
 use axum::{
-    body::{Body, to_bytes},
+    body::{to_bytes, Body},
     http::{Method, Request, StatusCode},
 };
 use rosetta_ruchy_mcp::{
     analyzer::CodeAnalyzer,
     language_detector::LanguageDetector,
+    mcp_server::{AnalysisRequest, AnalysisType, TranslationOptions, TranslationRequest},
     translator::CodeTranslator,
-    mcp_server::{TranslationRequest, TranslationOptions, AnalysisRequest, AnalysisType},
 };
 use serde_json::json;
 use tower::ServiceExt;
@@ -30,7 +30,7 @@ async fn test_health_endpoint() -> Result<()> {
 
     let body = to_bytes(response.into_body(), usize::MAX).await?;
     let json: serde_json::Value = serde_json::from_slice(&body)?;
-    
+
     assert_eq!(json["status"], "healthy");
     assert_eq!(json["service"], "rosetta-ruchy-mcp");
 
@@ -42,7 +42,11 @@ async fn test_capabilities_endpoint() -> Result<()> {
     let app = create_test_app().await;
 
     let response = app
-        .oneshot(Request::builder().uri("/api/v1/capabilities").body(Body::empty())?)
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/capabilities")
+                .body(Body::empty())?,
+        )
         .await?;
 
     assert_eq!(response.status(), StatusCode::OK);
@@ -52,7 +56,10 @@ async fn test_capabilities_endpoint() -> Result<()> {
 
     assert_eq!(json["name"], "rosetta-ruchy-translator");
     assert!(!json["supported_languages"].as_array().unwrap().is_empty());
-    assert!(json["capabilities"].as_array().unwrap().contains(&json!("code_translation")));
+    assert!(json["capabilities"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("code_translation")));
 
     Ok(())
 }
@@ -67,7 +74,8 @@ async fn test_translation_endpoint_rust_to_ruchy() -> Result<()> {
                 let x: i32 = 42;
                 println!("Hello, world!");
             }
-        "#.to_string(),
+        "#
+        .to_string(),
         source_language: Some("rust".to_string()),
         target_language: Some("ruchy".to_string()),
         options: Some(TranslationOptions {
@@ -111,7 +119,8 @@ def hello_world():
     
 if __name__ == "__main__":
     hello_world()
-        "#.to_string(),
+        "#
+        .to_string(),
         source_language: Some("python".to_string()),
         target_language: Some("ruchy".to_string()),
         options: None, // Test default options
@@ -132,7 +141,10 @@ if __name__ == "__main__":
     let body = to_bytes(response.into_body(), usize::MAX).await?;
     let json: serde_json::Value = serde_json::from_slice(&body)?;
 
-    assert!(json["ruchy_code"].as_str().unwrap().contains("fun hello_world"));
+    assert!(json["ruchy_code"]
+        .as_str()
+        .unwrap()
+        .contains("fun hello_world"));
     assert_eq!(json["source_language"], "python");
 
     Ok(())
@@ -148,7 +160,8 @@ function main() {
     const x = 42;
     console.log("Hello, world!");
 }
-        "#.to_string(),
+        "#
+        .to_string(),
         source_language: None, // Test language detection
         target_language: Some("ruchy".to_string()),
         options: Some(TranslationOptions::default()),
@@ -201,7 +214,8 @@ async fn test_analysis_endpoint_complexity() -> Result<()> {
                     _ => result,
                 }
             }
-        "#.to_string(),
+        "#
+        .to_string(),
         language: Some("rust".to_string()),
         analysis_type: AnalysisType::Complexity,
     };
@@ -336,7 +350,7 @@ async fn test_benchmark_endpoint_not_implemented() -> Result<()> {
 // Helper function to create test app
 async fn create_test_app() -> axum::Router {
     use rosetta_ruchy_mcp::mcp_server::MCPServer;
-    
+
     let server = MCPServer::new(
         "127.0.0.1".to_string(),
         8080,
@@ -372,13 +386,15 @@ mod unit_tests {
 
         let rust_code = "fn main() { println!(\"Hello\"); }";
         let ruchy_code = translator.translate_to_ruchy(rust_code, "rust").unwrap();
-        
+
         assert!(ruchy_code.contains("fun main"));
         assert!(ruchy_code.contains("println("));
 
         // Test passthrough for Ruchy code
         let original_ruchy = "fun main() { println(\"Hello\"); }";
-        let passthrough = translator.translate_to_ruchy(original_ruchy, "ruchy").unwrap();
+        let passthrough = translator
+            .translate_to_ruchy(original_ruchy, "ruchy")
+            .unwrap();
         assert_eq!(passthrough, original_ruchy);
     }
 
@@ -388,7 +404,7 @@ mod unit_tests {
 
         let simple_code = "fn main() { println!(\"Hello\"); }";
         let analysis = analyzer.analyze_complexity(simple_code, "rust").unwrap();
-        
+
         assert_eq!(analysis.cyclomatic, 1); // Simple function
         assert!(analysis.loc > 0);
         assert_eq!(analysis.big_o_estimate, "O(1)");
@@ -412,7 +428,7 @@ mod unit_tests {
     #[tokio::test]
     async fn test_ruchy_toolchain_mock() {
         use rosetta_ruchy_mcp::ruchy_tooling::RuchyToolchain;
-        
+
         let toolchain = RuchyToolchain::new("mock-ruchy".to_string());
         let code = "fun main() { println(\"Hello\"); }";
 

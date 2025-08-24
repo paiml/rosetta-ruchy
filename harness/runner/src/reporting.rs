@@ -5,13 +5,13 @@
 //! academic standards and Toyota Way quality principles.
 
 use anyhow::{Context, Result};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
-use chrono::{DateTime, Utc};
 
 use crate::isolation::{EnvironmentState, IsolationResult};
-use crate::statistics::{StatisticalAnalysis, ComparisonResult, SignificanceLevel};
+use crate::statistics::{ComparisonResult, SignificanceLevel, StatisticalAnalysis};
 
 /// Complete benchmark report structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -268,12 +268,12 @@ impl ReportGenerator {
         };
 
         // Ensure output directory exists
-        fs::create_dir_all(&self.output_dir)
-            .context("Failed to create output directory")?;
+        fs::create_dir_all(&self.output_dir).context("Failed to create output directory")?;
 
         // Generate reports in requested formats
         for format in &self.formats {
-            self.write_report(&report, format).await
+            self.write_report(&report, format)
+                .await
                 .with_context(|| format!("Failed to generate {:?} report", format))?;
         }
 
@@ -298,11 +298,15 @@ impl ReportGenerator {
     }
 
     /// Generate performance comparisons
-    fn generate_comparisons(&self, results: &HashMap<String, LanguageResults>) -> Vec<PerformanceComparison> {
+    fn generate_comparisons(
+        &self,
+        results: &HashMap<String, LanguageResults>,
+    ) -> Vec<PerformanceComparison> {
         let mut comparisons = Vec::new();
 
         // Find Rust as baseline (if available)
-        let baseline_name = results.keys()
+        let baseline_name = results
+            .keys()
             .find(|name| name.to_lowercase().contains("rust"))
             .or_else(|| results.keys().next())
             .cloned();
@@ -311,10 +315,11 @@ impl ReportGenerator {
             if let Some(baseline) = results.get(&baseline_name) {
                 for (name, result) in results {
                     if name != &baseline_name {
-                        let comparison_result = crate::statistics::PerformanceComparator::compare_performance(
-                            &baseline.statistics,
-                            &result.statistics,
-                        );
+                        let comparison_result =
+                            crate::statistics::PerformanceComparator::compare_performance(
+                                &baseline.statistics,
+                                &result.statistics,
+                            );
 
                         let interpretation = self.interpret_comparison(&comparison_result);
 
@@ -333,11 +338,21 @@ impl ReportGenerator {
     }
 
     /// Generate high-level summary and insights
-    fn generate_summary(&self, results: &HashMap<String, LanguageResults>, comparisons: &[PerformanceComparison]) -> BenchmarkSummary {
+    fn generate_summary(
+        &self,
+        results: &HashMap<String, LanguageResults>,
+        comparisons: &[PerformanceComparison],
+    ) -> BenchmarkSummary {
         // Find fastest implementation
         let fastest_implementation = results
             .iter()
-            .min_by(|a, b| a.1.statistics.sample_stats.mean.partial_cmp(&b.1.statistics.sample_stats.mean).unwrap())
+            .min_by(|a, b| {
+                a.1.statistics
+                    .sample_stats
+                    .mean
+                    .partial_cmp(&b.1.statistics.sample_stats.mean)
+                    .unwrap()
+            })
             .map(|(name, _)| name.clone())
             .unwrap_or_else(|| "Unknown".to_string());
 
@@ -374,19 +389,28 @@ impl ReportGenerator {
     }
 
     /// Generate performance insights
-    fn generate_insights(&self, results: &HashMap<String, LanguageResults>, comparisons: &[PerformanceComparison]) -> Vec<String> {
+    fn generate_insights(
+        &self,
+        results: &HashMap<String, LanguageResults>,
+        comparisons: &[PerformanceComparison],
+    ) -> Vec<String> {
         let mut insights = Vec::new();
 
         // Statistical insights
         if results.len() > 1 {
-            insights.push(format!("Benchmarked {} different implementations", results.len()));
+            insights.push(format!(
+                "Benchmarked {} different implementations",
+                results.len()
+            ));
         }
 
         // Variance insights
         let high_variance_threshold = 0.1; // 10% coefficient of variation
         let high_variance_impls: Vec<_> = results
             .iter()
-            .filter(|(_, result)| result.statistics.distribution.coefficient_of_variation > high_variance_threshold)
+            .filter(|(_, result)| {
+                result.statistics.distribution.coefficient_of_variation > high_variance_threshold
+            })
             .map(|(name, _)| name.as_str())
             .collect();
 
@@ -400,7 +424,13 @@ impl ReportGenerator {
         // Significance insights
         let significant_differences = comparisons
             .iter()
-            .filter(|comp| matches!(comp.result.significance, SignificanceLevel::SignificantImprovement | SignificanceLevel::SignificantRegression))
+            .filter(|comp| {
+                matches!(
+                    comp.result.significance,
+                    SignificanceLevel::SignificantImprovement
+                        | SignificanceLevel::SignificantRegression
+                )
+            })
             .count();
 
         if significant_differences > 0 {
@@ -414,22 +444,35 @@ impl ReportGenerator {
     }
 
     /// Generate recommendations
-    fn generate_recommendations(&self, _results: &HashMap<String, LanguageResults>, comparisons: &[PerformanceComparison]) -> Vec<String> {
+    fn generate_recommendations(
+        &self,
+        _results: &HashMap<String, LanguageResults>,
+        comparisons: &[PerformanceComparison],
+    ) -> Vec<String> {
         let mut recommendations = Vec::new();
 
-        recommendations.push("Ensure consistent environment isolation for reliable benchmarks".to_string());
-        recommendations.push("Run multiple iterations to achieve statistical significance".to_string());
+        recommendations
+            .push("Ensure consistent environment isolation for reliable benchmarks".to_string());
+        recommendations
+            .push("Run multiple iterations to achieve statistical significance".to_string());
 
         // Performance-based recommendations
-        let has_regressions = comparisons
-            .iter()
-            .any(|comp| matches!(comp.result.significance, SignificanceLevel::SignificantRegression));
+        let has_regressions = comparisons.iter().any(|comp| {
+            matches!(
+                comp.result.significance,
+                SignificanceLevel::SignificantRegression
+            )
+        });
 
         if has_regressions {
-            recommendations.push("Investigate performance regressions for optimization opportunities".to_string());
+            recommendations.push(
+                "Investigate performance regressions for optimization opportunities".to_string(),
+            );
         }
 
-        recommendations.push("Consider memory usage and binary size in addition to execution time".to_string());
+        recommendations.push(
+            "Consider memory usage and binary size in addition to execution time".to_string(),
+        );
         recommendations.push("Validate results on different hardware configurations".to_string());
 
         recommendations
@@ -439,10 +482,16 @@ impl ReportGenerator {
     fn interpret_comparison(&self, comparison: &ComparisonResult) -> String {
         match comparison.significance {
             SignificanceLevel::NotSignificant => {
-                format!("No statistically significant difference ({:.1}% change)", comparison.percent_change)
+                format!(
+                    "No statistically significant difference ({:.1}% change)",
+                    comparison.percent_change
+                )
             }
             SignificanceLevel::SignificantImprovement => {
-                format!("Significantly faster by {:.1}%", comparison.percent_change.abs())
+                format!(
+                    "Significantly faster by {:.1}%",
+                    comparison.percent_change.abs()
+                )
             }
             SignificanceLevel::SignificantRegression => {
                 format!("Significantly slower by {:.1}%", comparison.percent_change)
@@ -462,9 +511,9 @@ impl ReportGenerator {
 
     /// Write JSON report
     async fn write_json_report(&self, report: &BenchmarkReport) -> Result<()> {
-        let json = serde_json::to_string_pretty(report)
-            .context("Failed to serialize report to JSON")?;
-        
+        let json =
+            serde_json::to_string_pretty(report).context("Failed to serialize report to JSON")?;
+
         let path = format!("{}/benchmark_report.json", self.output_dir);
         fs::write(&path, json)
             .with_context(|| format!("Failed to write JSON report to {}", path))?;
@@ -479,23 +528,50 @@ impl ReportGenerator {
 
         // Title and metadata
         md.push_str("# Benchmark Report\n\n");
-        md.push_str(&format!("Generated: {}\n", report.metadata.generated_at.format("%Y-%m-%d %H:%M:%S UTC")));
+        md.push_str(&format!(
+            "Generated: {}\n",
+            report.metadata.generated_at.format("%Y-%m-%d %H:%M:%S UTC")
+        ));
         md.push_str(&format!("Generator: {}\n", report.metadata.generator));
-        md.push_str(&format!("Suite Version: {}\n\n", report.metadata.suite_version));
+        md.push_str(&format!(
+            "Suite Version: {}\n\n",
+            report.metadata.suite_version
+        ));
 
         // Executive Summary
         md.push_str("## Executive Summary\n\n");
-        md.push_str(&format!("- **Fastest Implementation**: {}\n", report.summary.fastest_implementation));
-        md.push_str(&format!("- **Implementations Tested**: {}\n", report.results.len()));
-        md.push_str(&format!("- **Statistical Significance**: {} comparisons performed\n\n", report.comparisons.len()));
+        md.push_str(&format!(
+            "- **Fastest Implementation**: {}\n",
+            report.summary.fastest_implementation
+        ));
+        md.push_str(&format!(
+            "- **Implementations Tested**: {}\n",
+            report.results.len()
+        ));
+        md.push_str(&format!(
+            "- **Statistical Significance**: {} comparisons performed\n\n",
+            report.comparisons.len()
+        ));
 
         // Environment Information
         md.push_str("## Environment\n\n");
         md.push_str(&format!("- **OS**: {}\n", report.environment.system.os));
-        md.push_str(&format!("- **Architecture**: {}\n", report.environment.system.arch));
-        md.push_str(&format!("- **CPU**: {}\n", report.environment.system.cpu_model));
-        md.push_str(&format!("- **Memory**: {:.1} GB\n", report.environment.system.total_memory_gb));
-        md.push_str(&format!("- **Rust Version**: {}\n\n", report.environment.system.rust_version));
+        md.push_str(&format!(
+            "- **Architecture**: {}\n",
+            report.environment.system.arch
+        ));
+        md.push_str(&format!(
+            "- **CPU**: {}\n",
+            report.environment.system.cpu_model
+        ));
+        md.push_str(&format!(
+            "- **Memory**: {:.1} GB\n",
+            report.environment.system.total_memory_gb
+        ));
+        md.push_str(&format!(
+            "- **Rust Version**: {}\n\n",
+            report.environment.system.rust_version
+        ));
 
         // Performance Results
         md.push_str("## Performance Results\n\n");
@@ -509,12 +585,7 @@ impl ReportGenerator {
 
             md.push_str(&format!(
                 "| {} | {:.0} | {:.0} | ({:.0}, {:.0}) | {:.1}% |\n",
-                name,
-                stats.mean,
-                stats.std_dev,
-                ci.0,
-                ci.1,
-                outliers.outlier_percentage
+                name, stats.mean, stats.std_dev, ci.0, ci.1, outliers.outlier_percentage
             ));
         }
         md.push('\n');
@@ -527,8 +598,14 @@ impl ReportGenerator {
                     "### {} vs {}\n\n",
                     comparison.compared, comparison.baseline
                 ));
-                md.push_str(&format!("- **Change**: {:.1}%\n", comparison.result.percent_change));
-                md.push_str(&format!("- **Significance**: {}\n", comparison.interpretation));
+                md.push_str(&format!(
+                    "- **Change**: {:.1}%\n",
+                    comparison.result.percent_change
+                ));
+                md.push_str(&format!(
+                    "- **Significance**: {}\n",
+                    comparison.interpretation
+                ));
                 md.push('\n');
             }
         }
@@ -552,10 +629,22 @@ impl ReportGenerator {
 
         // Configuration Details
         md.push_str("## Configuration\n\n");
-        md.push_str(&format!("- **Iterations**: {}\n", report.configuration.iterations));
-        md.push_str(&format!("- **Warmup Iterations**: {}\n", report.configuration.warmup_iterations));
-        md.push_str(&format!("- **Confidence Level**: {:.0}%\n", report.configuration.confidence_level * 100.0));
-        md.push_str(&format!("- **Min Sample Size**: {}\n", report.configuration.min_sample_size));
+        md.push_str(&format!(
+            "- **Iterations**: {}\n",
+            report.configuration.iterations
+        ));
+        md.push_str(&format!(
+            "- **Warmup Iterations**: {}\n",
+            report.configuration.warmup_iterations
+        ));
+        md.push_str(&format!(
+            "- **Confidence Level**: {:.0}%\n",
+            report.configuration.confidence_level * 100.0
+        ));
+        md.push_str(&format!(
+            "- **Min Sample Size**: {}\n",
+            report.configuration.min_sample_size
+        ));
 
         let path = format!("{}/benchmark_report.md", self.output_dir);
         fs::write(&path, md)
@@ -569,9 +658,12 @@ impl ReportGenerator {
     async fn write_html_report(&self, _report: &BenchmarkReport) -> Result<()> {
         // TODO: Implement HTML report with charts and visualizations
         let path = format!("{}/benchmark_report.html", self.output_dir);
-        fs::write(&path, "<html><body><h1>HTML Report - Coming Soon</h1></body></html>")
-            .with_context(|| format!("Failed to write HTML report to {}", path))?;
-        
+        fs::write(
+            &path,
+            "<html><body><h1>HTML Report - Coming Soon</h1></body></html>",
+        )
+        .with_context(|| format!("Failed to write HTML report to {}", path))?;
+
         println!("🌐 HTML report placeholder generated: {}", path);
         Ok(())
     }
@@ -596,8 +688,7 @@ impl ReportGenerator {
         }
 
         let path = format!("{}/benchmark_results.csv", self.output_dir);
-        fs::write(&path, csv)
-            .with_context(|| format!("Failed to write CSV report to {}", path))?;
+        fs::write(&path, csv).with_context(|| format!("Failed to write CSV report to {}", path))?;
 
         println!("📊 CSV report generated: {}", path);
         Ok(())
@@ -610,7 +701,7 @@ impl ReportGenerator {
             os: std::env::consts::OS.to_string(),
             arch: std::env::consts::ARCH.to_string(),
             cpu_model: "Unknown".to_string(), // TODO: Detect CPU model
-            total_memory_gb: 0.0, // TODO: Detect memory
+            total_memory_gb: 0.0,             // TODO: Detect memory
             rust_version: "Unknown".to_string(), // TODO: Detect Rust version
         })
     }
@@ -626,8 +717,7 @@ mod tests {
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let temp_path = temp_dir.path().to_string_lossy().to_string();
 
-        let generator = ReportGenerator::new()
-            .with_output_dir(&temp_path);
+        let generator = ReportGenerator::new().with_output_dir(&temp_path);
 
         let _results: HashMap<String, LanguageResults> = HashMap::new();
         let _config = BenchmarkConfiguration {

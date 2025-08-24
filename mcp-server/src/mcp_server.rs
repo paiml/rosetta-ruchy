@@ -16,9 +16,7 @@ use tracing::{info, warn};
 use uuid::Uuid;
 
 use crate::{
-    analyzer::CodeAnalyzer,
-    language_detector::LanguageDetector,
-    ruchy_tooling::RuchyToolchain,
+    analyzer::CodeAnalyzer, language_detector::LanguageDetector, ruchy_tooling::RuchyToolchain,
     translator::CodeTranslator,
 };
 
@@ -145,12 +143,15 @@ impl MCPServer {
         let app = self.create_router();
 
         let listener = tokio::net::TcpListener::bind(format!("{}:{}", host, port)).await?;
-        
+
         info!("MCP Server listening on {}:{}", host, port);
-        info!("Capabilities endpoint: http://{}:{}/api/v1/capabilities", host, port);
-        
+        info!(
+            "Capabilities endpoint: http://{}:{}/api/v1/capabilities",
+            host, port
+        );
+
         axum::serve(listener, app).await?;
-        
+
         Ok(())
     }
 
@@ -219,28 +220,38 @@ async fn translate_handler(
     Json(request): Json<TranslationRequest>,
 ) -> Result<ResponseJson<TranslationResponse>, (StatusCode, String)> {
     let id = Uuid::new_v4().to_string();
-    
+
     // Detect source language if not provided
     let source_language = match request.source_language {
         Some(lang) => lang,
-        None => {
-            match state.language_detector.detect(&request.source_code) {
-                Ok(lang) => lang,
-                Err(e) => {
-                    warn!("Failed to detect language: {}", e);
-                    return Err((StatusCode::BAD_REQUEST, format!("Could not detect source language: {}", e)));
-                }
+        None => match state.language_detector.detect(&request.source_code) {
+            Ok(lang) => lang,
+            Err(e) => {
+                warn!("Failed to detect language: {}", e);
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    format!("Could not detect source language: {}", e),
+                ));
             }
-        }
+        },
     };
 
-    info!("Translating {} code to Ruchy (request: {})", source_language, id);
+    info!(
+        "Translating {} code to Ruchy (request: {})",
+        source_language, id
+    );
 
     // Translate to Ruchy
-    let ruchy_code = match state.translator.translate_to_ruchy(&request.source_code, &source_language) {
+    let ruchy_code = match state
+        .translator
+        .translate_to_ruchy(&request.source_code, &source_language)
+    {
         Ok(code) => code,
         Err(e) => {
-            return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Translation failed: {}", e)));
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Translation failed: {}", e),
+            ));
         }
     };
 
@@ -282,7 +293,11 @@ async fn translate_handler(
     }
 
     if options.optimize {
-        if let Ok(suggestions) = state.ruchy_toolchain.get_optimization_suggestions(&ruchy_code).await {
+        if let Ok(suggestions) = state
+            .ruchy_toolchain
+            .get_optimization_suggestions(&ruchy_code)
+            .await
+        {
             response.optimization_suggestions = suggestions;
         }
     }
@@ -299,7 +314,11 @@ async fn translate_handler(
     }
 
     // Generate performance prediction
-    if let Ok(prediction) = state.analyzer.predict_performance(&request.source_code, &ruchy_code, &source_language) {
+    if let Ok(prediction) =
+        state
+            .analyzer
+            .predict_performance(&request.source_code, &ruchy_code, &source_language)
+    {
         response.performance_prediction = Some(prediction);
     }
 
@@ -312,12 +331,15 @@ async fn analyze_handler(
 ) -> Result<ResponseJson<serde_json::Value>, (StatusCode, String)> {
     let language = match request.language {
         Some(lang) => lang,
-        None => {
-            match state.language_detector.detect(&request.code) {
-                Ok(lang) => lang,
-                Err(e) => return Err((StatusCode::BAD_REQUEST, format!("Could not detect language: {}", e))),
+        None => match state.language_detector.detect(&request.code) {
+            Ok(lang) => lang,
+            Err(e) => {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    format!("Could not detect language: {}", e),
+                ))
             }
-        }
+        },
     };
 
     match request.analysis_type {
@@ -343,16 +365,17 @@ async fn analyze_handler(
                     Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
                 }
             } else {
-                Err((StatusCode::BAD_REQUEST, "Verification only available for Ruchy code".to_string()))
+                Err((
+                    StatusCode::BAD_REQUEST,
+                    "Verification only available for Ruchy code".to_string(),
+                ))
             }
         }
-        AnalysisType::All => {
-            Ok(ResponseJson(serde_json::json!({
-                "analysis_type": "all",
-                "language": language,
-                "status": "not_implemented"
-            })))
-        }
+        AnalysisType::All => Ok(ResponseJson(serde_json::json!({
+            "analysis_type": "all",
+            "language": language,
+            "status": "not_implemented"
+        }))),
     }
 }
 
@@ -367,7 +390,8 @@ async fn verify_handler(
     State(state): State<Arc<ServerState>>,
     Json(request): Json<serde_json::Value>,
 ) -> Result<ResponseJson<serde_json::Value>, (StatusCode, String)> {
-    let code = request.get("code")
+    let code = request
+        .get("code")
         .and_then(|v| v.as_str())
         .ok_or((StatusCode::BAD_REQUEST, "Missing 'code' field".to_string()))?;
 

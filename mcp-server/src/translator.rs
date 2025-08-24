@@ -15,10 +15,16 @@ trait LanguageTranslator: Send + Sync {
 impl CodeTranslator {
     pub fn new() -> Self {
         let mut translators: HashMap<String, Box<dyn LanguageTranslator>> = HashMap::new();
-        
+
         translators.insert("rust".to_string(), Box::new(RustToRuchyTranslator::new()));
-        translators.insert("python".to_string(), Box::new(PythonToRuchyTranslator::new()));
-        translators.insert("javascript".to_string(), Box::new(JavaScriptToRuchyTranslator::new()));
+        translators.insert(
+            "python".to_string(),
+            Box::new(PythonToRuchyTranslator::new()),
+        );
+        translators.insert(
+            "javascript".to_string(),
+            Box::new(JavaScriptToRuchyTranslator::new()),
+        );
         translators.insert("go".to_string(), Box::new(GoToRuchyTranslator::new()));
         translators.insert("c".to_string(), Box::new(CToRuchyTranslator::new()));
 
@@ -57,16 +63,25 @@ impl RustToRuchyTranslator {
         let patterns = vec![
             // Function definitions: fn -> fun
             (Regex::new(r"\bfn\b").unwrap(), "fun".to_string()),
-            
             // Main function stays the same but add explicit call
-            (Regex::new(r"fn main\(\) \{([^}]*)\}").unwrap(), "fun main() {$1}\n\nmain()".to_string()),
-            
+            (
+                Regex::new(r"fn main\(\) \{([^}]*)\}").unwrap(),
+                "fun main() {$1}\n\nmain()".to_string(),
+            ),
             // String literals with explicit printing
-            (Regex::new(r#"println!\("([^"]+)"\);"#).unwrap(), r#"println("$1");"#.to_string()),
-            (Regex::new(r#"print!\("([^"]+)"\);"#).unwrap(), r#"print("$1");"#.to_string()),
-            
+            (
+                Regex::new(r#"println!\("([^"]+)"\);"#).unwrap(),
+                r#"println("$1");"#.to_string(),
+            ),
+            (
+                Regex::new(r#"print!\("([^"]+)"\);"#).unwrap(),
+                r#"print("$1");"#.to_string(),
+            ),
             // Remove explicit type annotations in simple cases
-            (Regex::new(r"let (\w+): (\w+) =").unwrap(), "let $1 =".to_string()),
+            (
+                Regex::new(r"let (\w+): (\w+) =").unwrap(),
+                "let $1 =".to_string(),
+            ),
         ];
 
         Self {
@@ -81,7 +96,9 @@ impl LanguageTranslator for RustToRuchyTranslator {
 
         // Apply transformation patterns
         for (pattern, replacement) in &self.patterns {
-            result = pattern.replace_all(&result, replacement.as_str()).to_string();
+            result = pattern
+                .replace_all(&result, replacement.as_str())
+                .to_string();
         }
 
         // Add Ruchy-specific enhancements
@@ -106,7 +123,7 @@ impl PythonToRuchyTranslator {
 impl LanguageTranslator for PythonToRuchyTranslator {
     fn translate(&self, source: &str) -> Result<String> {
         let mut result = String::new();
-        
+
         result.push_str("// Translated from Python to Ruchy\n");
         result.push_str("// Enhanced with static typing and formal verification\n\n");
 
@@ -117,7 +134,7 @@ impl LanguageTranslator for PythonToRuchyTranslator {
 
         for line in lines {
             let trimmed = line.trim();
-            
+
             if trimmed.is_empty() {
                 result.push('\n');
                 continue;
@@ -178,20 +195,26 @@ impl JavaScriptToRuchyTranslator {
 impl LanguageTranslator for JavaScriptToRuchyTranslator {
     fn translate(&self, source: &str) -> Result<String> {
         let mut result = String::new();
-        
+
         result.push_str("// Translated from JavaScript to Ruchy\n");
         result.push_str("// Enhanced with compile-time safety and verification\n\n");
 
         let patterns = vec![
             // Function declarations
-            (Regex::new(r"function\s+(\w+)\s*\(([^)]*)\)\s*\{").unwrap(), "fun $1($2) {"),
-            
+            (
+                Regex::new(r"function\s+(\w+)\s*\(([^)]*)\)\s*\{").unwrap(),
+                "fun $1($2) {",
+            ),
             // Arrow functions (simple case)
-            (Regex::new(r"const\s+(\w+)\s*=\s*\([^)]*\)\s*=>\s*\{").unwrap(), "fun $1() {"),
-            
+            (
+                Regex::new(r"const\s+(\w+)\s*=\s*\([^)]*\)\s*=>\s*\{").unwrap(),
+                "fun $1() {",
+            ),
             // Variable declarations
-            (Regex::new(r"\b(const|let|var)\s+(\w+)\s*=").unwrap(), "let $2 ="),
-            
+            (
+                Regex::new(r"\b(const|let|var)\s+(\w+)\s*=").unwrap(),
+                "let $2 =",
+            ),
             // Console.log
             (Regex::new(r"console\.log\(").unwrap(), "println("),
         ];
@@ -220,23 +243,22 @@ impl GoToRuchyTranslator {
 impl LanguageTranslator for GoToRuchyTranslator {
     fn translate(&self, source: &str) -> Result<String> {
         let mut result = String::new();
-        
+
         result.push_str("// Translated from Go to Ruchy\n");
         result.push_str("// Enhanced with formal verification and zero-cost abstractions\n\n");
 
         let patterns = vec![
             // Remove package declaration
             (Regex::new(r"package\s+\w+\n?").unwrap(), ""),
-            
             // Remove import statements (for now)
             (Regex::new(r"import\s+[^\n]+\n?").unwrap(), ""),
-            
             // Function declarations
-            (Regex::new(r"\bfunc\s+(\w+)\s*\(([^)]*)\)").unwrap(), "fun $1($2)"),
-            
+            (
+                Regex::new(r"\bfunc\s+(\w+)\s*\(([^)]*)\)").unwrap(),
+                "fun $1($2)",
+            ),
             // Variable declarations
             (Regex::new(r"(\w+)\s*:=\s*").unwrap(), "let $1 = "),
-            
             // fmt.Println
             (Regex::new(r"fmt\.Println\(").unwrap(), "println("),
         ];
@@ -265,26 +287,34 @@ impl CToRuchyTranslator {
 impl LanguageTranslator for CToRuchyTranslator {
     fn translate(&self, source: &str) -> Result<String> {
         let mut result = String::new();
-        
+
         result.push_str("// Translated from C to Ruchy\n");
         result.push_str("// Enhanced with memory safety and automatic memory management\n\n");
 
         let patterns = vec![
             // Remove includes
             (Regex::new(r"#include\s*[^\n]+\n?").unwrap(), ""),
-            
             // Main function
-            (Regex::new(r"\bint\s+main\s*\([^)]*\)\s*\{").unwrap(), "fun main() {"),
-            
+            (
+                Regex::new(r"\bint\s+main\s*\([^)]*\)\s*\{").unwrap(),
+                "fun main() {",
+            ),
             // Return statements in main
             (Regex::new(r"\s*return\s+0;\s*").unwrap(), ""),
-            
             // Printf statements
-            (Regex::new(r#"printf\s*\(\s*"([^"]+)\\n"\s*\)"#).unwrap(), r#"println("$1")"#),
-            (Regex::new(r#"printf\s*\(\s*"([^"]+)"\s*\)"#).unwrap(), r#"print("$1")"#),
-            
+            (
+                Regex::new(r#"printf\s*\(\s*"([^"]+)\\n"\s*\)"#).unwrap(),
+                r#"println("$1")"#,
+            ),
+            (
+                Regex::new(r#"printf\s*\(\s*"([^"]+)"\s*\)"#).unwrap(),
+                r#"print("$1")"#,
+            ),
             // Variable declarations (simple cases)
-            (Regex::new(r"\b(int|char|float|double)\s+(\w+)\s*=").unwrap(), "let $2 ="),
+            (
+                Regex::new(r"\b(int|char|float|double)\s+(\w+)\s*=").unwrap(),
+                "let $2 =",
+            ),
         ];
 
         let mut translated = source.to_string();
@@ -332,7 +362,9 @@ if __name__ == "__main__":
     main()
 "#;
 
-        let result = translator.translate_to_ruchy(python_code, "python").unwrap();
+        let result = translator
+            .translate_to_ruchy(python_code, "python")
+            .unwrap();
         assert!(result.contains("fun main()"));
         assert!(result.contains("let x = 42"));
         assert!(result.contains("println("));
@@ -348,7 +380,9 @@ function main() {
 }
 "#;
 
-        let result = translator.translate_to_ruchy(js_code, "javascript").unwrap();
+        let result = translator
+            .translate_to_ruchy(js_code, "javascript")
+            .unwrap();
         assert!(result.contains("fun main()"));
         assert!(result.contains("let x ="));
         assert!(result.contains("println("));
