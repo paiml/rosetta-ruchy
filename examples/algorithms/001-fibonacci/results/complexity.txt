@@ -1,0 +1,6 @@
+⚡ Basic Performance Metrics for fibonacci.ruchy
+  Total Functions: 3
+  Recursive Functions: 0
+  Loop Complexity Level: 1
+  Estimated Runtime: O(n)
+  Optimization Score: ✅ Well Optimized (100.0/100)

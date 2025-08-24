@@ -1,0 +1,7 @@
+🔬 Basic Provability Analysis for fibonacci.ruchy
+  Total Functions: 3
+  Pure Functions: 3 (100.0%)
+  Recursive Functions: 0
+  Loops: 1
+  Conditionals: 1
+  Provability Score: ✅ High Provability (100.0/100)
