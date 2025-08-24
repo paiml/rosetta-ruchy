@@ -1,45 +1,70 @@
-# 002-quicksort
+# 002: QuickSort Algorithm
 
 ## Problem Statement
+Sort an array of integers using the QuickSort divide-and-conquer algorithm.
 
-Implement the quicksort sorting algorithm with the following variants:
-- **Classic**: In-place partition with random pivot
-- **Three-way**: Optimize for duplicate elements  
-- **Parallel**: Multi-threaded sorting for large arrays
+## Mathematical Definition
+```
+QuickSort(A, low, high):
+  if low < high:
+    pivot = Partition(A, low, high)
+    QuickSort(A, low, pivot - 1)
+    QuickSort(A, pivot + 1, high)
 
-## Algorithm Complexity
+Partition(A, low, high):
+  pivot = A[high]
+  i = low - 1
+  for j = low to high - 1:
+    if A[j] <= pivot:
+      i = i + 1
+      swap A[i] with A[j]
+  swap A[i + 1] with A[high]
+  return i + 1
+```
 
-- **Time**: O(n log n) average, O(n²) worst case
-- **Space**: O(log n) for recursive stack
-- **Stability**: Not stable (can be made stable with modifications)
+## Complexity Analysis
+- **Average Time Complexity**: O(n log n) - Balanced partitions
+- **Worst Time Complexity**: O(n²) - Unbalanced partitions (sorted input)
+- **Best Time Complexity**: O(n log n) - Perfect partitions
+- **Space Complexity**: O(log n) - Recursion stack depth
+- **Recurrence Relation**: T(n) = 2T(n/2) + O(n)
+
+## Hypothesis
+**Ruchy can prove O(n log n) average case complexity at compile time** and detect the O(n²) worst case, while other languages can only measure empirically.
 
 ## Test Cases
+```rust
+Input:  [64, 34, 25, 12, 22, 11, 90]
+Output: [11, 12, 22, 25, 34, 64, 90]
 
-### Basic Functionality
-- Empty array: `[]`
-- Single element: `[42]`
-- Already sorted: `[1, 2, 3, 4, 5]`
-- Reverse sorted: `[5, 4, 3, 2, 1]`
-- Random elements: `[3, 1, 4, 1, 5, 9, 2, 6]`
+Input:  [3, 1, 4, 1, 5, 9, 2, 6]
+Output: [1, 1, 2, 3, 4, 5, 6, 9]
 
-### Edge Cases
-- All duplicates: `[5, 5, 5, 5, 5]`
-- Large arrays: 10K, 100K, 1M elements
-- Nearly sorted arrays (few inversions)
+Input:  [1]
+Output: [1]
 
-## Performance Targets
+Input:  []
+Output: []
 
-| Metric | Target |
-|--------|---------|
-| 10K elements | < 2ms |
-| 100K elements | < 25ms |
-| 1M elements | < 300ms |
-| Memory overhead | < 10% of array size |
+Input:  [5, 5, 5, 5]
+Output: [5, 5, 5, 5]
 
-## Ruchy Advantages
+Worst case: [1, 2, 3, 4, 5] (already sorted)
+```
 
-1. **Provable Correctness**: SMT solver verifies sorting invariants
-2. **Complexity Verification**: Automated BigO analysis confirms O(n log n)
-3. **Memory Safety**: Zero-cost bounds checking without performance penalty
-4. **Pattern Matching**: Elegant pivot selection and partitioning
-5. **Pipeline Operators**: Functional style with imperative performance
+## Implementation Requirements
+1. In-place sorting algorithm
+2. Last element as pivot (simple partitioning)
+3. Handle edge cases (empty, single element, duplicates)
+4. No external dependencies
+5. Demonstrate both average and worst-case scenarios
+
+## Verification Checklist
+- [ ] Formal complexity proof (O(n log n) average, O(n²) worst)
+- [ ] Correctness verification (maintains sort property)
+- [ ] Performance benchmarks across input patterns
+- [ ] Statistical analysis of complexity classes
+- [ ] Reproducibility confirmed
+
+## Scientific Report
+See [SCIENTIFIC_REPORT.md](./results/SCIENTIFIC_REPORT.md) for complete analysis.
