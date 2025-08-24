@@ -528,3 +528,4 @@ Blocks commits that:
 - **Quality**: Complexity trends, test coverage evolution
 - **Velocity**: Features completed per sprint, technical debt reduction
 - **User Experience**: Example compilation times, error message quality
+- always check for new ruchy version on each sprint after you commit.
