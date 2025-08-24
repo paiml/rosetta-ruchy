@@ -1,0 +1,15 @@
+[package]
+name = "selection-sort-rust"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Selection Sort algorithm implementation with O(n²) complexity and comprehensive analysis"
+
+[[bin]]
+name = "selection-sort-rust"
+path = "src/main.rs"
+
+[dependencies]
+# No external dependencies - using only standard library
