@@ -1,0 +1,375 @@
+[metadata]
+name = "graph-coloring"
+category = "graph-algorithms"
+difficulty = "hard"
+tags = ["graph-theory", "backtracking", "np-complete", "heuristics", "constraint-satisfaction"]
+
+[complexity]
+time_exact = "O(k^n)"  # k colors, n vertices - exponential
+time_greedy = "O(V + E)"  # Linear for greedy approach
+time_backtrack = "O(k^V)"  # Exponential backtracking
+space_exact = "O(V)"   # Vertex coloring array
+space_backtrack = "O(V)"  # Recursion stack + coloring
+preprocessing = "O(V + E)"  # Graph representation
+
+[test_cases.basic]
+single_vertex = {
+    vertices = 1,
+    edges = [],
+    colors = 1,
+    expected_chromatic = 1,
+    expected_colorable = true,
+    note = "Single vertex requires one color"
+}
+
+two_vertices_no_edge = {
+    vertices = 2,
+    edges = [],
+    colors = 1,
+    expected_chromatic = 1,
+    expected_colorable = true,
+    note = "Independent vertices can share color"
+}
+
+two_vertices_with_edge = {
+    vertices = 2,
+    edges = [[0, 1]],
+    colors = 1,
+    expected_chromatic = 2,
+    expected_colorable = false,
+    note = "Adjacent vertices need different colors"
+}
+
+triangle = {
+    vertices = 3,
+    edges = [[0, 1], [1, 2], [0, 2]],
+    colors = 3,
+    expected_chromatic = 3,
+    expected_colorable = true,
+    note = "Complete graph K3 requires 3 colors"
+}
+
+square = {
+    vertices = 4,
+    edges = [[0, 1], [1, 2], [2, 3], [3, 0]],
+    colors = 2,
+    expected_chromatic = 2,
+    expected_colorable = true,
+    note = "Cycle of even length is 2-colorable"
+}
+
+[test_cases.standard]
+complete_graph_k4 = {
+    vertices = 4,
+    edges = [[0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3]],
+    colors = 4,
+    expected_chromatic = 4,
+    expected_colorable = true,
+    note = "Complete graph Kn requires n colors"
+}
+
+bipartite_graph = {
+    vertices = 6,
+    edges = [[0, 3], [0, 4], [0, 5], [1, 3], [1, 4], [2, 4], [2, 5]],
+    colors = 2,
+    expected_chromatic = 2,
+    expected_colorable = true,
+    bipartite_sets = [[0, 1, 2], [3, 4, 5]],
+    note = "Bipartite graph is always 2-colorable"
+}
+
+petersen_graph = {
+    vertices = 10,
+    edges = [
+        [0, 1], [1, 2], [2, 3], [3, 4], [4, 0],  # Outer cycle
+        [5, 6], [6, 7], [7, 8], [8, 9], [9, 5],  # Inner cycle
+        [0, 5], [1, 6], [2, 7], [3, 8], [4, 9]   # Connections
+    ],
+    colors = 3,
+    expected_chromatic = 3,
+    expected_colorable = true,
+    note = "Famous Petersen graph with chromatic number 3"
+}
+
+wheel_graph_w5 = {
+    vertices = 6,
+    edges = [
+        [0, 1], [1, 2], [2, 3], [3, 4], [4, 0],  # Outer cycle (5-cycle)
+        [5, 0], [5, 1], [5, 2], [5, 3], [5, 4]   # Hub connections
+    ],
+    colors = 3,
+    expected_chromatic = 3,
+    expected_colorable = true,
+    note = "Wheel graph W5 with odd cycle requires 3 colors"
+}
+
+path_graph = {
+    vertices = 8,
+    edges = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7]],
+    colors = 2,
+    expected_chromatic = 2,
+    expected_colorable = true,
+    note = "Path graph is 2-colorable"
+}
+
+[test_cases.edge_cases]
+empty_graph = {
+    vertices = 5,
+    edges = [],
+    colors = 1,
+    expected_chromatic = 1,
+    expected_colorable = true,
+    note = "Empty graph (no edges) requires only 1 color"
+}
+
+star_graph = {
+    vertices = 7,
+    edges = [[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6]],
+    colors = 2,
+    expected_chromatic = 2,
+    expected_colorable = true,
+    note = "Star graph is 2-colorable (center vs leaves)"
+}
+
+clique_k5 = {
+    vertices = 5,
+    edges = [
+        [0, 1], [0, 2], [0, 3], [0, 4],
+        [1, 2], [1, 3], [1, 4],
+        [2, 3], [2, 4],
+        [3, 4]
+    ],
+    colors = 4,
+    expected_chromatic = 5,
+    expected_colorable = false,
+    note = "Complete graph K5 needs 5 colors, but only 4 provided"
+}
+
+odd_cycle_c5 = {
+    vertices = 5,
+    edges = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 0]],
+    colors = 3,
+    expected_chromatic = 3,
+    expected_colorable = true,
+    note = "Odd cycle requires 3 colors"
+}
+
+disconnected_components = {
+    vertices = 8,
+    edges = [
+        [0, 1], [1, 2], [0, 2],  # Triangle (3 colors)
+        [3, 4],                  # Edge (2 colors)
+        [5, 6], [6, 7], [7, 5]   # Triangle (3 colors)
+    ],
+    colors = 3,
+    expected_chromatic = 3,
+    expected_colorable = true,
+    note = "Disconnected graph - max of component chromatic numbers"
+}
+
+[test_cases.challenging]
+grotzsch_graph = {
+    vertices = 11,
+    edges = [
+        # Outer 5-cycle
+        [0, 1], [1, 2], [2, 3], [3, 4], [4, 0],
+        # Inner vertices connected to alternating outer vertices
+        [5, 0], [5, 2], [6, 1], [6, 3], [7, 2], [7, 4],
+        [8, 3], [8, 0], [9, 4], [9, 1],
+        # Central vertex connected to all inner vertices
+        [10, 5], [10, 6], [10, 7], [10, 8], [10, 9]
+    ],
+    colors = 4,
+    expected_chromatic = 4,
+    expected_colorable = true,
+    note = "Grötzsch graph - triangle-free with chromatic number 4"
+}
+
+mycielski_m4 = {
+    vertices = 11,
+    edges = "generate_mycielski_m4",  # Special case - complex construction
+    colors = 4,
+    expected_chromatic = 4,
+    expected_colorable = true,
+    triangle_free = true,
+    note = "Mycielski M4 - triangle-free graph with chromatic number 4"
+}
+
+large_random_graph = {
+    vertices = 20,
+    edges = { generate = "random", density = 0.3, seed = 42 },
+    colors = 5,
+    measure_performance = true,
+    stress_test = true,
+    note = "Large random graph for performance testing"
+}
+
+[test_cases.performance]
+dense_graph_medium = {
+    vertices = 15,
+    edges = { generate = "random", density = 0.6, seed = 123 },
+    colors = 8,
+    backtracking_vs_greedy = true,
+    measure_time = true
+}
+
+sparse_graph_large = {
+    vertices = 50,
+    edges = { generate = "random", density = 0.1, seed = 456 },
+    colors = 4,
+    greedy_performance = true,
+    dp_required = false
+}
+
+planar_graph_test = {
+    vertices = 25,
+    edges = { generate = "planar", max_edges = 69, seed = 789 },  # 3V - 6 for planar
+    colors = 4,
+    four_color_theorem = true,
+    note = "Planar graph - should be 4-colorable by Four Color Theorem"
+}
+
+pathological_backtrack = {
+    vertices = 12,
+    edges = { generate = "complement_of_matching" },
+    colors = 6,
+    backtrack_explosion = true,
+    heuristic_critical = true
+}
+
+[test_cases.theoretical]
+chromatic_polynomial_examples = {
+    path_n4 = {
+        vertices = 4,
+        edges = [[0, 1], [1, 2], [2, 3]],
+        chromatic_polynomial = "k(k-1)^3",
+        polynomial_values = [0, 0, 6, 24]  # For k=1,2,3,4
+    },
+    
+    cycle_c4 = {
+        vertices = 4,
+        edges = [[0, 1], [1, 2], [2, 3], [3, 0]],
+        chromatic_polynomial = "(k-1)((k-1)^3 - (-1)^4(k-1))",
+        polynomial_values = [0, 0, 2, 12]  # For k=1,2,3,4
+    }
+}
+
+greedy_worst_case = {
+    vertices = 8,
+    edges = [
+        # Construct graph where greedy performs poorly
+        [0, 1], [0, 2], [0, 3],  # Star from 0
+        [4, 5], [4, 6], [4, 7],  # Star from 4
+        [1, 4]  # Connect the two stars
+    ],
+    colors = 3,
+    expected_chromatic = 3,
+    greedy_result = 4,  # Greedy might use 4 colors
+    demonstrates_greedy_suboptimal = true
+}
+
+[algorithms.variants]
+backtracking_exact = {
+    implemented = true,
+    time = "O(k^V)",
+    space = "O(V)",
+    optimal = true,
+    complete = true
+}
+
+greedy_ordering = {
+    implemented = true,
+    time = "O(V + E)",
+    space = "O(V)",
+    optimal = false,
+    heuristic = true,
+    ordering_strategies = ["largest_first", "smallest_last", "random"]
+}
+
+welsh_powell = {
+    implemented = true,
+    time = "O(V^2)",
+    space = "O(V)",
+    optimal = false,
+    heuristic = true,
+    note = "Sort by degree descending, then greedy"
+}
+
+dsatur = {
+    implemented = false,
+    time = "O(V^2)",
+    space = "O(V)",
+    optimal = false,
+    advanced_heuristic = true,
+    note = "Degree of saturation heuristic"
+}
+
+branch_and_bound = {
+    implemented = false,
+    time = "O(k^V) best case better",
+    space = "O(V)",
+    optimal = true,
+    pruning_technique = true
+}
+
+constraint_propagation = {
+    implemented = false,
+    time = "Variable",
+    space = "O(V*k)",
+    optimal = true,
+    csp_approach = true
+}
+
+[benchmark]
+iterations = 100
+warmup = 10
+graph_sizes = [10, 15, 20, 25]
+densities = [0.2, 0.4, 0.6, 0.8]
+algorithms = ["backtracking", "greedy_largest_first", "welsh_powell"]
+color_limits = [3, 4, 5, 6]
+
+[performance_targets]
+"vertices_20_sparse" = 0.1  # seconds for sparse graphs
+"vertices_15_dense" = 1.0   # seconds for dense graphs
+"greedy_vs_backtrack_speedup" = 100.0
+"success_rate" = 0.85  # Fraction of graphs successfully colored
+
+[visualization]
+show_graph_structure = true
+show_coloring_process = true
+animate_backtracking = true
+show_color_conflicts = true
+export_formats = ["ascii", "dot", "svg"]
+
+[validation]
+property_tests = 1000
+verify_no_adjacent_same_color = true
+verify_color_count = true
+cross_validate_algorithms = true
+
+[graph_theory_properties]
+# Test various graph classes and their properties
+bipartite_graphs = true
+planar_graphs = true
+perfect_graphs = true
+chordal_graphs = true
+interval_graphs = true
+tree_graphs = true
+
+[applications]
+register_allocation = true      # Compiler optimization
+scheduling = true              # Resource scheduling
+frequency_assignment = true    # Telecommunications
+map_coloring = true           # Cartography
+sudoku_solving = true         # Constraint satisfaction
+timetabling = true            # Academic scheduling
+
+[ruchy_features]
+# v1.5.0 specific features this example demonstrates
+constraint_satisfaction_dsl = true      # Built-in CSP solving syntax
+graph_theory_stdlib = true             # Rich graph algorithms library
+backtracking_optimization = true       # Automated pruning strategies
+polynomial_time_approximation = true   # Approximation algorithm framework
+formal_complexity_verification = true  # Prove time/space complexity bounds
+concurrent_graph_processing = true     # Parallel graph algorithm execution
+symbolic_constraint_solving = true     # SMT-based exact solutions
