@@ -142,7 +142,7 @@ Successfully established **v1.9.3 compatibility patterns**:
 
 ### v1.9.3 Compatibility Patterns Established
 1. **Tuple Avoidance Pattern**
-   ```rust
+   ```ruchy
    // Instead of: let (a, b) = function()
    // Use: separate functions for each return value
    fun get_first(data) -> T1 { ... }
@@ -150,7 +150,7 @@ Successfully established **v1.9.3 compatibility patterns**:
    ```
 
 2. **Vector-Based Data Structures**
-   ```rust
+   ```ruchy
    // Instead of: complex struct definitions
    // Use: parallel vectors with index relationships
    let values = vec![...];
@@ -158,7 +158,7 @@ Successfully established **v1.9.3 compatibility patterns**:
    ```
 
 3. **Function-Based Constants**
-   ```rust
+   ```ruchy
    // Instead of: const INFINITY = 999999;
    // Use: function returning constant
    fun get_infinity() -> i32 { 999999 }
