@@ -37,22 +37,24 @@ fun filter_above_threshold(data: Vec<i32>, threshold: i32) -> Vec<i32> {
     result
 }
 
-// Sort values in ascending order (bubble sort)
+// Sort values in ascending order (simple bubble sort)
 fun sort_values(data: Vec<i32>) -> Vec<i32> {
     let mut sorted = data.clone();
-    let mut n = sorted.len();
+    let n = sorted.len();
     
-    while n > 1 {
-        let mut new_n = 0;
+    if n <= 1 {
+        return sorted;
+    }
+    
+    // Simple bubble sort pass
+    for _pass in 0..n {
         for i in 1..n {
             if sorted[i-1] > sorted[i] {
                 let temp = sorted[i-1];
                 sorted[i-1] = sorted[i];
                 sorted[i] = temp;
-                new_n = i;
             }
         }
-        n = new_n;
     }
     
     sorted
@@ -114,14 +116,10 @@ fun count_consecutive_groups(data: Vec<i32>) -> Vec<i32> {
     result
 }
 
-// Test all basic data operations
-fun test_data_operations() {
-    println!("Basic Data Operations Tests - Ruchy v1.9.3");
-    println!("==========================================");
-    
+// Test sum and mean calculations
+fun test_sum_mean_operations() {
     let test_data = create_test_data();
     
-    // Test 1: Sum calculation
     let sum_result = calculate_sum(test_data.clone());
     if sum_result == 55 {
         println!("✓ Sum calculation: Pass");
@@ -129,15 +127,18 @@ fun test_data_operations() {
         println!("✗ Sum calculation: Fail");
     }
     
-    // Test 2: Mean calculation
     let mean_result = calculate_mean(test_data.clone());
     if mean_result == 5 {
         println!("✓ Mean calculation: Pass");
     } else {
         println!("✗ Mean calculation: Fail");
     }
+}
+
+// Test filter and sort operations
+fun test_filter_sort_operations() {
+    let test_data = create_test_data();
     
-    // Test 3: Filtering
     let filtered = filter_above_threshold(test_data.clone(), 5);
     if filtered.len() == 5 {
         println!("✓ Filtering operations: Pass");
@@ -145,7 +146,6 @@ fun test_data_operations() {
         println!("✗ Filtering operations: Fail");
     }
     
-    // Test 4: Sorting
     let test_unsorted = vec![5, 2, 8, 1, 9];
     let sorted = sort_values(test_unsorted);
     if sorted[0] == 1 && sorted[4] == 9 {
@@ -153,8 +153,12 @@ fun test_data_operations() {
     } else {
         println!("✗ Sorting operations: Fail");
     }
+}
+
+// Test min/max and grouping operations
+fun test_minmax_group_operations() {
+    let test_data = create_test_data();
     
-    // Test 5: Maximum/Minimum
     let max_val = find_maximum(test_data.clone());
     let min_val = find_minimum(test_data.clone());
     if max_val == 10 && min_val == 1 {
@@ -163,7 +167,6 @@ fun test_data_operations() {
         println!("✗ Min/Max operations: Fail");
     }
     
-    // Test 6: Group counting
     let grouped_data = vec![1, 1, 2, 2, 2, 3];
     let counts = count_consecutive_groups(grouped_data);
     if counts.len() == 3 && counts[0] == 2 && counts[1] == 3 && counts[2] == 1 {
@@ -171,6 +174,16 @@ fun test_data_operations() {
     } else {
         println!("✗ Group counting: Fail");
     }
+}
+
+// Test all basic data operations
+fun test_data_operations() {
+    println!("Basic Data Operations Tests - Ruchy v1.9.3");
+    println!("==========================================");
+    
+    test_sum_mean_operations();
+    test_filter_sort_operations();
+    test_minmax_group_operations();
     
     println!("");
     println!("Basic data operations validation complete");
