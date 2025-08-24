@@ -232,7 +232,7 @@ Formula: Cₙ = (2n)! / ((n+1)! × n!)
 ## Ruchy v1.5.0 Advanced Features
 
 ### Self-Hosting DP Code Generation
-```ruchy
+```rust
 // Generate optimized interval DP code at compile-time
 let mcm_code = compiler.generate_interval_dp("matrix_chain",
     cost_function = "matrix_multiply_cost",
@@ -241,7 +241,7 @@ let mcm_code = compiler.generate_interval_dp("matrix_chain",
 ```
 
 ### Numerical Stability Analysis
-```ruchy
+```rust
 // Analyze floating-point precision in large computations
 #[analyze(precision = "f64", overflow_detection = true)]
 fn matrix_chain_stable(dimensions: &[usize]) -> MatrixChainResult {
@@ -250,7 +250,7 @@ fn matrix_chain_stable(dimensions: &[usize]) -> MatrixChainResult {
 ```
 
 ### Concurrent Matrix Optimization
-```ruchy
+```rust
 async fn parallel_matrix_chain_multiple<T: AsRef<[usize]>>(
     dimension_sets: Vec<T>
 ) -> Vec<MatrixChainResult> {
@@ -262,7 +262,7 @@ async fn parallel_matrix_chain_multiple<T: AsRef<[usize]>>(
 ```
 
 ### Formal Correctness Verification
-```ruchy
+```rust
 #[verify(smt_solver = "z3")]
 fn matrix_chain_optimality_property(
     dimensions: &[usize], cost: usize, parenthesization: &str

@@ -337,7 +337,7 @@ impl CourseScheduler {
 ## Ruchy v1.5.0 Advanced Features
 
 ### Constraint Satisfaction DSL
-```ruchy
+```rust
 // Built-in graph coloring CSP syntax
 #[csp_problem]
 struct GraphColoring {
@@ -358,7 +358,7 @@ let solution = GraphColoring::solve_with_backtrack(graph, 1..=4)?;
 ```
 
 ### Graph Theory Standard Library
-```ruchy
+```rust
 use std::graph::{Graph, ColoringAlgorithm};
 
 let g = Graph::petersen();
@@ -371,7 +371,7 @@ assert!(g.chromatic_number() <= g.max_degree() + 1);
 ```
 
 ### Automated Algorithm Selection
-```ruchy
+```rust
 #[optimize(time_budget = "100ms")]
 fn color_graph_adaptive(graph: &Graph, colors: usize) -> Option<Coloring> {
     // Ruchy automatically selects algorithm based on:
@@ -394,7 +394,7 @@ fn color_graph_adaptive(graph: &Graph, colors: usize) -> Option<Coloring> {
 ```
 
 ### Formal Verification
-```ruchy
+```rust
 #[verify(smt_solver = "z3")]
 fn coloring_correctness_property(
     graph: &Graph, 
@@ -414,7 +414,7 @@ fn backtrack_time_bound(vertices: usize, colors: usize) -> BigO {
 ```
 
 ### Parallel Graph Processing
-```ruchy
+```rust
 async fn parallel_graph_coloring_batch<G: AsRef<Graph>>(
     graphs: Vec<G>
 ) -> Vec<ColoringResult> {

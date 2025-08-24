@@ -266,7 +266,7 @@ A coin system is canonical if for every amount, the greedy solution equals the o
 ## Ruchy v1.5.0 Advanced Features
 
 ### Self-Hosting DP Code Generation
-```ruchy
+```rust
 // Generate optimized DP recurrence at compile-time
 let coin_dp_code = compiler.generate_dp_recurrence("coin_change",
     state_space = "amount",
@@ -275,7 +275,7 @@ let coin_dp_code = compiler.generate_dp_recurrence("coin_change",
 ```
 
 ### Greedy Analysis Framework
-```ruchy
+```rust
 // Analyze when greedy algorithms are optimal
 #[analyze(greedy_optimality)]
 fn coin_change_greedy_analysis(coins: &[usize]) -> AnalysisResult {
@@ -285,7 +285,7 @@ fn coin_change_greedy_analysis(coins: &[usize]) -> AnalysisResult {
 ```
 
 ### Concurrent Coin Optimization
-```ruchy
+```rust
 async fn parallel_coin_change_multiple<T: AsRef<[usize]>>(
     problems: Vec<(T, usize)>
 ) -> Vec<CoinChangeResult> {
@@ -297,7 +297,7 @@ async fn parallel_coin_change_multiple<T: AsRef<[usize]>>(
 ```
 
 ### Formal Correctness Verification
-```ruchy
+```rust
 #[verify(smt_solver = "z3")]
 fn coin_change_optimality_property(
     coins: &[usize], amount: usize, min_coins: usize, solution: &[usize]

@@ -147,7 +147,7 @@ Supports **PMCP (Protocol for MCP)** for enhanced capabilities:
 ### MCP Server Implementation
 
 #### Server Architecture
-```ruchy
+```rust
 #!/usr/bin/env ruchy
 // mcp_server.ruchy - Main MCP server implementation
 
@@ -233,7 +233,7 @@ impl RosettaMCPServer {
 ```
 
 Example Ruchy script structure:
-```ruchy
+```rust
 #!/usr/bin/env ruchy
 
 // Build script in Ruchy
@@ -453,7 +453,7 @@ make release-auto
 **STEP 1: Theoretical Complexity Declaration**
 Every algorithm must declare its expected complexity in the Ruchy implementation:
 
-```ruchy
+```rust
 #!/usr/bin/env ruchy
 // algorithm_name.ruchy - REQUIRED complexity annotations
 
@@ -500,7 +500,7 @@ Every algorithm must generate these artifacts:
 - `optimality_analysis.md` - Comparison with theoretical bounds
 
 **STEP 4: Integration with Algorithm Documentation**
-```ruchy
+```rust
 // MANDATORY: Include complexity verification in algorithm documentation
 #[doc(complexity_verified = true)]
 #[doc(proof_file = "complexity_proof.json")]

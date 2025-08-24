@@ -95,14 +95,14 @@ struct RBNode<T> {
 
 ### Self-Hosting Rotation Generation
 Use Ruchy's self-hosting compiler to generate optimized rotation code:
-```ruchy
+```rust
 // Generate rotation logic at compile-time
 let rotation_code = compiler.generate_rotation("left", node_type)?;
 ```
 
 ### Algorithm W Type Inference
 Complex trait bounds automatically resolved:
-```ruchy
+```rust
 trait BalancedTree<T> where T: Ord + Clone {
     type Node: TreeNode<T>;
     // Algorithm W infers all associated type constraints
@@ -111,7 +111,7 @@ trait BalancedTree<T> where T: Ord + Clone {
 
 ### Pattern Matching Exhaustiveness
 Ensure all color/rotation cases are handled:
-```ruchy
+```rust
 match (node.color, uncle_color, parent_position) {
     (Red, Red, Left) => recolor_case(),
     (Red, Black, Left) if is_line() => rotate_case(),
@@ -121,7 +121,7 @@ match (node.color, uncle_color, parent_position) {
 
 ### Concurrent Operations
 Safe concurrent tree access with formal verification:
-```ruchy
+```rust
 async fn concurrent_insert<T>(&self, value: T) -> Result<(), TreeError> {
     // Lock-free insertion with invariant preservation
 }
