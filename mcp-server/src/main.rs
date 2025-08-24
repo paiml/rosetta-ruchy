@@ -1,7 +1,7 @@
 //! Rosetta Ruchy MCP Server
-//! 
+//!
 //! A Model Context Protocol (MCP) server that provides real-time code translation
-//! capabilities to Claude Code agents, allowing seamless conversion from any 
+//! capabilities to Claude Code agents, allowing seamless conversion from any
 //! supported language to Ruchy with immediate formal verification and performance analysis.
 
 use anyhow::Result;
@@ -10,12 +10,12 @@ use mcp_server::MCPServer;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 
-mod mcp_server;
-mod translator;
 mod analyzer;
-mod ruchy_tooling;
 mod language_detector;
+mod mcp_server;
 mod pmcp_integration;
+mod ruchy_tooling;
+mod translator;
 
 #[tokio::main]
 async fn main() -> Result<()> {

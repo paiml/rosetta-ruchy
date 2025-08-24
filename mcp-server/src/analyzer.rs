@@ -119,11 +119,16 @@ impl CodeAnalyzer {
                 r"&&",
                 r"\?",
             ],
-            _ => return Err(anyhow!("Unsupported language for complexity analysis: {}", language)),
+            _ => {
+                return Err(anyhow!(
+                    "Unsupported language for complexity analysis: {}",
+                    language
+                ))
+            }
         };
 
         let mut complexity = 1; // Base complexity
-        
+
         for pattern in complexity_patterns {
             let re = Regex::new(pattern)?;
             complexity += re.find_iter(code).count() as u32;
@@ -204,14 +209,18 @@ impl CodeAnalyzer {
             }
 
             if code.contains("unwrap()") {
-                hotspots.push("Consider using proper error handling instead of unwrap()".to_string());
+                hotspots
+                    .push("Consider using proper error handling instead of unwrap()".to_string());
             }
         }
 
         // Long functions
         let lines = code.lines().count();
         if lines > 50 {
-            hotspots.push(format!("Function is {} lines long, consider breaking it down", lines));
+            hotspots.push(format!(
+                "Function is {} lines long, consider breaking it down",
+                lines
+            ));
         }
 
         // Deep nesting detection (simplified)
@@ -230,18 +239,21 @@ impl CodeAnalyzer {
         match source_language {
             "python" => Ok(15.0), // Python is typically 10-20x slower than compiled languages
             "javascript" => Ok(3.0), // V8 is quite optimized, but compiled code is still faster
-            "rust" => Ok(0.98), // Ruchy aims for 95-105% of Rust performance
-            "go" => Ok(1.2), // Go is slightly slower than Rust due to GC
-            "c" => Ok(0.95), // C can be slightly faster due to manual optimizations
-            "ruchy" => Ok(1.0), // No change
-            _ => Err(anyhow!("Unknown language for speedup estimation: {}", source_language)),
+            "rust" => Ok(0.98),   // Ruchy aims for 95-105% of Rust performance
+            "go" => Ok(1.2),      // Go is slightly slower than Rust due to GC
+            "c" => Ok(0.95),      // C can be slightly faster due to manual optimizations
+            "ruchy" => Ok(1.0),   // No change
+            _ => Err(anyhow!(
+                "Unknown language for speedup estimation: {}",
+                source_language
+            )),
         }
     }
 
     fn estimate_memory_efficiency(&self, _original_code: &str, ruchy_code: &str) -> Result<f64> {
         // Estimate memory usage change (negative = less memory, positive = more)
         // This is a simplified estimation based on code patterns
-        
+
         let has_vectors = ruchy_code.contains("Vec<") || ruchy_code.contains("vec!");
         let has_strings = ruchy_code.contains("String") || ruchy_code.contains("&str");
         let has_heap_allocations = ruchy_code.contains("Box<") || ruchy_code.contains("Rc<");
@@ -272,10 +284,10 @@ impl CodeAnalyzer {
         // Estimate binary size in KB based on code characteristics
         let base_size = 50; // Base Ruchy runtime size in KB
         let loc = self.count_lines_of_code(ruchy_code) as u64;
-        
+
         // Rough estimation: ~0.5KB per line of code for simple programs
         let estimated_size = base_size + (loc * 500) / 1000; // Convert bytes to KB
-        
+
         Ok(estimated_size)
     }
 
@@ -283,10 +295,10 @@ impl CodeAnalyzer {
         // Estimate compilation time in seconds
         let loc = self.count_lines_of_code(ruchy_code) as f64;
         let base_time = 0.1; // Base compilation overhead
-        
+
         // Ruchy aims for fast compilation: ~1000 lines per second
         let compile_time = base_time + (loc / 1000.0);
-        
+
         Ok(compile_time)
     }
 }
@@ -337,24 +349,32 @@ mod tests {
             }
         "#;
 
-        let complexity = analyzer.calculate_cyclomatic_complexity(code, "rust").unwrap();
+        let complexity = analyzer
+            .calculate_cyclomatic_complexity(code, "rust")
+            .unwrap();
         assert!(complexity > 1); // Should detect multiple decision points
     }
 
     #[test]
     fn test_big_o_estimation() {
         let analyzer = CodeAnalyzer::new();
-        
+
         let linear_code = "for i in 0..n { println!(\"{}\", i); }";
-        let big_o = analyzer.estimate_big_o_complexity(linear_code, "rust").unwrap();
+        let big_o = analyzer
+            .estimate_big_o_complexity(linear_code, "rust")
+            .unwrap();
         assert_eq!(big_o, "O(n)");
 
         let quadratic_code = "for i in 0..n { for j in 0..n { println!(\"{} {}\", i, j); } }";
-        let big_o = analyzer.estimate_big_o_complexity(quadratic_code, "rust").unwrap();
+        let big_o = analyzer
+            .estimate_big_o_complexity(quadratic_code, "rust")
+            .unwrap();
         assert_eq!(big_o, "O(n²)");
 
         let constant_code = "let x = 42; println!(\"{}\", x);";
-        let big_o = analyzer.estimate_big_o_complexity(constant_code, "rust").unwrap();
+        let big_o = analyzer
+            .estimate_big_o_complexity(constant_code, "rust")
+            .unwrap();
         assert_eq!(big_o, "O(1)");
     }
 
@@ -363,8 +383,10 @@ mod tests {
         let analyzer = CodeAnalyzer::new();
         let python_code = "print('hello')";
         let ruchy_code = "println(\"hello\");";
-        
-        let prediction = analyzer.predict_performance(python_code, ruchy_code, "python").unwrap();
+
+        let prediction = analyzer
+            .predict_performance(python_code, ruchy_code, "python")
+            .unwrap();
         assert!(prediction.estimated_speedup > 1.0); // Should be faster than Python
         assert!(prediction.binary_size_estimate > 0);
         assert!(prediction.compilation_time_estimate > 0.0);

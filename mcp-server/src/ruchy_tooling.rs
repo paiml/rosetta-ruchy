@@ -39,7 +39,7 @@ impl RuchyToolchain {
 
     pub async fn analyze_ast(&self, ruchy_code: &str) -> Result<serde_json::Value> {
         let temp_file = self.create_temp_file(ruchy_code).await?;
-        
+
         let output = AsyncCommand::new(&self.ruchy_path)
             .args(["ast", &temp_file, "--format", "json"])
             .output()
@@ -76,7 +76,7 @@ impl RuchyToolchain {
 
     pub async fn check_provability(&self, ruchy_code: &str) -> Result<ProvabilityResult> {
         let temp_file = self.create_temp_file(ruchy_code).await?;
-        
+
         let output = AsyncCommand::new(&self.ruchy_path)
             .args(["provability", &temp_file, "--smt-solver", "z3"])
             .output()
@@ -99,7 +99,7 @@ impl RuchyToolchain {
 
     pub async fn get_quality_score(&self, ruchy_code: &str) -> Result<f64> {
         let temp_file = self.create_temp_file(ruchy_code).await?;
-        
+
         let output = AsyncCommand::new(&self.ruchy_path)
             .args(["score", &temp_file, "--detailed"])
             .output()
@@ -121,7 +121,7 @@ impl RuchyToolchain {
 
     pub async fn get_optimization_suggestions(&self, ruchy_code: &str) -> Result<Vec<String>> {
         let temp_file = self.create_temp_file(ruchy_code).await?;
-        
+
         let output = AsyncCommand::new(&self.ruchy_path)
             .args(["optimize", &temp_file, "--suggest"])
             .output()
@@ -143,7 +143,7 @@ impl RuchyToolchain {
 
     pub async fn compile_and_verify(&self, ruchy_code: &str) -> Result<bool> {
         let temp_file = self.create_temp_file(ruchy_code).await?;
-        
+
         let output = AsyncCommand::new(&self.ruchy_path)
             .args(["compile", &temp_file, "--verify"])
             .output()
@@ -164,10 +164,10 @@ impl RuchyToolchain {
     async fn create_temp_file(&self, code: &str) -> Result<String> {
         // Ensure temp directory exists
         fs::create_dir_all(&self.temp_dir).await.ok();
-        
+
         let file_id = Uuid::new_v4().to_string();
         let temp_file = format!("{}/temp_{}.ruchy", self.temp_dir, file_id);
-        
+
         fs::write(&temp_file, code).await?;
         Ok(temp_file)
     }
@@ -180,7 +180,7 @@ impl RuchyToolchain {
     fn parse_provability_output(&self, output: &str) -> Result<ProvabilityResult> {
         // Parse actual ruchy provability output
         // This is a simplified parser - real implementation would be more robust
-        
+
         let score = if output.contains("100% pure functions") {
             100.0
         } else if output.contains("High Provability") {
@@ -192,7 +192,7 @@ impl RuchyToolchain {
         };
 
         let verified = score >= 80.0;
-        
+
         let safety_guarantees = vec![
             "Memory safety guaranteed".to_string(),
             "No undefined behavior".to_string(),
@@ -221,7 +221,7 @@ impl RuchyToolchain {
                 return Ok(score_str.parse::<f64>().unwrap_or(0.8));
             }
         }
-        
+
         // Default fallback
         Ok(0.8)
     }
@@ -230,7 +230,11 @@ impl RuchyToolchain {
         output
             .lines()
             .filter(|line| line.starts_with("- ") || line.starts_with("• "))
-            .map(|line| line.trim_start_matches("- ").trim_start_matches("• ").to_string())
+            .map(|line| {
+                line.trim_start_matches("- ")
+                    .trim_start_matches("• ")
+                    .to_string()
+            })
             .collect()
     }
 
@@ -293,7 +297,7 @@ impl RuchyToolchain {
         let lines = ruchy_code.lines().count() as f64;
         let has_comments = ruchy_code.contains("//");
         let has_proper_naming = !ruchy_code.contains("x") || ruchy_code.contains("main");
-        
+
         let mut score: f64 = 0.7; // Base score
 
         if has_comments {
@@ -315,7 +319,8 @@ impl RuchyToolchain {
         let mut suggestions = Vec::new();
 
         if ruchy_code.contains("unwrap()") {
-            suggestions.push("Consider using proper error handling instead of unwrap()".to_string());
+            suggestions
+                .push("Consider using proper error handling instead of unwrap()".to_string());
         }
 
         if ruchy_code.lines().count() > 20 {
@@ -327,7 +332,9 @@ impl RuchyToolchain {
         }
 
         if ruchy_code.contains("clone()") {
-            suggestions.push("Consider using references instead of cloning to improve performance".to_string());
+            suggestions.push(
+                "Consider using references instead of cloning to improve performance".to_string(),
+            );
         }
 
         if suggestions.is_empty() {
@@ -356,10 +363,10 @@ mod tests {
     async fn test_create_temp_file() {
         let toolchain = RuchyToolchain::new("ruchy".to_string());
         let code = "fun main() { println(\"test\"); }";
-        
+
         let temp_file = toolchain.create_temp_file(code).await.unwrap();
         assert!(temp_file.contains(".ruchy"));
-        
+
         // Cleanup
         toolchain.cleanup_temp_file(&temp_file).await.unwrap();
     }
@@ -381,7 +388,8 @@ mod tests {
     #[test]
     fn test_mock_quality_score() {
         let toolchain = RuchyToolchain::new("ruchy".to_string());
-        let good_code = "// Well documented function\nfun calculate_sum(a: i32, b: i32) -> i32 { a + b }";
+        let good_code =
+            "// Well documented function\nfun calculate_sum(a: i32, b: i32) -> i32 { a + b }";
         let poor_code = "fun x(a, b) { a + b }";
 
         let good_score = toolchain.calculate_mock_quality_score(good_code);

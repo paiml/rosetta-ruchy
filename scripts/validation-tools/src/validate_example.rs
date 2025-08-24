@@ -6,7 +6,7 @@
 use anyhow::{Context, Result};
 use clap::Parser;
 use std::path::PathBuf;
-use tracing::{info, warn, error};
+use tracing::{error, info, warn};
 
 /// Validate example structure and quality standards
 #[derive(Parser)]
@@ -28,12 +28,10 @@ fn main() -> Result<()> {
     let args = Args::parse();
 
     let log_level = if args.verbose { "debug" } else { "info" };
-    tracing_subscriber::fmt()
-        .with_env_filter(log_level)
-        .init();
+    tracing_subscriber::fmt().with_env_filter(log_level).init();
 
     info!("🔍 Validating example: {}", args.example_path.display());
-    
+
     // TODO: Implement actual validation logic in future tasks
     println!("✅ Example validation tool (placeholder - to be implemented in ROSETTA-004)");
 

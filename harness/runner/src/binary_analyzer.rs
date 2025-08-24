@@ -252,8 +252,12 @@ impl BinaryAnalyzer {
 
     /// Get file size
     fn get_file_size(&self) -> Result<u64> {
-        let metadata = fs::metadata(&self.binary_path)
-            .with_context(|| format!("Failed to read binary metadata: {}", self.binary_path.display()))?;
+        let metadata = fs::metadata(&self.binary_path).with_context(|| {
+            format!(
+                "Failed to read binary metadata: {}",
+                self.binary_path.display()
+            )
+        })?;
         Ok(metadata.len())
     }
 
@@ -352,7 +356,7 @@ impl BinaryAnalyzer {
                 if let Ok(size) = u64::from_str_radix(parts[2], 16) {
                     let percentage = (size as f64 / total_size as f64) * 100.0;
                     let section_type = self.classify_section(&name);
-                    
+
                     sections.push(SectionInfo {
                         name,
                         size_bytes: size,
@@ -394,7 +398,12 @@ impl BinaryAnalyzer {
 
         if self.available_tools.has_nm {
             let output = Command::new("nm")
-                .args(["--print-size", "--size-sort", "--reverse-sort", self.binary_path.to_str().unwrap()])
+                .args([
+                    "--print-size",
+                    "--size-sort",
+                    "--reverse-sort",
+                    self.binary_path.to_str().unwrap(),
+                ])
                 .output()
                 .context("Failed to run nm")?;
 
@@ -402,7 +411,7 @@ impl BinaryAnalyzer {
                 let stdout = String::from_utf8_lossy(&output.stdout);
                 for (i, line) in stdout.lines().enumerate() {
                     total_symbols += 1;
-                    
+
                     let parts: Vec<&str> = line.split_whitespace().collect();
                     if parts.len() >= 4 {
                         // Parse symbol type
@@ -474,12 +483,12 @@ impl BinaryAnalyzer {
     /// Analyze compression potential
     async fn analyze_compression(&self) -> Result<CompressionAnalysis> {
         let original_bytes = self.get_file_size()?;
-        
+
         // Test gzip compression
         let gzip_output = Command::new("gzip")
             .args(["-c", self.binary_path.to_str().unwrap()])
             .output();
-        
+
         let gzip_bytes = if let Ok(output) = gzip_output {
             output.stdout.len() as u64
         } else {
@@ -557,7 +566,8 @@ impl BinaryAnalyzer {
                 potential_savings_bytes: debug_size,
                 difficulty: 1,
                 description: "Debug symbols account for significant binary size".to_string(),
-                action: "Strip debug symbols for production: strip --strip-debug binary".to_string(),
+                action: "Strip debug symbols for production: strip --strip-debug binary"
+                    .to_string(),
             });
         }
 
@@ -610,25 +620,39 @@ impl BinaryAnalyzer {
     /// Log analysis results
     fn log_analysis(&self, analysis: &BinarySizeAnalysis) {
         info!("📦 Binary Size Analysis:");
-        info!("   Total size: {:.2} MB", analysis.total_size_bytes as f64 / 1_048_576.0);
-        info!("   Stripped size: {:.2} MB", analysis.stripped_size_bytes as f64 / 1_048_576.0);
+        info!(
+            "   Total size: {:.2} MB",
+            analysis.total_size_bytes as f64 / 1_048_576.0
+        );
+        info!(
+            "   Stripped size: {:.2} MB",
+            analysis.stripped_size_bytes as f64 / 1_048_576.0
+        );
         info!("   Debug symbols: {:.1}%", analysis.debug_percentage);
-        
+
         if !analysis.sections.is_empty() {
             info!("   Main sections:");
             for section in analysis.sections.iter().take(3) {
-                info!("     {}: {:.2} MB ({:.1}%)", 
-                      section.name,
-                      section.size_bytes as f64 / 1_048_576.0,
-                      section.percentage);
+                info!(
+                    "     {}: {:.2} MB ({:.1}%)",
+                    section.name,
+                    section.size_bytes as f64 / 1_048_576.0,
+                    section.percentage
+                );
             }
         }
 
         if analysis.symbol_analysis.bloat_score > 70.0 {
-            warn!("   ⚠️ High symbol bloat score: {:.1}", analysis.symbol_analysis.bloat_score);
+            warn!(
+                "   ⚠️ High symbol bloat score: {:.1}",
+                analysis.symbol_analysis.bloat_score
+            );
         }
 
-        info!("   Optimization opportunities: {}", analysis.optimization_opportunities.len());
+        info!(
+            "   Optimization opportunities: {}",
+            analysis.optimization_opportunities.len()
+        );
     }
 
     /// Generate binary size report
@@ -639,15 +663,23 @@ impl BinaryAnalyzer {
 
         // Summary section
         report.push_str("## Summary\n\n");
-        report.push_str(&format!("- **Total Size**: {:.2} MB\n", 
-                               analysis.total_size_bytes as f64 / 1_048_576.0));
-        report.push_str(&format!("- **Stripped Size**: {:.2} MB\n", 
-                               analysis.stripped_size_bytes as f64 / 1_048_576.0));
-        report.push_str(&format!("- **Debug Symbols**: {:.2} MB ({:.1}%)\n", 
-                               analysis.debug_symbols_bytes as f64 / 1_048_576.0,
-                               analysis.debug_percentage));
-        report.push_str(&format!("- **Compression Potential**: {:.1}%\n\n", 
-                               analysis.compression.zstd_ratio * 100.0));
+        report.push_str(&format!(
+            "- **Total Size**: {:.2} MB\n",
+            analysis.total_size_bytes as f64 / 1_048_576.0
+        ));
+        report.push_str(&format!(
+            "- **Stripped Size**: {:.2} MB\n",
+            analysis.stripped_size_bytes as f64 / 1_048_576.0
+        ));
+        report.push_str(&format!(
+            "- **Debug Symbols**: {:.2} MB ({:.1}%)\n",
+            analysis.debug_symbols_bytes as f64 / 1_048_576.0,
+            analysis.debug_percentage
+        ));
+        report.push_str(&format!(
+            "- **Compression Potential**: {:.1}%\n\n",
+            analysis.compression.zstd_ratio * 100.0
+        ));
 
         // Section breakdown
         if !analysis.sections.is_empty() {
@@ -655,10 +687,12 @@ impl BinaryAnalyzer {
             report.push_str("| Section | Size (MB) | Percentage |\n");
             report.push_str("|---------|-----------|------------|\n");
             for section in &analysis.sections {
-                report.push_str(&format!("| {} | {:.2} | {:.1}% |\n",
-                                       section.name,
-                                       section.size_bytes as f64 / 1_048_576.0,
-                                       section.percentage));
+                report.push_str(&format!(
+                    "| {} | {:.2} | {:.1}% |\n",
+                    section.name,
+                    section.size_bytes as f64 / 1_048_576.0,
+                    section.percentage
+                ));
             }
             report.push('\n');
         }
@@ -667,10 +701,14 @@ impl BinaryAnalyzer {
         if !analysis.optimization_opportunities.is_empty() {
             report.push_str("## Optimization Opportunities\n\n");
             for opt in &analysis.optimization_opportunities {
-                report.push_str(&format!("### {:?} (Difficulty: {}/5)\n", 
-                                       opt.optimization_type, opt.difficulty));
-                report.push_str(&format!("- **Potential Savings**: {:.2} MB\n", 
-                                       opt.potential_savings_bytes as f64 / 1_048_576.0));
+                report.push_str(&format!(
+                    "### {:?} (Difficulty: {}/5)\n",
+                    opt.optimization_type, opt.difficulty
+                ));
+                report.push_str(&format!(
+                    "- **Potential Savings**: {:.2} MB\n",
+                    opt.potential_savings_bytes as f64 / 1_048_576.0
+                ));
                 report.push_str(&format!("- **Description**: {}\n", opt.description));
                 report.push_str(&format!("- **Action**: {}\n\n", opt.action));
             }
@@ -682,9 +720,16 @@ impl BinaryAnalyzer {
 
 /// Analyze binary size for a language implementation
 #[allow(dead_code)]
-pub async fn analyze_language_binary(language: &str, binary_path: &Path) -> Result<BinarySizeAnalysis> {
-    info!("📦 Analyzing {} binary: {}", language, binary_path.display());
-    
+pub async fn analyze_language_binary(
+    language: &str,
+    binary_path: &Path,
+) -> Result<BinarySizeAnalysis> {
+    info!(
+        "📦 Analyzing {} binary: {}",
+        language,
+        binary_path.display()
+    );
+
     let analyzer = BinaryAnalyzer::new(binary_path);
     analyzer.analyze().await
 }
@@ -699,7 +744,7 @@ mod tests {
         // Analyze the test binary itself
         let current_exe = env::current_exe().unwrap();
         let analyzer = BinaryAnalyzer::new(current_exe);
-        
+
         if let Ok(analysis) = analyzer.analyze().await {
             assert!(analysis.total_size_bytes > 0);
             assert!(analysis.stripped_size_bytes <= analysis.total_size_bytes);
@@ -710,10 +755,22 @@ mod tests {
     #[test]
     fn test_section_classification() {
         let analyzer = BinaryAnalyzer::new("dummy");
-        
-        assert!(matches!(analyzer.classify_section(".text"), SectionType::Code));
-        assert!(matches!(analyzer.classify_section(".rodata"), SectionType::ReadOnlyData));
-        assert!(matches!(analyzer.classify_section(".debug_info"), SectionType::Debug));
-        assert!(matches!(analyzer.classify_section(".bss"), SectionType::Bss));
+
+        assert!(matches!(
+            analyzer.classify_section(".text"),
+            SectionType::Code
+        ));
+        assert!(matches!(
+            analyzer.classify_section(".rodata"),
+            SectionType::ReadOnlyData
+        ));
+        assert!(matches!(
+            analyzer.classify_section(".debug_info"),
+            SectionType::Debug
+        ));
+        assert!(matches!(
+            analyzer.classify_section(".bss"),
+            SectionType::Bss
+        ));
     }
 }

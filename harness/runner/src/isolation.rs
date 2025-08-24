@@ -108,13 +108,20 @@ impl EnvironmentController {
     pub async fn detect_environment(&mut self) -> Result<()> {
         info!("🔍 Detecting system environment for benchmark isolation");
 
-        self.current_state = self.gather_system_state().await
+        self.current_state = self
+            .gather_system_state()
+            .await
             .context("Failed to gather system state")?;
 
-        info!("📊 Environment detected: {} cores, governor={:?}, load={:.2}",
-              self.current_state.available_cores.len(),
-              self.current_state.cpu_governors.first().unwrap_or(&"unknown".to_string()),
-              self.current_state.load_average.0);
+        info!(
+            "📊 Environment detected: {} cores, governor={:?}, load={:.2}",
+            self.current_state.available_cores.len(),
+            self.current_state
+                .cpu_governors
+                .first()
+                .unwrap_or(&"unknown".to_string()),
+            self.current_state.load_average.0
+        );
 
         Ok(())
     }
@@ -142,15 +149,21 @@ impl EnvironmentController {
 
         // Step 3: Configure CPU governor
         if let Err(e) = self.configure_cpu_governor(&mut result).await {
-            result.errors.push(format!("CPU governor configuration failed: {}", e));
+            result
+                .errors
+                .push(format!("CPU governor configuration failed: {}", e));
             // This is often a permission issue, so we continue with a warning
-            result.warnings.push("CPU governor control requires root privileges".to_string());
+            result
+                .warnings
+                .push("CPU governor control requires root privileges".to_string());
         }
 
         // Step 4: Control frequency scaling
         if self.disable_freq_scaling {
             if let Err(e) = self.control_frequency_scaling(&mut result).await {
-                result.warnings.push(format!("Frequency scaling control failed: {}", e));
+                result
+                    .warnings
+                    .push(format!("Frequency scaling control failed: {}", e));
             }
         }
 
@@ -188,14 +201,14 @@ impl EnvironmentController {
         use nix::unistd::Pid;
 
         let mut cpu_set = CpuSet::new();
-        
+
         for &core in &self.isolated_cores {
-            cpu_set.set(core)
+            cpu_set
+                .set(core)
                 .with_context(|| format!("Failed to set core {} in CPU set", core))?;
         }
 
-        sched_setaffinity(Pid::from_raw(0), &cpu_set)
-            .context("Failed to set CPU affinity")?;
+        sched_setaffinity(Pid::from_raw(0), &cpu_set).context("Failed to set CPU affinity")?;
 
         result.isolated_cores = self.isolated_cores.clone();
         info!("📌 CPU affinity set to cores: {:?}", self.isolated_cores);
@@ -208,10 +221,16 @@ impl EnvironmentController {
         let mut governors_set = Vec::new();
 
         for &core in &self.isolated_cores {
-            let governor_path = format!("/sys/devices/system/cpu/cpu{}/cpufreq/scaling_governor", core);
-            
+            let governor_path = format!(
+                "/sys/devices/system/cpu/cpu{}/cpufreq/scaling_governor",
+                core
+            );
+
             if Path::new(&governor_path).exists() {
-                match self.try_set_governor(&governor_path, &self.target_governor).await {
+                match self
+                    .try_set_governor(&governor_path, &self.target_governor)
+                    .await
+                {
                     Ok(()) => {
                         governors_set.push(core);
                         info!("⚡ Core {} governor set to {}", core, self.target_governor);
@@ -221,7 +240,9 @@ impl EnvironmentController {
                     }
                 }
             } else {
-                result.warnings.push(format!("Governor control not available for core {}", core));
+                result
+                    .warnings
+                    .push(format!("Governor control not available for core {}", core));
             }
         }
 
@@ -239,9 +260,13 @@ impl EnvironmentController {
         if Path::new(&available_path).exists() {
             let available = fs::read_to_string(&available_path)
                 .context("Failed to read available governors")?;
-            
+
             if !available.contains(governor) {
-                anyhow::bail!("Governor '{}' not available. Available: {}", governor, available.trim());
+                anyhow::bail!(
+                    "Governor '{}' not available. Available: {}",
+                    governor,
+                    available.trim()
+                );
             }
         }
 
@@ -255,16 +280,27 @@ impl EnvironmentController {
     /// Control CPU frequency scaling
     async fn control_frequency_scaling(&self, result: &mut IsolationResult) -> Result<()> {
         for &core in &self.isolated_cores {
-            let min_freq_path = format!("/sys/devices/system/cpu/cpu{}/cpufreq/scaling_min_freq", core);
-            let max_freq_path = format!("/sys/devices/system/cpu/cpu{}/cpufreq/scaling_max_freq", core);
-            
+            let min_freq_path = format!(
+                "/sys/devices/system/cpu/cpu{}/cpufreq/scaling_min_freq",
+                core
+            );
+            let max_freq_path = format!(
+                "/sys/devices/system/cpu/cpu{}/cpufreq/scaling_max_freq",
+                core
+            );
+
             if Path::new(&min_freq_path).exists() && Path::new(&max_freq_path).exists() {
-                match self.try_lock_frequency(core, &min_freq_path, &max_freq_path).await {
+                match self
+                    .try_lock_frequency(core, &min_freq_path, &max_freq_path)
+                    .await
+                {
                     Ok(freq) => {
                         info!("🔒 Core {} frequency locked at {} MHz", core, freq / 1000);
                     }
                     Err(e) => {
-                        result.warnings.push(format!("Frequency lock failed for core {}: {}", core, e));
+                        result
+                            .warnings
+                            .push(format!("Frequency lock failed for core {}: {}", core, e));
                     }
                 }
             }
@@ -274,16 +310,21 @@ impl EnvironmentController {
     }
 
     /// Try to lock CPU frequency to maximum
-    async fn try_lock_frequency(&self, _core: usize, min_path: &str, max_path: &str) -> Result<u32> {
-        let max_freq_str = fs::read_to_string(max_path)
-            .context("Failed to read max frequency")?;
-        
-        let max_freq: u32 = max_freq_str.trim().parse()
+    async fn try_lock_frequency(
+        &self,
+        _core: usize,
+        min_path: &str,
+        max_path: &str,
+    ) -> Result<u32> {
+        let max_freq_str = fs::read_to_string(max_path).context("Failed to read max frequency")?;
+
+        let max_freq: u32 = max_freq_str
+            .trim()
+            .parse()
             .context("Failed to parse max frequency")?;
 
         // Set min freq to max freq (effectively locking frequency)
-        fs::write(min_path, max_freq.to_string())
-            .context("Failed to lock frequency")?;
+        fs::write(min_path, max_freq.to_string()).context("Failed to lock frequency")?;
 
         Ok(max_freq)
     }
@@ -294,19 +335,27 @@ impl EnvironmentController {
         let memory_usage = self.current_state.memory_info.usage_percent;
 
         if load > 0.5 {
-            result.warnings.push(format!("High system load: {:.2}", load));
+            result
+                .warnings
+                .push(format!("High system load: {:.2}", load));
         }
 
         if memory_usage > 80.0 {
-            result.warnings.push(format!("High memory usage: {:.1}%", memory_usage));
+            result
+                .warnings
+                .push(format!("High memory usage: {:.1}%", memory_usage));
         }
 
         if self.current_state.irq_balance_active {
-            result.warnings.push("IRQ balancing is active - may affect benchmark consistency".to_string());
+            result
+                .warnings
+                .push("IRQ balancing is active - may affect benchmark consistency".to_string());
         }
 
-        info!("📈 System noise assessment: load={:.2}, memory={:.1}%, irq_balance={}",
-              load, memory_usage, self.current_state.irq_balance_active);
+        info!(
+            "📈 System noise assessment: load={:.2}, memory={:.1}%, irq_balance={}",
+            load, memory_usage, self.current_state.irq_balance_active
+        );
     }
 
     /// Gather current system state
@@ -356,7 +405,10 @@ impl EnvironmentController {
         let mut governors = Vec::new();
 
         for &core in cores {
-            let governor_path = format!("/sys/devices/system/cpu/cpu{}/cpufreq/scaling_governor", core);
+            let governor_path = format!(
+                "/sys/devices/system/cpu/cpu{}/cpufreq/scaling_governor",
+                core
+            );
             let governor = fs::read_to_string(&governor_path)
                 .map(|s| s.trim().to_string())
                 .unwrap_or_else(|_| "unknown".to_string());
@@ -371,9 +423,16 @@ impl EnvironmentController {
         let mut frequencies = Vec::new();
 
         for &core in cores {
-            let freq_path = format!("/sys/devices/system/cpu/cpu{}/cpufreq/scaling_cur_freq", core);
+            let freq_path = format!(
+                "/sys/devices/system/cpu/cpu{}/cpufreq/scaling_cur_freq",
+                core
+            );
             let freq = fs::read_to_string(&freq_path)
-                .and_then(|s| s.trim().parse::<u32>().map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e)))
+                .and_then(|s| {
+                    s.trim()
+                        .parse::<u32>()
+                        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
+                })
                 .map(|f| f / 1000) // Convert to MHz
                 .unwrap_or(0);
             frequencies.push(freq);
@@ -384,9 +443,9 @@ impl EnvironmentController {
 
     /// Read system load average
     fn read_load_average(&self) -> Result<(f64, f64, f64)> {
-        let loadavg = fs::read_to_string("/proc/loadavg")
-            .context("Failed to read /proc/loadavg")?;
-        
+        let loadavg =
+            fs::read_to_string("/proc/loadavg").context("Failed to read /proc/loadavg")?;
+
         let parts: Vec<&str> = loadavg.split_whitespace().collect();
         if parts.len() >= 3 {
             let load1: f64 = parts[0].parse().unwrap_or(0.0);
@@ -464,7 +523,7 @@ mod tests {
     #[tokio::test]
     async fn test_environment_detection() {
         let mut controller = EnvironmentController::new();
-        
+
         // This test may fail in some environments (like containers)
         // so we make it lenient
         if controller.detect_environment().await.is_ok() {

@@ -133,9 +133,9 @@ pub struct MemoryProfiler {
 impl Default for MemoryProfilerConfig {
     fn default() -> Self {
         Self {
-            sampling_interval_ms: 100, // 100ms sampling rate
-            detailed_allocation_tracking: false, // Can be resource intensive
-            max_duration_seconds: 300, // 5 minutes max
+            sampling_interval_ms: 100,                   // 100ms sampling rate
+            detailed_allocation_tracking: false,         // Can be resource intensive
+            max_duration_seconds: 300,                   // 5 minutes max
             leak_detection_threshold_bytes: 1024 * 1024, // 1MB threshold
             monitor_swap: true,
         }
@@ -168,36 +168,48 @@ impl MemoryProfiler {
 
     /// Start profiling a specific process by PID
     pub async fn start_profiling_pid(&mut self, pid: u32) -> Result<()> {
-        info!("🧠 Starting memory profiling for PID {} (sampling every {}ms)", 
-              pid, self.config.sampling_interval_ms);
+        info!(
+            "🧠 Starting memory profiling for PID {} (sampling every {}ms)",
+            pid, self.config.sampling_interval_ms
+        );
 
         self.target_pid = Some(pid);
         self.start_time = Some(Instant::now());
         self.snapshots.clear();
 
         // Take initial memory snapshot
-        let initial_snapshot = self.take_memory_snapshot(0).await
+        let initial_snapshot = self
+            .take_memory_snapshot(0)
+            .await
             .context("Failed to take initial memory snapshot")?;
-        
+
         self.initial_memory = Some(initial_snapshot.clone());
         self.snapshots.push(initial_snapshot);
 
-        debug!("Memory profiling started - initial RSS: {} MB", 
-               self.initial_memory.as_ref().unwrap().rss_bytes / 1_048_576);
+        debug!(
+            "Memory profiling started - initial RSS: {} MB",
+            self.initial_memory.as_ref().unwrap().rss_bytes / 1_048_576
+        );
 
         Ok(())
     }
 
     /// Stop profiling and generate comprehensive analysis
     pub async fn stop_profiling(&mut self) -> Result<MemoryProfile> {
-        let start_time = self.start_time
+        let start_time = self
+            .start_time
             .ok_or_else(|| anyhow::anyhow!("Profiling not started"))?;
 
         let duration = start_time.elapsed();
-        info!("🧠 Stopping memory profiling after {:.2}s", duration.as_secs_f64());
+        info!(
+            "🧠 Stopping memory profiling after {:.2}s",
+            duration.as_secs_f64()
+        );
 
         // Take final snapshot
-        let final_snapshot = self.take_memory_snapshot(duration.as_millis() as u64).await
+        let final_snapshot = self
+            .take_memory_snapshot(duration.as_millis() as u64)
+            .await
             .context("Failed to take final memory snapshot")?;
         self.snapshots.push(final_snapshot);
 
@@ -208,7 +220,8 @@ impl MemoryProfiler {
     /// Continuously sample memory usage in background
     #[allow(dead_code)]
     pub async fn sample_continuously(&mut self) -> Result<()> {
-        let start_time = self.start_time
+        let start_time = self
+            .start_time
             .ok_or_else(|| anyhow::anyhow!("Profiling not started"))?;
 
         let max_duration = Duration::from_secs(self.config.max_duration_seconds);
@@ -218,7 +231,7 @@ impl MemoryProfiler {
             sleep(sampling_interval).await;
 
             let elapsed_ms = start_time.elapsed().as_millis() as u64;
-            
+
             match self.take_memory_snapshot(elapsed_ms).await {
                 Ok(snapshot) => {
                     self.snapshots.push(snapshot);
@@ -235,7 +248,9 @@ impl MemoryProfiler {
 
     /// Take a memory snapshot at current time
     async fn take_memory_snapshot(&self, timestamp_ms: u64) -> Result<MemorySnapshot> {
-        let pid = self.target_pid.ok_or_else(|| anyhow::anyhow!("No target PID set"))?;
+        let pid = self
+            .target_pid
+            .ok_or_else(|| anyhow::anyhow!("No target PID set"))?;
 
         // Read process memory information from /proc/[pid]/status
         let status_path = format!("/proc/{}/status", pid);
@@ -261,21 +276,27 @@ impl MemoryProfiler {
             timestamp_ms,
             rss_bytes,
             vms_bytes,
-            heap_bytes: None, // Would need specialized instrumentation
+            heap_bytes: None,  // Would need specialized instrumentation
             stack_bytes: None, // Would need specialized instrumentation
         })
     }
 
     /// Generate comprehensive memory profile analysis
     async fn generate_memory_profile(&self) -> Result<MemoryProfile> {
-        let initial = self.initial_memory.as_ref()
+        let initial = self
+            .initial_memory
+            .as_ref()
             .ok_or_else(|| anyhow::anyhow!("No initial memory snapshot"))?;
-        
-        let final_snapshot = self.snapshots.last()
+
+        let final_snapshot = self
+            .snapshots
+            .last()
             .ok_or_else(|| anyhow::anyhow!("No memory snapshots available"))?;
 
         // Calculate basic metrics
-        let peak_usage_bytes = self.snapshots.iter()
+        let peak_usage_bytes = self
+            .snapshots
+            .iter()
             .map(|s| s.rss_bytes)
             .max()
             .unwrap_or(0);
@@ -292,10 +313,9 @@ impl MemoryProfiler {
         let allocation_stats = self.generate_allocation_stats().await;
 
         // Create efficiency metrics
-        let efficiency_metrics = self.calculate_efficiency_metrics(
-            peak_usage_bytes,
-            average_usage_bytes,
-        ).await;
+        let efficiency_metrics = self
+            .calculate_efficiency_metrics(peak_usage_bytes, average_usage_bytes)
+            .await;
 
         // Monitor swap usage
         let swap_usage = self.monitor_swap_usage().await;
@@ -321,7 +341,7 @@ impl MemoryProfiler {
     async fn generate_allocation_stats(&self) -> AllocationStats {
         // In a real implementation, this would integrate with malloc hooks,
         // valgrind, or other memory instrumentation tools
-        
+
         let _duration_seconds = if let Some(start_time) = self.start_time {
             start_time.elapsed().as_secs_f64()
         } else {
@@ -345,14 +365,22 @@ impl MemoryProfiler {
             total_deallocations: estimated_deallocations,
             net_allocations: estimated_allocations as i64 - estimated_deallocations as i64,
             peak_allocated_objects: estimated_allocations / 10,
-            average_allocation_size: if estimated_allocations > 0 { memory_growth / estimated_allocations } else { 64 },
+            average_allocation_size: if estimated_allocations > 0 {
+                memory_growth / estimated_allocations
+            } else {
+                64
+            },
             largest_allocation_bytes: memory_growth.max(1024),
             fragmentation_score: self.estimate_fragmentation_score(),
         }
     }
 
     /// Calculate memory efficiency metrics
-    async fn calculate_efficiency_metrics(&self, peak_bytes: u64, average_bytes: u64) -> MemoryEfficiency {
+    async fn calculate_efficiency_metrics(
+        &self,
+        peak_bytes: u64,
+        average_bytes: u64,
+    ) -> MemoryEfficiency {
         let duration_seconds = if let Some(start_time) = self.start_time {
             start_time.elapsed().as_secs_f64()
         } else {
@@ -426,7 +454,12 @@ impl MemoryProfiler {
         }
 
         let mut variance_sum = 0.0;
-        let average = self.snapshots.iter().map(|s| s.rss_bytes as f64).sum::<f64>() / self.snapshots.len() as f64;
+        let average = self
+            .snapshots
+            .iter()
+            .map(|s| s.rss_bytes as f64)
+            .sum::<f64>()
+            / self.snapshots.len() as f64;
 
         for snapshot in &self.snapshots {
             let diff = snapshot.rss_bytes as f64 - average;
@@ -450,10 +483,18 @@ impl MemoryProfiler {
         for i in 1..self.snapshots.len() {
             let prev = self.snapshots[i - 1].rss_bytes as f64;
             let curr = self.snapshots[i].rss_bytes as f64;
-            let change_ratio = if prev > 0.0 { (curr - prev).abs() / prev } else { 0.0 };
-            
+            let change_ratio = if prev > 0.0 {
+                (curr - prev).abs() / prev
+            } else {
+                0.0
+            };
+
             // Reward smooth, predictable changes
-            smoothness_score += if change_ratio < 0.1 { 1.0 } else { 1.0 / (1.0 + change_ratio) };
+            smoothness_score += if change_ratio < 0.1 {
+                1.0
+            } else {
+                1.0 / (1.0 + change_ratio)
+            };
         }
 
         (smoothness_score / (self.snapshots.len() - 1) as f64) * 100.0
@@ -462,14 +503,20 @@ impl MemoryProfiler {
     /// Estimate cache efficiency based on memory access patterns
     fn estimate_cache_efficiency(&self) -> f64 {
         // Simple heuristic: smaller working sets likely have better cache efficiency
-        let peak_mb = self.snapshots.iter().map(|s| s.rss_bytes).max().unwrap_or(0) / 1_048_576;
-        
+        let peak_mb = self
+            .snapshots
+            .iter()
+            .map(|s| s.rss_bytes)
+            .max()
+            .unwrap_or(0)
+            / 1_048_576;
+
         match peak_mb {
-            0..=32 => 95.0,      // Excellent cache efficiency
-            33..=128 => 85.0,    // Good cache efficiency  
-            129..=512 => 70.0,   // Moderate cache efficiency
-            513..=2048 => 55.0,  // Fair cache efficiency
-            _ => 40.0,           // Poor cache efficiency
+            0..=32 => 95.0,     // Excellent cache efficiency
+            33..=128 => 85.0,   // Good cache efficiency
+            129..=512 => 70.0,  // Moderate cache efficiency
+            513..=2048 => 55.0, // Fair cache efficiency
+            _ => 40.0,          // Poor cache efficiency
         }
     }
 
@@ -483,25 +530,42 @@ impl MemoryProfiler {
     /// Log memory analysis results
     fn log_memory_analysis(&self, profile: &MemoryProfile) {
         info!("🧠 Memory Profile Analysis:");
-        info!("   Peak usage: {:.2} MB", profile.peak_usage_bytes as f64 / 1_048_576.0);
-        info!("   Average usage: {:.2} MB", profile.average_usage_bytes as f64 / 1_048_576.0);
-        
+        info!(
+            "   Peak usage: {:.2} MB",
+            profile.peak_usage_bytes as f64 / 1_048_576.0
+        );
+        info!(
+            "   Average usage: {:.2} MB",
+            profile.average_usage_bytes as f64 / 1_048_576.0
+        );
+
         if profile.memory_leak_bytes > self.config.leak_detection_threshold_bytes {
-            warn!("   ⚠️ Potential memory leak: {} bytes", profile.memory_leak_bytes);
+            warn!(
+                "   ⚠️ Potential memory leak: {} bytes",
+                profile.memory_leak_bytes
+            );
         } else {
             info!("   ✅ No significant memory leaks detected");
         }
 
-        info!("   Overhead: {:.1}%", profile.efficiency_metrics.overhead_percent);
-        info!("   System utilization: {:.2}%", profile.efficiency_metrics.utilization_percent);
-        
+        info!(
+            "   Overhead: {:.1}%",
+            profile.efficiency_metrics.overhead_percent
+        );
+        info!(
+            "   System utilization: {:.2}%",
+            profile.efficiency_metrics.utilization_percent
+        );
+
         if profile.swap_usage.swap_activity_detected {
             warn!("   ⚠️ Swap activity detected - may impact performance");
         }
 
-        debug!("   Allocation stats: {} total, fragmentation: {:.1}%", 
-               profile.allocation_stats.total_allocations,
-               profile.allocation_stats.fragmentation_score);
+        debug!(
+            "   Allocation stats: {} total, fragmentation: {:.1}%",
+            profile.allocation_stats.total_allocations,
+            profile.allocation_stats.fragmentation_score
+        );
     }
 
     /// Generate memory usage report in markdown format
@@ -512,12 +576,25 @@ impl MemoryProfiler {
 
         // Summary section
         report.push_str("## Executive Summary\n\n");
-        report.push_str(&format!("- **Peak Memory Usage**: {:.2} MB\n", profile.peak_usage_bytes as f64 / 1_048_576.0));
-        report.push_str(&format!("- **Average Memory Usage**: {:.2} MB\n", profile.average_usage_bytes as f64 / 1_048_576.0));
-        report.push_str(&format!("- **Memory Overhead**: {:.1}%\n", profile.efficiency_metrics.overhead_percent));
-        
-        if profile.memory_leak_bytes > 1_048_576 { // > 1MB
-            report.push_str(&format!("- **⚠️ Memory Leak Detected**: {} MB\n", profile.memory_leak_bytes / 1_048_576));
+        report.push_str(&format!(
+            "- **Peak Memory Usage**: {:.2} MB\n",
+            profile.peak_usage_bytes as f64 / 1_048_576.0
+        ));
+        report.push_str(&format!(
+            "- **Average Memory Usage**: {:.2} MB\n",
+            profile.average_usage_bytes as f64 / 1_048_576.0
+        ));
+        report.push_str(&format!(
+            "- **Memory Overhead**: {:.1}%\n",
+            profile.efficiency_metrics.overhead_percent
+        ));
+
+        if profile.memory_leak_bytes > 1_048_576 {
+            // > 1MB
+            report.push_str(&format!(
+                "- **⚠️ Memory Leak Detected**: {} MB\n",
+                profile.memory_leak_bytes / 1_048_576
+            ));
         } else {
             report.push_str("- **✅ No Memory Leaks**: Clean memory management\n");
         }
@@ -528,30 +605,52 @@ impl MemoryProfiler {
         report.push_str("## Detailed Metrics\n\n");
         report.push_str("| Metric | Value |\n");
         report.push_str("|--------|-------|\n");
-        report.push_str(&format!("| Initial Usage | {:.2} MB |\n", profile.initial_usage_bytes as f64 / 1_048_576.0));
-        report.push_str(&format!("| Final Usage | {:.2} MB |\n", profile.final_usage_bytes as f64 / 1_048_576.0));
-        report.push_str(&format!("| Peak Usage | {:.2} MB |\n", profile.peak_usage_bytes as f64 / 1_048_576.0));
-        report.push_str(&format!("| System Utilization | {:.2}% |\n", profile.efficiency_metrics.utilization_percent));
-        report.push_str(&format!("| Cache Efficiency | {:.1}% |\n", profile.efficiency_metrics.cache_efficiency_percent));
-        report.push_str(&format!("| Fragmentation Score | {:.1} |\n", profile.allocation_stats.fragmentation_score));
+        report.push_str(&format!(
+            "| Initial Usage | {:.2} MB |\n",
+            profile.initial_usage_bytes as f64 / 1_048_576.0
+        ));
+        report.push_str(&format!(
+            "| Final Usage | {:.2} MB |\n",
+            profile.final_usage_bytes as f64 / 1_048_576.0
+        ));
+        report.push_str(&format!(
+            "| Peak Usage | {:.2} MB |\n",
+            profile.peak_usage_bytes as f64 / 1_048_576.0
+        ));
+        report.push_str(&format!(
+            "| System Utilization | {:.2}% |\n",
+            profile.efficiency_metrics.utilization_percent
+        ));
+        report.push_str(&format!(
+            "| Cache Efficiency | {:.1}% |\n",
+            profile.efficiency_metrics.cache_efficiency_percent
+        ));
+        report.push_str(&format!(
+            "| Fragmentation Score | {:.1} |\n",
+            profile.allocation_stats.fragmentation_score
+        ));
 
         report.push('\n');
 
         // Recommendations
         report.push_str("## Recommendations\n\n");
-        
+
         if profile.memory_leak_bytes > 1_048_576 {
-            report.push_str("- ⚠️ **Memory Leak**: Investigate potential memory leaks in allocation patterns\n");
+            report.push_str(
+                "- ⚠️ **Memory Leak**: Investigate potential memory leaks in allocation patterns\n",
+            );
         }
-        
+
         if profile.efficiency_metrics.overhead_percent > 50.0 {
-            report.push_str("- 💡 **High Overhead**: Consider optimizing memory allocation patterns\n");
+            report.push_str(
+                "- 💡 **High Overhead**: Consider optimizing memory allocation patterns\n",
+            );
         }
-        
+
         if profile.efficiency_metrics.utilization_percent > 80.0 {
             report.push_str("- ⚠️ **High Memory Pressure**: Consider increasing system memory or optimizing usage\n");
         }
-        
+
         if profile.swap_usage.swap_activity_detected {
             report.push_str("- 🚨 **Swap Activity**: Performance impact detected - increase RAM or optimize memory usage\n");
         }
@@ -588,7 +687,8 @@ mod tests {
             let profile_result = timeout(Duration::from_millis(200), async {
                 tokio::time::sleep(Duration::from_millis(100)).await;
                 profiler.stop_profiling().await
-            }).await;
+            })
+            .await;
 
             if let Ok(Ok(profile)) = profile_result {
                 assert!(profile.peak_usage_bytes > 0);
@@ -601,7 +701,7 @@ mod tests {
     #[test]
     fn test_memory_report_generation() {
         let profile = MemoryProfile {
-            peak_usage_bytes: 10_485_760, // 10MB
+            peak_usage_bytes: 10_485_760,   // 10MB
             average_usage_bytes: 8_388_608, // 8MB
             initial_usage_bytes: 5_242_880, // 5MB
             final_usage_bytes: 5_242_880,

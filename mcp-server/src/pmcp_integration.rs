@@ -1,5 +1,5 @@
 //! PMCP (Protocol for MCP) integration for enhanced interactive capabilities
-//! 
+//!
 //! This module provides the foundation for interactive step-by-step translation
 //! capabilities. The actual PMCP integration would require the pmcp crate.
 
@@ -9,9 +9,7 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::{
-    analyzer::CodeAnalyzer,
-    language_detector::LanguageDetector,
-    ruchy_tooling::RuchyToolchain,
+    analyzer::CodeAnalyzer, language_detector::LanguageDetector, ruchy_tooling::RuchyToolchain,
     translator::CodeTranslator,
 };
 
@@ -77,17 +75,17 @@ pub struct PMCPTranslationRequest {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum StepSize {
-    Function,    // Translate function by function
-    Statement,   // Translate statement by statement
-    Expression,  // Translate expression by expression
-    Auto,        // Automatically determine optimal step size
+    Function,   // Translate function by function
+    Statement,  // Translate statement by statement
+    Expression, // Translate expression by expression
+    Auto,       // Automatically determine optimal step size
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum VerificationLevel {
-    Basic,       // Syntax and type checking only
-    Standard,    // Include basic provability checks
+    Basic,         // Syntax and type checking only
+    Standard,      // Include basic provability checks
     Comprehensive, // Full formal verification at each step
 }
 
@@ -123,7 +121,11 @@ impl PMCPIntegration {
         };
 
         // Analyze the source code to determine translation steps
-        let steps = self.analyze_translation_steps(&request.source_code, &source_language, &request.step_size)?;
+        let steps = self.analyze_translation_steps(
+            &request.source_code,
+            &source_language,
+            &request.step_size,
+        )?;
 
         let session = InteractiveTranslationSession {
             id: session_id.clone(),
@@ -137,7 +139,8 @@ impl PMCPIntegration {
             verification_results: Vec::new(),
         };
 
-        self.active_sessions.insert(session_id.clone(), session.clone());
+        self.active_sessions
+            .insert(session_id.clone(), session.clone());
         Ok(session)
     }
 
@@ -147,7 +150,8 @@ impl PMCPIntegration {
         user_approval: bool,
     ) -> Result<InteractiveTranslationSession> {
         let session_clone = {
-            let session = self.active_sessions
+            let session = self
+                .active_sessions
                 .get(session_id)
                 .ok_or_else(|| anyhow::anyhow!("Session not found: {}", session_id))?;
 
@@ -158,24 +162,22 @@ impl PMCPIntegration {
             if session.current_step >= session.total_steps {
                 return Ok(session.clone());
             }
-            
+
             session.clone()
         };
 
         // Execute the current step
         let step_result = self.execute_translation_step(&session_clone).await?;
-        
+
         // Update session with step results
         let updated_code = step_result.updated_code.clone();
         let current_step = session_clone.current_step + 1;
-        
+
         // Verify the step if requested
-        let verification_results = self.verify_translation_step(
-            &updated_code,
-            current_step,
-            &VerificationLevel::Standard,
-        ).await?;
-        
+        let verification_results = self
+            .verify_translation_step(&updated_code, current_step, &VerificationLevel::Standard)
+            .await?;
+
         // Update session in map
         if let Some(session) = self.active_sessions.get_mut(session_id) {
             session.partial_ruchy_code = updated_code;
@@ -183,7 +185,10 @@ impl PMCPIntegration {
             session.verification_results.extend(verification_results);
             Ok(session.clone())
         } else {
-            Err(anyhow::anyhow!("Session not found during update: {}", session_id))
+            Err(anyhow::anyhow!(
+                "Session not found during update: {}",
+                session_id
+            ))
         }
     }
 
@@ -202,16 +207,15 @@ impl PMCPIntegration {
         self.active_sessions.get(session_id)
     }
 
-    pub async fn finalize_session(
-        &mut self,
-        session_id: &str,
-    ) -> Result<String> {
-        let session = self.active_sessions
+    pub async fn finalize_session(&mut self, session_id: &str) -> Result<String> {
+        let session = self
+            .active_sessions
             .remove(session_id)
             .ok_or_else(|| anyhow::anyhow!("Session not found: {}", session_id))?;
 
         // Run final verification on complete Ruchy code
-        let final_verification = self.ruchy_toolchain
+        let final_verification = self
+            .ruchy_toolchain
             .compile_and_verify(&session.partial_ruchy_code)
             .await?;
 
@@ -243,7 +247,9 @@ impl PMCPIntegration {
             }
             StepSize::Auto => {
                 // Determine optimal step size based on code complexity
-                let complexity = self.analyzer.analyze_complexity(source_code, source_language)?;
+                let complexity = self
+                    .analyzer
+                    .analyze_complexity(source_code, source_language)?;
                 if complexity.cyclomatic > 10 {
                     steps.extend(self.extract_statement_steps(source_code, source_language)?);
                 } else {
@@ -255,7 +261,11 @@ impl PMCPIntegration {
         Ok(steps)
     }
 
-    fn extract_function_steps(&self, source_code: &str, source_language: &str) -> Result<Vec<String>> {
+    fn extract_function_steps(
+        &self,
+        source_code: &str,
+        source_language: &str,
+    ) -> Result<Vec<String>> {
         // Extract individual functions for step-by-step translation
         let mut steps = Vec::new();
 
@@ -293,11 +303,18 @@ impl PMCPIntegration {
         Ok(steps)
     }
 
-    fn extract_statement_steps(&self, source_code: &str, _source_language: &str) -> Result<Vec<String>> {
+    fn extract_statement_steps(
+        &self,
+        source_code: &str,
+        _source_language: &str,
+    ) -> Result<Vec<String>> {
         let mut steps = Vec::new();
 
         for (i, line) in source_code.lines().enumerate() {
-            if !line.trim().is_empty() && !line.trim().starts_with("//") && !line.trim().starts_with("#") {
+            if !line.trim().is_empty()
+                && !line.trim().starts_with("//")
+                && !line.trim().starts_with("#")
+            {
                 steps.push(format!("Translate statement {}: {}", i + 1, line.trim()));
             }
         }
@@ -305,7 +322,11 @@ impl PMCPIntegration {
         Ok(steps)
     }
 
-    fn extract_expression_steps(&self, source_code: &str, _source_language: &str) -> Result<Vec<String>> {
+    fn extract_expression_steps(
+        &self,
+        source_code: &str,
+        _source_language: &str,
+    ) -> Result<Vec<String>> {
         // For expression-level translation, we would need proper AST parsing
         // This is a simplified implementation
         let mut steps = Vec::new();
@@ -316,7 +337,12 @@ impl PMCPIntegration {
                 let expressions: Vec<&str> = line.split(';').collect();
                 for (j, expr) in expressions.iter().enumerate() {
                     if !expr.trim().is_empty() {
-                        steps.push(format!("Translate expression {}.{}: {}", i + 1, j + 1, expr.trim()));
+                        steps.push(format!(
+                            "Translate expression {}.{}: {}",
+                            i + 1,
+                            j + 1,
+                            expr.trim()
+                        ));
                     }
                 }
             }
@@ -331,12 +357,14 @@ impl PMCPIntegration {
     ) -> Result<TranslationStepResult> {
         // Extract the code portion for current step
         let step_description = &session.step_explanations[session.current_step as usize];
-        
+
         // This is a simplified implementation - in reality, we would need
         // more sophisticated code parsing and partial translation
         let step_code = self.extract_step_code(&session.source_code, step_description)?;
-        let translated_step = self.translator.translate_to_ruchy(&step_code, &session.source_language)?;
-        
+        let translated_step = self
+            .translator
+            .translate_to_ruchy(&step_code, &session.source_language)?;
+
         // Combine with existing partial code
         let updated_code = if session.partial_ruchy_code.is_empty() {
             translated_step.clone()
@@ -361,13 +389,25 @@ impl PMCPIntegration {
         let mut results = Vec::new();
 
         // Basic syntax verification
-        let syntax_check = self.ruchy_toolchain.compile_and_verify(code).await.unwrap_or(false);
+        let syntax_check = self
+            .ruchy_toolchain
+            .compile_and_verify(code)
+            .await
+            .unwrap_or(false);
         results.push(StepVerificationResult {
             step,
             verification_type: VerificationType::SyntaxCheck,
             passed: syntax_check,
-            details: if syntax_check { "Syntax is valid".to_string() } else { "Syntax errors detected".to_string() },
-            suggestions: if !syntax_check { vec!["Check for missing semicolons or braces".to_string()] } else { vec![] },
+            details: if syntax_check {
+                "Syntax is valid".to_string()
+            } else {
+                "Syntax errors detected".to_string()
+            },
+            suggestions: if !syntax_check {
+                vec!["Check for missing semicolons or braces".to_string()]
+            } else {
+                vec![]
+            },
         });
 
         // Additional verifications based on level
@@ -405,7 +445,11 @@ impl PMCPIntegration {
                         verification_type: VerificationType::QualityCheck,
                         passed: quality_score >= 0.8,
                         details: format!("Quality score: {:.2}", quality_score),
-                        suggestions: if quality_score < 0.8 { vec!["Consider refactoring for better quality".to_string()] } else { vec![] },
+                        suggestions: if quality_score < 0.8 {
+                            vec!["Consider refactoring for better quality".to_string()]
+                        } else {
+                            vec![]
+                        },
                     });
                 }
             }
@@ -445,4 +489,3 @@ struct TranslationStepResult {
     updated_code: String,
     explanation: String,
 }
-
