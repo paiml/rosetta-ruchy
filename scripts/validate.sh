@@ -135,11 +135,15 @@ run_check "PMAT Quality Analysis" "
     pmat analyze complexity --max-threshold 20 &&
     echo 'PMAT quality analysis passed'" "true"
 
-# Check 13: Git hooks installation
-run_check "Git Hooks Installation" "
-    [ -f .git/hooks/pre-commit ] &&
-    [ -x .git/hooks/pre-commit ] &&
-    echo 'Git hooks properly installed'"
+# Check 13: Git hooks installation (skip in CI)
+if [ -z "$CI" ]; then
+    run_check "Git Hooks Installation" "
+        [ -f .git/hooks/pre-commit ] &&
+        [ -x .git/hooks/pre-commit ] &&
+        echo 'Git hooks properly installed'"
+else
+    echo "ℹ️  Git hooks check skipped in CI environment"
+fi
 
 # Check 14: Security configuration
 run_check "Security Configuration" "
