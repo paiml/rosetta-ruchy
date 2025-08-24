@@ -767,3 +767,4 @@ This workflow ensures every algorithm demonstrates Ruchy's formal verification c
 - **Velocity**: Features completed per sprint, technical debt reduction
 - **User Experience**: Example compilation times, error message quality
 - always check for new ruchy version on each sprint after you commit.
+- we do not do "theortical", or "work arounds", we ONLY use the ruchy language in current form.  if a flaw exists we practice TOYOTA way, and flag the problem at the root level via INTEGRATION.md in the same way as ../ruchy-book.
