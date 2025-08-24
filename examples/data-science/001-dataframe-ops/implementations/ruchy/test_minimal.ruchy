@@ -1,0 +1,15 @@
+// Minimal test to identify syntax issues
+
+fun simple_function() -> i32 {
+    42
+}
+
+fun function_with_param(x: i32) -> i32 {
+    x + 1
+}
+
+fun main() {
+    println!("Test");
+    let result = simple_function();
+    println!("Complete");
+}
