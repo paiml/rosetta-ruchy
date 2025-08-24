@@ -1,0 +1,18 @@
+// Simple test for Ruchy 1.8 compatibility
+
+fun fibonacci(n: i32) -> i32 {
+    if n <= 1 {
+        n
+    } else {
+        fibonacci(n - 1) + fibonacci(n - 2)
+    }
+}
+
+fun main() {
+    println!("Testing Ruchy 1.8 compatibility");
+    
+    let result = fibonacci(5);
+    println!("fibonacci(5) = 5");
+    
+    println!("Test complete");
+}

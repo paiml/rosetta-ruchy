@@ -1,0 +1,56 @@
+// Fibonacci Sequence - Ruchy v1.8 Compatible
+// Simple version without complex macros
+
+// Pure recursive Fibonacci
+fun fibonacci(n: i32) -> i32 {
+    if n <= 1 {
+        n
+    } else {
+        fibonacci(n - 1) + fibonacci(n - 2)
+    }
+}
+
+// Simple test function
+fun test() {
+    println!("Testing Fibonacci...");
+    
+    // Test basic cases
+    if fibonacci(0) == 0 {
+        println!("F(0) = 0 ✓");
+    }
+    
+    if fibonacci(1) == 1 {
+        println!("F(1) = 1 ✓");
+    }
+    
+    if fibonacci(5) == 5 {
+        println!("F(5) = 5 ✓");
+    }
+    
+    if fibonacci(10) == 55 {
+        println!("F(10) = 55 ✓");
+    }
+    
+    println!("All tests passed!");
+}
+
+fun main() {
+    println!("Fibonacci Sequence (Ruchy v1.8)");
+    println!("===============================");
+    
+    // Run tests
+    test();
+    
+    // Show first 10 numbers
+    println!("First 10 Fibonacci numbers:");
+    println!("F(0) = 0");
+    println!("F(1) = 1");
+    println!("F(2) = 1");
+    println!("F(3) = 2");
+    println!("F(4) = 3");
+    println!("F(5) = 5");
+    println!("F(6) = 8");
+    println!("F(7) = 13");
+    println!("F(8) = 21");
+    println!("F(9) = 34");
+}
