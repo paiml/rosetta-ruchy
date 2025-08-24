@@ -1,0 +1,181 @@
+Traveling Salesman Problem - Multiple Algorithm Implementation
+======================================================================
+
+Test Case: Triangle (3 cities)
+============================================================
+Number of cities: 3
+
+Algorithm Performance:
+----------------------------------------------------------------------
+Algorithm                      |   Distance |  Time (ms) |    Quality
+----------------------------------------------------------------------
+Brute Force                    |       3.00 |      0.002 |      1.00x
+Dynamic Programming (Held-Karp) |       3.00 |      0.001 |      1.00x
+Nearest Neighbor               |       3.00 |      0.000 |      1.00x
+2-opt                          |       3.00 |      0.000 |      1.00x
+Simulated Annealing            |       3.00 |      0.030 |      1.00x
+
+Best Solution: Brute Force (distance: 3.00)
+
+Tour Visualization:
+==================================================
+A                   B                   
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+          C                             
+                                        
+                                        
+Tour: A → B → C → A
+
+Test Case: Square (4 cities)
+============================================================
+Number of cities: 4
+
+Algorithm Performance:
+----------------------------------------------------------------------
+Algorithm                      |   Distance |  Time (ms) |    Quality
+----------------------------------------------------------------------
+Brute Force                    |       4.00 |      0.001 |      1.00x
+Dynamic Programming (Held-Karp) |       4.00 |      0.002 |      1.00x
+Nearest Neighbor               |       4.00 |      0.000 |      1.00x
+2-opt                          |       4.00 |      0.000 |      1.00x
+Simulated Annealing            |       4.00 |      0.042 |      1.00x
+
+Best Solution: Brute Force (distance: 4.00)
+
+Tour Visualization:
+==================================================
+A                   B                   
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+Tour: A → B → C → D → A
+
+Test Case: Regular Pentagon (5 cities)
+============================================================
+Number of cities: 5
+
+Algorithm Performance:
+----------------------------------------------------------------------
+Algorithm                      |   Distance |  Time (ms) |    Quality
+----------------------------------------------------------------------
+Brute Force                    |       5.88 |      0.002 |      1.00x
+Dynamic Programming (Held-Karp) |       5.88 |      0.004 |      1.00x
+Nearest Neighbor               |       5.88 |      0.000 |      1.00x
+2-opt                          |       5.88 |      0.000 |      1.00x
+Simulated Annealing            |       5.88 |      0.034 |      1.00x
+
+Best Solution: Brute Force (distance: 5.88)
+
+Tour Visualization:
+==================================================
+D     E             A                   
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+C                                       
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+      B                                 
+Tour: A → B → C → D → E → A
+
+Test Case: Random 10 cities
+============================================================
+Number of cities: 10
+
+Algorithm Performance:
+----------------------------------------------------------------------
+Algorithm                      |   Distance |  Time (ms) |    Quality
+----------------------------------------------------------------------
+Brute Force                    |       2.65 |     16.883 |      1.00x
+Dynamic Programming (Held-Karp) |       2.65 |      0.343 |      1.00x
+Nearest Neighbor               |       3.06 |      0.001 |      1.15x
+2-opt                          |       2.85 |      0.001 |      1.08x
+Simulated Annealing            |       2.78 |      0.046 |      1.05x
+
+Best Solution: Brute Force (distance: 2.65)
+
+Test Case: Random 20 cities
+============================================================
+Number of cities: 20
+
+Algorithm Performance:
+----------------------------------------------------------------------
+Algorithm                      |   Distance |  Time (ms) |    Quality
+----------------------------------------------------------------------
+Dynamic Programming (Held-Karp) |       3.84 |    791.468 |      1.00x
+Nearest Neighbor               |       4.83 |      0.008 |      1.26x
+2-opt                          |       3.84 |      0.002 |      1.00x
+Simulated Annealing            |       4.59 |      0.065 |      1.19x
+
+Best Solution: 2-opt (distance: 3.84)
+
+Test Case: Random 50 cities (heuristics only)
+============================================================
+Number of cities: 50
+
+Algorithm Performance:
+----------------------------------------------------------------------
+Algorithm                      |   Distance |  Time (ms) |    Quality
+----------------------------------------------------------------------
+Nearest Neighbor               |       7.20 |      0.005 |        N/A
+2-opt                          |       6.25 |      0.008 |        N/A
+Simulated Annealing            |       7.20 |      0.109 |        N/A
+
+Best Solution: 2-opt (distance: 6.25)
+
+
+Algorithm Complexity Summary:
+======================================================================
+Brute Force:          O(n!) time, O(n) space
+Dynamic Programming:  O(n²·2ⁿ) time, O(n·2ⁿ) space
+Nearest Neighbor:     O(n²) time, O(n) space
+2-opt:               O(n²) per iteration, O(n) space
+Simulated Annealing: O(iterations) time, O(n) space
+
+Practical Limits:
+- Brute Force: ≤10 cities
+- Dynamic Programming: ≤20 cities
+- Heuristics: Thousands of cities

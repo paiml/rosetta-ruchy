@@ -5032,6 +5032,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "traveling-salesman-rust"
+version = "1.0.0"
+
+[[package]]
 name = "tree-sitter"
 version = "0.20.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
