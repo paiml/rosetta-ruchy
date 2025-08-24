@@ -4036,6 +4036,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "selection-sort-rust"
+version = "1.6.0"
+
+[[package]]
 name = "semver"
 version = "1.0.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
