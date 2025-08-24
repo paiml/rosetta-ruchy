@@ -505,7 +505,7 @@ dependencies = [
 
 [[package]]
 name = "bucket-sort-rust"
-version = "1.5.0"
+version = "1.6.0"
 
 [[package]]
 name = "bumpalo"
@@ -703,7 +703,7 @@ checksum = "b94f61472cee1439c0b966b47e3aca9ae07e45d070759512cd390ea2bebc6675"
 
 [[package]]
 name = "coin-change-rust"
-version = "1.5.0"
+version = "1.6.0"
 
 [[package]]
 name = "colorchoice"
@@ -779,6 +779,10 @@ name = "core-foundation-sys"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
+
+[[package]]
+name = "counting-sort-rust"
+version = "1.6.0"
 
 [[package]]
 name = "cpp_demangle"
@@ -1050,7 +1054,7 @@ dependencies = [
 
 [[package]]
 name = "dijkstra-rust"
-version = "1.5.0"
+version = "1.6.0"
 
 [[package]]
 name = "dirs"
@@ -1098,7 +1102,7 @@ checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
 
 [[package]]
 name = "edit-distance-rust"
-version = "1.5.0"
+version = "1.6.0"
 
 [[package]]
 name = "either"
@@ -1504,7 +1508,7 @@ dependencies = [
 
 [[package]]
 name = "graph-coloring-rust"
-version = "1.5.0"
+version = "1.6.0"
 
 [[package]]
 name = "h2"
@@ -1600,7 +1604,7 @@ dependencies = [
 
 [[package]]
 name = "heap-sort-rust"
-version = "1.5.0"
+version = "1.6.0"
 
 [[package]]
 name = "heck"
@@ -2245,7 +2249,7 @@ dependencies = [
 
 [[package]]
 name = "knapsack-rust"
-version = "1.5.0"
+version = "1.6.0"
 
 [[package]]
 name = "kqueue"
@@ -2281,7 +2285,7 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "lcs-rust"
-version = "1.5.0"
+version = "1.6.0"
 
 [[package]]
 name = "libc"
@@ -2412,7 +2416,7 @@ checksum = "47e1ffaa40ddd1f3ed91f717a33c8c0ee23fff369e3aa8772b9605cc1d22f4c3"
 
 [[package]]
 name = "matrix-chain-rust"
-version = "1.5.0"
+version = "1.6.0"
 
 [[package]]
 name = "matrixmultiply"
@@ -3438,7 +3442,7 @@ checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
 
 [[package]]
 name = "radix-sort-rust"
-version = "1.5.0"
+version = "1.6.0"
 
 [[package]]
 name = "rand"
@@ -3537,7 +3541,7 @@ dependencies = [
 
 [[package]]
 name = "red-black-tree-rust"
-version = "1.5.0"
+version = "1.6.0"
 
 [[package]]
 name = "redox_syscall"
@@ -3752,11 +3756,11 @@ dependencies = [
 
 [[package]]
 name = "rod-cutting-rust"
-version = "1.5.0"
+version = "1.6.0"
 
 [[package]]
 name = "rosetta-ruchy-mcp"
-version = "1.5.0"
+version = "1.6.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -3784,7 +3788,7 @@ dependencies = [
 
 [[package]]
 name = "rosetta-runner"
-version = "1.5.0"
+version = "1.6.0"
 dependencies = [
  "anyhow",
  "approx",
@@ -3813,7 +3817,7 @@ dependencies = [
 
 [[package]]
 name = "rust"
-version = "1.5.0"
+version = "1.6.0"
 
 [[package]]
 name = "rustc-demangle"
@@ -5289,7 +5293,7 @@ dependencies = [
 
 [[package]]
 name = "validation-tools"
-version = "1.5.0"
+version = "1.6.0"
 dependencies = [
  "anyhow",
  "assert_cmd",

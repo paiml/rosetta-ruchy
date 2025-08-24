@@ -1,0 +1,15 @@
+[package]
+name = "counting-sort-rust"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Counting Sort algorithm implementation with O(n+k) complexity and comprehensive analysis"
+
+[[bin]]
+name = "counting-sort-rust"
+path = "src/main.rs"
+
+[dependencies]
+# No external dependencies - using only standard library
