@@ -123,7 +123,7 @@ if [ -f Cargo.toml ]; then
         echo 'Rust code properly formatted'"
     
     run_check "Rust Linting" "
-        cargo clippy --all-targets --all-features -- -D warnings --quiet &&
+        cargo clippy --all-targets --all-features -- -D warnings &&
         echo 'Rust code passes lint checks'"
 else
     echo "ℹ️  No Rust workspace detected"

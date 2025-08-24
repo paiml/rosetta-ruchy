@@ -6,16 +6,9 @@
 
 use anyhow::Result;
 use clap::{Arg, Command};
-use mcp_server::MCPServer;
+use rosetta_ruchy_mcp::MCPServer;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
-
-mod analyzer;
-mod language_detector;
-mod mcp_server;
-mod pmcp_integration;
-mod ruchy_tooling;
-mod translator;
 
 #[tokio::main]
 async fn main() -> Result<()> {

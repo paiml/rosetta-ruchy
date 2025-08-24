@@ -1,6 +1,6 @@
 //! Interface to Ruchy compiler and tooling suite
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 use tokio::process::Command as AsyncCommand;
