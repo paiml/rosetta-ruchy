@@ -1,6 +1,6 @@
 # Rosetta Ruchy
 
-A polyglot benchmark suite demonstrating Ruchy's performance parity with Rust while maintaining Python-like ergonomics. The repository provides empirical evidence of zero-cost abstractions through systematic comparison across production workloads.
+A polyglot benchmark suite demonstrating Ruchy's performance parity with Rust while maintaining Python-like ergonomics. **Features real Ruchy formal verification and complexity analysis tools** providing empirical evidence of zero-cost abstractions through systematic comparison across production workloads.
 
 [![Quality Gates](https://github.com/pragmatic-ai-labs/rosetta-ruchy/actions/workflows/quality-gates.yml/badge.svg)](https://github.com/pragmatic-ai-labs/rosetta-ruchy/actions/workflows/quality-gates.yml)
 [![Toyota Way](https://img.shields.io/badge/Toyota%20Way-Quality%20Built--in-green.svg)](https://lean.org/toyota-production-system/)
@@ -46,6 +46,63 @@ The project enforces **zero-tolerance quality standards** through:
 - ✅ **Test Coverage ≥80%**: Statistical significance required
 - ✅ **Zero Lint Warnings**: `-D warnings` flag enforced
 - ✅ **Security Scan**: Zero critical vulnerabilities
+
+## 🔬 Ruchy Formal Verification Workflow
+
+Every algorithm implementation demonstrates **real Ruchy toolchain capabilities** using the installed `ruchy` binary (v1.7.0):
+
+### 1. Syntax Validation
+```bash
+ruchy check algorithm.ruchy    # ✓ Syntax is valid
+```
+
+### 2. Runtime Complexity Analysis  
+```bash
+ruchy runtime algorithm.ruchy
+# ⚡ Basic Performance Metrics for algorithm.ruchy
+#   Total Functions: 1
+#   Recursive Functions: 0
+#   Loop Complexity Level: 0
+#   Estimated Runtime: O(1)
+#   Optimization Score: ✅ Well Optimized (100.0/100)
+```
+
+### 3. Formal Provability Analysis
+```bash
+ruchy provability algorithm.ruchy
+# 🔬 Basic Provability Analysis for algorithm.ruchy
+#   Total Functions: 1
+#   Pure Functions: 1 (100.0%)
+#   Recursive Functions: 0
+#   Loops: 0
+#   Conditionals: 2
+#   Provability Score: ✅ High Provability (100.0/100)
+```
+
+### 4. Quality Scoring
+```bash
+ruchy score algorithm.ruchy
+# Quality Score Report
+# ==================================================
+# Overall Score: 1.000 (A+)
+# Confidence: 54.0%
+# 
+# Component Breakdown:
+#   Correctness: 1.000 (35%)
+#   Performance: 1.000 (25%)
+#   Maintainability: 1.000 (20%)
+#   Safety: 1.000 (15%)
+#   Idiomaticity: 1.000 (5%)
+```
+
+### 5. Advanced Capabilities (Ruchy v1.7.0)
+```bash
+ruchy ast algorithm.ruchy           # Enhanced AST analysis
+ruchy optimize algorithm.ruchy      # Hardware-aware optimization
+ruchy prove algorithm.ruchy         # Interactive theorem prover
+ruchy mcp algorithm.ruchy           # Real-time quality analysis
+ruchy quality-gate algorithm.ruchy  # Quality gate enforcement
+```
 
 ### 🚀 Benchmark Infrastructure
 
