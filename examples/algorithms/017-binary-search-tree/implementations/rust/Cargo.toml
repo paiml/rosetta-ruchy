@@ -1,0 +1,10 @@
+[package]
+name = "binary-search-tree-rust"
+version = "1.2.0"
+edition = "2021"
+
+[dependencies]
+
+[[bin]]
+name = "binary-search-tree-rust"
+path = "src/main.rs"

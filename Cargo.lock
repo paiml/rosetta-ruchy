@@ -362,6 +362,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "binary-search-tree-rust"
+version = "1.2.0"
+
+[[package]]
 name = "bincode"
 version = "1.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
