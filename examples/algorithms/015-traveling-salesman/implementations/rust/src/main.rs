@@ -21,7 +21,7 @@ impl Graph {
     fn from_points(points: &[(f64, f64)]) -> Self {
         let n = points.len();
         let mut graph = Self::new(n);
-        
+
         for i in 0..n {
             for j in 0..n {
                 if i != j {
@@ -31,7 +31,7 @@ impl Graph {
                 }
             }
         }
-        
+
         graph
     }
 
@@ -67,7 +67,7 @@ struct TSPSolution {
 fn tsp_brute_force(graph: &Graph) -> TSPSolution {
     let start = Instant::now();
     let n = graph.n;
-    
+
     if n > 10 {
         // Too large for brute force
         return TSPSolution {
@@ -77,15 +77,15 @@ fn tsp_brute_force(graph: &Graph) -> TSPSolution {
             time_ms: 0.0,
         };
     }
-    
+
     let mut cities: Vec<usize> = (1..n).collect();
     let mut best_tour = vec![0];
     best_tour.extend_from_slice(&cities);
     let mut best_distance = graph.tour_distance(&best_tour);
-    
+
     // Generate all permutations
     permute(&mut cities, 0, graph, &mut best_tour, &mut best_distance);
-    
+
     TSPSolution {
         tour: best_tour,
         distance: best_distance,
@@ -111,7 +111,7 @@ fn permute(
         }
         return;
     }
-    
+
     for i in k..cities.len() {
         cities.swap(k, i);
         permute(cities, k + 1, graph, best_tour, best_distance);
@@ -123,7 +123,7 @@ fn permute(
 fn tsp_dynamic_programming(graph: &Graph) -> TSPSolution {
     let start = Instant::now();
     let n = graph.n;
-    
+
     if n > 20 {
         // Too large for DP
         return TSPSolution {
@@ -133,31 +133,31 @@ fn tsp_dynamic_programming(graph: &Graph) -> TSPSolution {
             time_ms: 0.0,
         };
     }
-    
+
     let num_subsets = 1 << n;
     let mut dp = vec![vec![f64::INFINITY; n]; num_subsets];
     let mut parent = vec![vec![None; n]; num_subsets];
-    
+
     // Base case: starting from city 0
     dp[1][0] = 0.0;
-    
+
     // Fill DP table
     for mask in 1..num_subsets {
         for last in 0..n {
             if (mask & (1 << last)) == 0 {
                 continue;
             }
-            
+
             let prev_mask = mask ^ (1 << last);
             if prev_mask == 0 {
                 continue;
             }
-            
+
             for prev in 0..n {
                 if (prev_mask & (1 << prev)) == 0 {
                     continue;
                 }
-                
+
                 let cost = dp[prev_mask][prev] + graph.get_distance(prev, last);
                 if cost < dp[mask][last] {
                     dp[mask][last] = cost;
@@ -166,12 +166,12 @@ fn tsp_dynamic_programming(graph: &Graph) -> TSPSolution {
             }
         }
     }
-    
+
     // Find minimum cost to visit all cities and return to start
     let all_visited = num_subsets - 1;
     let mut min_cost = f64::INFINITY;
     let mut last_city = 0;
-    
+
     for last in 1..n {
         let cost = dp[all_visited][last] + graph.get_distance(last, 0);
         if cost < min_cost {
@@ -179,12 +179,12 @@ fn tsp_dynamic_programming(graph: &Graph) -> TSPSolution {
             last_city = last;
         }
     }
-    
+
     // Reconstruct tour
     let mut tour = vec![];
     let mut mask = all_visited;
     let mut current = last_city;
-    
+
     while let Some(prev) = parent[mask][current] {
         tour.push(current);
         mask ^= 1 << current;
@@ -192,7 +192,7 @@ fn tsp_dynamic_programming(graph: &Graph) -> TSPSolution {
     }
     tour.push(0);
     tour.reverse();
-    
+
     TSPSolution {
         tour,
         distance: min_cost,
@@ -210,11 +210,11 @@ fn tsp_nearest_neighbor(graph: &Graph) -> TSPSolution {
     visited[0] = true;
     let mut current = 0;
     let mut total_distance = 0.0;
-    
+
     for _ in 1..n {
         let mut nearest = None;
         let mut min_dist = f64::INFINITY;
-        
+
         for next in 0..n {
             if !visited[next] {
                 let dist = graph.get_distance(current, next);
@@ -224,7 +224,7 @@ fn tsp_nearest_neighbor(graph: &Graph) -> TSPSolution {
                 }
             }
         }
-        
+
         if let Some(next) = nearest {
             tour.push(next);
             visited[next] = true;
@@ -232,10 +232,10 @@ fn tsp_nearest_neighbor(graph: &Graph) -> TSPSolution {
             current = next;
         }
     }
-    
+
     // Return to start
     total_distance += graph.get_distance(current, 0);
-    
+
     TSPSolution {
         tour,
         distance: total_distance,
@@ -251,23 +251,23 @@ fn tsp_two_opt(graph: &Graph, initial_tour: &[usize]) -> TSPSolution {
     let mut tour = initial_tour.to_vec();
     let mut improved = true;
     let mut total_distance = graph.tour_distance(&tour);
-    
+
     while improved {
         improved = false;
-        
+
         for i in 0..n - 1 {
             for j in i + 2..n {
                 // Don't reverse the entire tour
                 if i == 0 && j == n - 1 {
                     continue;
                 }
-                
+
                 // Calculate change in distance
                 let current_dist = graph.get_distance(tour[i], tour[i + 1])
                     + graph.get_distance(tour[j], tour[(j + 1) % n]);
                 let new_dist = graph.get_distance(tour[i], tour[j])
                     + graph.get_distance(tour[i + 1], tour[(j + 1) % n]);
-                
+
                 if new_dist < current_dist {
                     // Reverse the segment between i+1 and j
                     tour[i + 1..=j].reverse();
@@ -277,7 +277,7 @@ fn tsp_two_opt(graph: &Graph, initial_tour: &[usize]) -> TSPSolution {
             }
         }
     }
-    
+
     TSPSolution {
         tour,
         distance: total_distance,
@@ -294,23 +294,23 @@ fn tsp_simulated_annealing(graph: &Graph, initial_tour: &[usize]) -> TSPSolution
     let mut current_distance = graph.tour_distance(&current_tour);
     let mut best_tour = current_tour.clone();
     let mut best_distance = current_distance;
-    
+
     let mut temperature = 100.0;
     let cooling_rate = 0.995;
     let min_temperature = 0.001;
-    
+
     let mut rng = SimpleRng::new(42);
-    
+
     while temperature > min_temperature {
         // Generate neighbor by swapping two random cities
         let i = 1 + (rng.next() % (n - 1) as u32) as usize;
         let j = 1 + (rng.next() % (n - 1) as u32) as usize;
-        
+
         if i != j {
             current_tour.swap(i, j);
             let new_distance = graph.tour_distance(&current_tour);
             let delta = new_distance - current_distance;
-            
+
             // Accept or reject the new solution
             if delta < 0.0 || rng.next_float() < (-delta / temperature).exp() {
                 current_distance = new_distance;
@@ -323,10 +323,10 @@ fn tsp_simulated_annealing(graph: &Graph, initial_tour: &[usize]) -> TSPSolution
                 current_tour.swap(i, j);
             }
         }
-        
+
         temperature *= cooling_rate;
     }
-    
+
     TSPSolution {
         tour: best_tour,
         distance: best_distance,
@@ -344,12 +344,12 @@ impl SimpleRng {
     fn new(seed: u32) -> Self {
         Self { seed }
     }
-    
+
     fn next(&mut self) -> u32 {
         self.seed = self.seed.wrapping_mul(1103515245).wrapping_add(12345);
         (self.seed / 65536) % 32768
     }
-    
+
     fn next_float(&mut self) -> f64 {
         self.next() as f64 / 32768.0
     }
@@ -359,12 +359,12 @@ impl SimpleRng {
 fn visualize_tour(tour: &[usize], points: &[(f64, f64)]) {
     println!("\nTour Visualization:");
     println!("{}", "=".repeat(50));
-    
+
     // Simple ASCII art visualization for small instances
     if points.len() <= 10 {
         let scale = 20.0;
         let mut grid = vec![vec![' '; 40]; 20];
-        
+
         // Plot cities
         for (i, &(x, y)) in points.iter().enumerate() {
             let gx = (x * scale) as usize;
@@ -373,13 +373,13 @@ fn visualize_tour(tour: &[usize], points: &[(f64, f64)]) {
                 grid[gy][gx] = (b'A' + i as u8) as char;
             }
         }
-        
+
         // Print grid
         for row in grid {
             println!("{}", row.iter().collect::<String>());
         }
     }
-    
+
     // Print tour
     print!("Tour: ");
     for (i, &city) in tour.iter().enumerate() {
@@ -395,7 +395,7 @@ fn run_test_case(name: &str, graph: &Graph, points: Option<&[(f64, f64)]>) {
     println!("\nTest Case: {}", name);
     println!("{}", "=".repeat(60));
     println!("Number of cities: {}", graph.n);
-    
+
     // Run algorithms based on problem size
     let solutions = if graph.n <= 10 {
         vec![
@@ -437,38 +437,43 @@ fn run_test_case(name: &str, graph: &Graph, points: Option<&[(f64, f64)]>) {
             },
         ]
     };
-    
+
     // Find optimal solution (if available)
     let optimal = solutions
         .iter()
         .filter(|s| s.algorithm.contains("Brute") || s.algorithm.contains("Dynamic"))
         .min_by(|a, b| a.distance.partial_cmp(&b.distance).unwrap());
-    
+
     println!("\nAlgorithm Performance:");
     println!("{}", "-".repeat(70));
-    println!("{:<30} | {:>10} | {:>10} | {:>10}", 
-             "Algorithm", "Distance", "Time (ms)", "Quality");
+    println!(
+        "{:<30} | {:>10} | {:>10} | {:>10}",
+        "Algorithm", "Distance", "Time (ms)", "Quality"
+    );
     println!("{}", "-".repeat(70));
-    
+
     for solution in &solutions {
         let quality = if let Some(opt) = optimal {
             format!("{:.2}x", solution.distance / opt.distance)
         } else {
             "N/A".to_string()
         };
-        
-        println!("{:<30} | {:>10.2} | {:>10.3} | {:>10}",
-                 solution.algorithm,
-                 solution.distance,
-                 solution.time_ms,
-                 quality);
+
+        println!(
+            "{:<30} | {:>10.2} | {:>10.3} | {:>10}",
+            solution.algorithm, solution.distance, solution.time_ms, quality
+        );
     }
-    
+
     // Show best tour
-    if let Some(best) = solutions.iter().min_by(|a, b| 
-        a.distance.partial_cmp(&b.distance).unwrap()) {
-        println!("\nBest Solution: {} (distance: {:.2})", 
-                 best.algorithm, best.distance);
+    if let Some(best) = solutions
+        .iter()
+        .min_by(|a, b| a.distance.partial_cmp(&b.distance).unwrap())
+    {
+        println!(
+            "\nBest Solution: {} (distance: {:.2})",
+            best.algorithm, best.distance
+        );
         if let Some(pts) = points {
             visualize_tour(&best.tour, pts);
         }
@@ -478,26 +483,17 @@ fn run_test_case(name: &str, graph: &Graph, points: Option<&[(f64, f64)]>) {
 fn main() {
     println!("Traveling Salesman Problem - Multiple Algorithm Implementation");
     println!("{}", "=".repeat(70));
-    
+
     // Test Case 1: Small triangle
-    let triangle_points = vec![
-        (0.0, 0.0),
-        (1.0, 0.0),
-        (0.5, 0.866),
-    ];
+    let triangle_points = vec![(0.0, 0.0), (1.0, 0.0), (0.5, 0.866)];
     let triangle = Graph::from_points(&triangle_points);
     run_test_case("Triangle (3 cities)", &triangle, Some(&triangle_points));
-    
+
     // Test Case 2: Square
-    let square_points = vec![
-        (0.0, 0.0),
-        (1.0, 0.0),
-        (1.0, 1.0),
-        (0.0, 1.0),
-    ];
+    let square_points = vec![(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)];
     let square = Graph::from_points(&square_points);
     run_test_case("Square (4 cities)", &square, Some(&square_points));
-    
+
     // Test Case 3: Pentagon
     let pentagon_points: Vec<(f64, f64)> = (0..5)
         .map(|i| {
@@ -506,8 +502,12 @@ fn main() {
         })
         .collect();
     let pentagon = Graph::from_points(&pentagon_points);
-    run_test_case("Regular Pentagon (5 cities)", &pentagon, Some(&pentagon_points));
-    
+    run_test_case(
+        "Regular Pentagon (5 cities)",
+        &pentagon,
+        Some(&pentagon_points),
+    );
+
     // Test Case 4: Random 10 cities
     let mut rng = SimpleRng::new(12345);
     let random10_points: Vec<(f64, f64)> = (0..10)
@@ -515,21 +515,21 @@ fn main() {
         .collect();
     let random10 = Graph::from_points(&random10_points);
     run_test_case("Random 10 cities", &random10, None);
-    
+
     // Test Case 5: Random 20 cities (DP limit)
     let random20_points: Vec<(f64, f64)> = (0..20)
         .map(|_| (rng.next_float(), rng.next_float()))
         .collect();
     let random20 = Graph::from_points(&random20_points);
     run_test_case("Random 20 cities", &random20, None);
-    
+
     // Test Case 6: Large random (heuristics only)
     let random50_points: Vec<(f64, f64)> = (0..50)
         .map(|_| (rng.next_float(), rng.next_float()))
         .collect();
     let random50 = Graph::from_points(&random50_points);
     run_test_case("Random 50 cities (heuristics only)", &random50, None);
-    
+
     // Algorithm complexity summary
     println!("\n\nAlgorithm Complexity Summary:");
     println!("{}", "=".repeat(70));
