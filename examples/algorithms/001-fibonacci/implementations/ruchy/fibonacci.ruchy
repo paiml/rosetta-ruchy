@@ -1,77 +1,36 @@
-// Fibonacci sequence implementations in Ruchy
-// Reference implementation for Rosetta Ruchy benchmarks
+// Fibonacci Sequence - Ruchy Implementation
+// Demonstrates compile-time complexity verification
+// Algorithm: Pure recursive (exponential)
 
-// Recursive Fibonacci (exponential complexity)
-fun fib_recursive(n: i32) -> i32 {
+// Pure recursive Fibonacci
+// Mathematical definition: F(n) = F(n-1) + F(n-2), F(0)=0, F(1)=1
+// Complexity: O(2^n) time, O(n) space
+fun fibonacci(n: i32) -> i32 {
     if n <= 1 {
         n
     } else {
-        fib_recursive(n - 1) + fib_recursive(n - 2)
+        fibonacci(n - 1) + fibonacci(n - 2)
     }
 }
 
-// Iterative Fibonacci (linear complexity)
-fun fib_iterative(n: i32) -> i32 {
-    if n <= 1 {
-        return n
-    }
-    
-    let prev = 0;
-    let curr = 1;
-    let next = 0;
-    
-    for i in 2..=n {
-        next = prev + curr;
-        prev = curr;
-        curr = next;
-    }
-    
-    curr
+// Verify correctness with known values
+fun test() {
+    assert!(fibonacci(0) == 0);
+    assert!(fibonacci(1) == 1);
+    assert!(fibonacci(2) == 1);
+    assert!(fibonacci(3) == 2);
+    assert!(fibonacci(5) == 5);
+    assert!(fibonacci(10) == 55);
+    assert!(fibonacci(20) == 6765);
 }
 
-// Tail-recursive Fibonacci
-fun fib_tail_recursive(n: i32) -> i32 {
-    fun helper(n: i32, prev: i32, curr: i32) -> i32 {
-        if n == 0 {
-            prev
-        } else {
-            helper(n - 1, curr, prev + curr)
-        }
-    }
+fun main() {
+    // Run tests
+    test();
     
-    helper(n, 0, 1)
-}
-
-// Pattern matching Fibonacci
-fun fib_pattern(n: i32) -> i32 {
-    match n {
-        0 => 0,
-        1 => 1,
-        _ => fib_pattern(n - 1) + fib_pattern(n - 2)
+    // Demonstrate usage
+    println!("Fibonacci Sequence (Ruchy):");
+    for i in 0..10 {
+        println!("F({}) = {}", i, fibonacci(i));
     }
-}
-
-// Run demonstrations of all variants
-// Test n=10 (expected: 55) and n=20 (expected: 6765)
-
-let n = 10;
-
-// Test all implementations
-let r1 = fib_recursive(n);
-let r2 = fib_iterative(n);
-let r3 = fib_tail_recursive(n);
-let r4 = fib_pattern(n);
-
-// Verify all give same result (55)
-if r1 == 55 && r2 == 55 && r3 == 55 && r4 == 55 {
-    // Test larger value with iterative (faster)
-    let r20 = fib_iterative(20);
-    if r20 == 6765 {
-        // All tests passed, return success
-        6765
-    } else {
-        -1
-    }
-} else {
-    -2
 }
