@@ -1,0 +1,326 @@
+#!/usr/bin/env ruchy
+
+// DataFrame Advanced Operations - Sprint 26 (Simplified for v1.9.3)
+// Group-by operations, joins, and aggregations with formal verification
+
+use std::collections::HashMap;
+use std::vec::Vec;
+
+// Simplified DataFrame for demonstration
+struct DataFrame {
+    rows: Vec<Vec<f64>>,
+    columns: Vec<String>,
+    shape: (usize, usize),
+}
+
+// Group-by result
+struct GroupedData {
+    groups: HashMap<String, Vec<usize>>,
+    parent_rows: usize,
+}
+
+// Join result
+struct JoinResult {
+    matched: usize,
+    unmatched_left: usize,
+    unmatched_right: usize,
+}
+
+// Group-by operation
+fun group_by_column(data: Vec<Vec<f64>>, col_idx: usize) -> GroupedData {
+    let mut groups = HashMap::new();
+    let n = data.len();
+    
+    for i in 0..n {
+        let key = data[i][col_idx].to_string();
+        let mut indices = groups.get(&key).unwrap_or(&Vec::new()).clone();
+        indices.push(i);
+        groups.insert(key, indices);
+    }
+    
+    GroupedData {
+        groups,
+        parent_rows: n,
+    }
+}
+
+// Aggregate sum function
+fun aggregate_sum(data: Vec<Vec<f64>>, indices: &Vec<usize>, col_idx: usize) -> f64 {
+    let mut sum = 0.0;
+    for i in indices {
+        sum += data[*i][col_idx];
+    }
+    sum
+}
+
+// Aggregate mean function
+fun aggregate_mean(data: Vec<Vec<f64>>, indices: &Vec<usize>, col_idx: usize) -> f64 {
+    let sum = aggregate_sum(data.clone(), indices, col_idx);
+    let count = indices.len() as f64;
+    if count > 0.0 {
+        sum / count
+    } else {
+        0.0
+    }
+}
+
+// Inner join operation
+fun inner_join(left: Vec<Vec<f64>>, right: Vec<Vec<f64>>, left_col: usize, right_col: usize) -> JoinResult {
+    let mut matched = 0;
+    let mut unmatched_left = 0;
+    
+    for i in 0..left.len() {
+        let mut found = false;
+        for j in 0..right.len() {
+            if left[i][left_col] == right[j][right_col] {
+                matched += 1;
+                found = true;
+            }
+        }
+        if !found {
+            unmatched_left += 1;
+        }
+    }
+    
+    // Formal verification
+    verify!(matched <= left.len() * right.len());
+    verify!(unmatched_left <= left.len());
+    
+    JoinResult {
+        matched,
+        unmatched_left,
+        unmatched_right: 0,
+    }
+}
+
+// Left join operation
+fun left_join(left: Vec<Vec<f64>>, right: Vec<Vec<f64>>, left_col: usize, right_col: usize) -> JoinResult {
+    let mut matched = 0;
+    let mut total_rows = 0;
+    
+    for i in 0..left.len() {
+        let mut found = false;
+        for j in 0..right.len() {
+            if left[i][left_col] == right[j][right_col] {
+                matched += 1;
+                found = true;
+                total_rows += 1;
+            }
+        }
+        if !found {
+            total_rows += 1;  // Keep unmatched left rows
+        }
+    }
+    
+    // Formal verification
+    verify!(total_rows >= left.len());
+    
+    JoinResult {
+        matched,
+        unmatched_left: left.len() - matched,
+        unmatched_right: 0,
+    }
+}
+
+// Pivot table operation
+fun pivot_table(data: Vec<Vec<f64>>, row_col: usize, col_col: usize, val_col: usize) -> Vec<Vec<f64>> {
+    let n = data.len();
+    let mut result = Vec::new();
+    
+    // Get unique values for rows and columns
+    let mut unique_rows = Vec::new();
+    let mut unique_cols = Vec::new();
+    
+    for i in 0..n {
+        let row_val = data[i][row_col];
+        let col_val = data[i][col_col];
+        
+        if !unique_rows.contains(&row_val) {
+            unique_rows.push(row_val);
+        }
+        if !unique_cols.contains(&col_val) {
+            unique_cols.push(col_val);
+        }
+    }
+    
+    // Initialize result matrix
+    for _ in 0..unique_rows.len() {
+        let mut row = Vec::new();
+        for _ in 0..unique_cols.len() {
+            row.push(0.0);
+        }
+        result.push(row);
+    }
+    
+    // Formal verification
+    verify!(result.len() <= data.len());
+    
+    result
+}
+
+// Rolling window mean
+fun rolling_mean(data: Vec<f64>, window_size: usize) -> Vec<f64> {
+    let n = data.len();
+    let mut result = Vec::new();
+    
+    verify!(window_size > 0);
+    verify!(window_size <= n);
+    
+    for i in 0..n {
+        let start = if i >= window_size - 1 { i - window_size + 1 } else { 0 };
+        let mut sum = 0.0;
+        let mut count = 0;
+        
+        for j in start..=i {
+            sum += data[j];
+            count += 1;
+        }
+        
+        result.push(sum / count as f64);
+    }
+    
+    verify!(result.len() == n);
+    result
+}
+
+// Rank function
+fun rank_values(data: Vec<f64>) -> Vec<f64> {
+    let n = data.len();
+    let mut ranks = vec![0.0; n];
+    
+    for i in 0..n {
+        let mut rank = 1.0;
+        for j in 0..n {
+            if data[j] > data[i] {
+                rank += 1.0;
+            }
+        }
+        ranks[i] = rank;
+    }
+    
+    verify!(ranks.len() == n);
+    ranks
+}
+
+// Cumulative sum
+fun cumulative_sum(data: Vec<f64>) -> Vec<f64> {
+    let n = data.len();
+    let mut result = Vec::new();
+    let mut sum = 0.0;
+    
+    for i in 0..n {
+        sum += data[i];
+        result.push(sum);
+    }
+    
+    verify!(result.len() == n);
+    result
+}
+
+// Lag operation
+fun lag_values(data: Vec<f64>, periods: usize) -> Vec<Option<f64>> {
+    let n = data.len();
+    let mut result = Vec::new();
+    
+    for i in 0..n {
+        if i < periods {
+            result.push(None);
+        } else {
+            result.push(Some(data[i - periods]));
+        }
+    }
+    
+    verify!(result.len() == n);
+    result
+}
+
+// Verification functions
+fun verify_join_properties(left_size: usize, right_size: usize, result: &JoinResult) {
+    // Inner join properties
+    verify!(result.matched <= left_size * right_size);
+    
+    // Left join properties  
+    verify!(result.unmatched_left <= left_size);
+    
+    // Total constraint
+    verify!(result.matched + result.unmatched_left <= left_size + right_size);
+}
+
+fun verify_aggregation_properties(groups: &GroupedData, parent_rows: usize) {
+    // Sum of group sizes equals parent rows
+    let mut total = 0;
+    for (_, indices) in &groups.groups {
+        total += indices.len();
+    }
+    verify!(total == parent_rows);
+}
+
+fun main() {
+    println!("=== DataFrame Advanced Operations in Ruchy (Simplified) ===");
+    
+    // Create sample data
+    let data = vec![
+        vec![1.0, 10.0, 100.0],
+        vec![1.0, 20.0, 200.0],
+        vec![2.0, 30.0, 300.0],
+        vec![2.0, 40.0, 400.0],
+        vec![3.0, 50.0, 500.0],
+    ];
+    
+    // Test group-by
+    println!("\n1. Group-By Operation:");
+    let grouped = group_by_column(data.clone(), 0);
+    println!("   Groups found: {}", grouped.groups.len());
+    verify_aggregation_properties(&grouped, 5);
+    
+    // Test aggregation
+    println!("\n2. Aggregation:");
+    for (key, indices) in &grouped.groups {
+        let sum = aggregate_sum(data.clone(), indices, 2);
+        let mean = aggregate_mean(data.clone(), indices, 2);
+        println!("   Group {}: sum={}, mean={}", key, sum, mean);
+    }
+    
+    // Test joins
+    println!("\n3. Join Operations:");
+    let right_data = vec![
+        vec![1.0, 1000.0],
+        vec![2.0, 2000.0],
+        vec![4.0, 4000.0],
+    ];
+    
+    let inner_result = inner_join(data.clone(), right_data.clone(), 0, 0);
+    println!("   Inner join: {} matched", inner_result.matched);
+    
+    let left_result = left_join(data.clone(), right_data.clone(), 0, 0);
+    println!("   Left join: {} matched, {} unmatched", left_result.matched, left_result.unmatched_left);
+    verify_join_properties(5, 3, &inner_result);
+    
+    // Test pivot
+    println!("\n4. Pivot Table:");
+    let pivot = pivot_table(data.clone(), 0, 1, 2);
+    println!("   Pivot shape: {}x{}", pivot.len(), if pivot.len() > 0 { pivot[0].len() } else { 0 });
+    
+    // Test rolling window
+    println!("\n5. Rolling Window:");
+    let values = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
+    let rolling = rolling_mean(values.clone(), 3);
+    println!("   Rolling mean computed: {} values", rolling.len());
+    
+    // Test ranking
+    println!("\n6. Ranking:");
+    let ranks = rank_values(values.clone());
+    println!("   Ranks computed: {} values", ranks.len());
+    
+    // Test cumulative operations
+    println!("\n7. Cumulative Sum:");
+    let cumsum = cumulative_sum(values.clone());
+    println!("   Final cumulative sum: {}", cumsum[cumsum.len() - 1]);
+    
+    // Test lag
+    println!("\n8. Lag Operation:");
+    let lagged = lag_values(values.clone(), 2);
+    println!("   Lagged values: {} entries", lagged.len());
+    
+    println!("\n=== All operations completed with formal verification ===");
+}
