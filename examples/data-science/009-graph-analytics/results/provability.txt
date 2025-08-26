@@ -1,0 +1,4 @@
+=== Provability Analysis ===
+File: implementations/ruchy/graph_analytics.ruchy
+Provability Score: 75.0/100
+
