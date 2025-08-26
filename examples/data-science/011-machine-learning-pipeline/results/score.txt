@@ -1,0 +1,4 @@
+=== Quality Score ===
+File: implementations/ruchy/machine_learning_pipeline.ruchy
+Score: 0.85/1.0
+Analysis Depth: standard
