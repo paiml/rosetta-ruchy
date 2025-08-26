@@ -1,0 +1,4 @@
+=== Provability Analysis ===
+File: implementations/ruchy/time_series_forecasting.ruchy
+Provability Score: 75.0/100
+
