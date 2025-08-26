@@ -1,0 +1,651 @@
+// time_series_forecasting.ruchy - Time series forecasting with statistical guarantees
+// Implements ARIMA models, exponential smoothing, and confidence intervals
+// Version: Ruchy v1.10.0 compatible
+
+use std::vec::Vec;
+
+// Simple exponential smoothing with alpha parameter
+fun simple_exponential_smoothing(series: Vec<i32>, alpha: i32, periods: i32) -> Vec<i32> {
+    let n = series.len();
+    if n == 0 {
+        return Vec::new();
+    }
+    
+    // Initialize with first observation
+    var smoothed_value = series[0];
+    
+    // Apply exponential smoothing to all observations
+    var i = 1;
+    while i < n {
+        // S(t) = alpha * X(t) + (1-alpha) * S(t-1)
+        // Using integer math: alpha is percentage (0-100)
+        let alpha_weight = (alpha * series[i]) / 100;
+        let smoothed_weight = ((100 - alpha) * smoothed_value) / 100;
+        smoothed_value = alpha_weight + smoothed_weight;
+        i = i + 1;
+    }
+    
+    // Generate forecasts
+    var forecasts = Vec::new();
+    var forecast_period = 0;
+    while forecast_period < periods {
+        forecasts.push(smoothed_value);
+        forecast_period = forecast_period + 1;
+    }
+    
+    forecasts
+}
+
+// Double exponential smoothing (Holt's method) with level and trend
+fun double_exponential_smoothing(series: Vec<i32>, alpha: i32, beta: i32, periods: i32) -> Vec<i32> {
+    let n = series.len();
+    if n < 2 {
+        return simple_exponential_smoothing(series, alpha, periods);
+    }
+    
+    // Initialize level and trend
+    var level = series[0];
+    var trend = series[1] - series[0];
+    
+    // Apply double exponential smoothing
+    var i = 1;
+    while i < n {
+        let previous_level = level;
+        
+        // Level: L(t) = alpha * X(t) + (1-alpha) * (L(t-1) + T(t-1))
+        let alpha_weight = (alpha * series[i]) / 100;
+        let level_trend_weight = ((100 - alpha) * (previous_level + trend)) / 100;
+        level = alpha_weight + level_trend_weight;
+        
+        // Trend: T(t) = beta * (L(t) - L(t-1)) + (1-beta) * T(t-1)
+        let beta_weight = (beta * (level - previous_level)) / 100;
+        let trend_weight = ((100 - beta) * trend) / 100;
+        trend = beta_weight + trend_weight;
+        
+        i = i + 1;
+    }
+    
+    // Generate forecasts with trend
+    var forecasts = Vec::new();
+    var forecast_period = 1;
+    while forecast_period <= periods {
+        let forecast_value = level + (forecast_period * trend);
+        forecasts.push(forecast_value);
+        forecast_period = forecast_period + 1;
+    }
+    
+    forecasts
+}
+
+// Triple exponential smoothing (Holt-Winters) with seasonality
+fun triple_exponential_smoothing(series: Vec<i32>, alpha: i32, beta: i32, gamma: i32, season_length: i32, periods: i32) -> Vec<i32> {
+    let n = series.len();
+    if n < season_length {
+        return double_exponential_smoothing(series, alpha, beta, periods);
+    }
+    
+    // Initialize seasonal factors
+    var seasonal_factors = Vec::new();
+    var s = 0;
+    while s < season_length {
+        seasonal_factors.push(100); // Start with neutral seasonal factor
+        s = s + 1;
+    }
+    
+    // Estimate initial seasonal factors
+    s = 0;
+    while s < season_length && s < n {
+        let avg_seasonal = series[s];
+        seasonal_factors[s] = avg_seasonal;
+        s = s + 1;
+    }
+    
+    // Initialize level and trend
+    var level = series[0];
+    var trend = if n > 1 { series[1] - series[0] } else { 0 };
+    
+    // Apply triple exponential smoothing
+    var i = season_length;
+    while i < n {
+        let seasonal_index = i % season_length;
+        let previous_level = level;
+        
+        // Deseasonalize observation
+        let deseasonalized = (series[i] * 100) / seasonal_factors[seasonal_index];
+        
+        // Level: L(t) = alpha * (X(t) / S(t-m)) + (1-alpha) * (L(t-1) + T(t-1))
+        let alpha_weight = (alpha * deseasonalized) / 100;
+        let level_trend_weight = ((100 - alpha) * (previous_level + trend)) / 100;
+        level = alpha_weight + level_trend_weight;
+        
+        // Trend: T(t) = beta * (L(t) - L(t-1)) + (1-beta) * T(t-1)
+        let beta_weight = (beta * (level - previous_level)) / 100;
+        let trend_weight = ((100 - beta) * trend) / 100;
+        trend = beta_weight + trend_weight;
+        
+        // Seasonal: S(t) = gamma * (X(t) / L(t)) + (1-gamma) * S(t-m)
+        let seasonal_ratio = (series[i] * 100) / level;
+        let gamma_weight = (gamma * seasonal_ratio) / 100;
+        let seasonal_weight = ((100 - gamma) * seasonal_factors[seasonal_index]) / 100;
+        seasonal_factors[seasonal_index] = gamma_weight + seasonal_weight;
+        
+        i = i + 1;
+    }
+    
+    // Generate forecasts with trend and seasonality
+    var forecasts = Vec::new();
+    var forecast_period = 1;
+    while forecast_period <= periods {
+        let seasonal_index = (n + forecast_period - 1) % season_length;
+        let forecast_value = (level + (forecast_period * trend)) * seasonal_factors[seasonal_index] / 100;
+        forecasts.push(forecast_value);
+        forecast_period = forecast_period + 1;
+    }
+    
+    forecasts
+}
+
+// ARIMA AR(p) model - simplified autoregressive forecast
+fun arima_ar_forecast(series: Vec<i32>, ar_order: i32, periods: i32) -> Vec<i32> {
+    let n = series.len();
+    if n < ar_order {
+        return moving_average_forecast(series, n, periods);
+    }
+    
+    // Calculate AR coefficient (simplified for AR(1))
+    var ar_coefficient = 50; // Default 0.5
+    
+    if ar_order == 1 && n > 1 {
+        // Estimate AR(1) coefficient using least squares approximation
+        var sum_xy = 0;
+        var sum_x2 = 0;
+        
+        var i = 1;
+        while i < n {
+            let x = series[i - 1];
+            let y = series[i];
+            sum_xy = sum_xy + (x * y);
+            sum_x2 = sum_x2 + (x * x);
+            i = i + 1;
+        }
+        
+        if sum_x2 > 0 {
+            ar_coefficient = (sum_xy * 100) / sum_x2; // Scale to percentage
+            
+            // Bound coefficient for stability
+            if ar_coefficient > 95 {
+                ar_coefficient = 95;
+            }
+            if ar_coefficient < 5 {
+                ar_coefficient = 5;
+            }
+        }
+    }
+    
+    // Generate AR forecasts
+    var forecasts = Vec::new();
+    var last_value = series[n - 1];
+    
+    var forecast_period = 0;
+    while forecast_period < periods {
+        // AR(1): X(t+1) = phi * X(t) + error
+        last_value = (ar_coefficient * last_value) / 100;
+        forecasts.push(last_value);
+        forecast_period = forecast_period + 1;
+    }
+    
+    forecasts
+}
+
+// Moving average forecast
+fun moving_average_forecast(series: Vec<i32>, window_size: i32, periods: i32) -> Vec<i32> {
+    let n = series.len();
+    if n == 0 {
+        return Vec::new();
+    }
+    
+    var effective_window = window_size;
+    if effective_window > n {
+        effective_window = n;
+    }
+    
+    // Calculate moving average of last window_size observations
+    var sum = 0;
+    var i = n - effective_window;
+    while i < n {
+        sum = sum + series[i];
+        i = i + 1;
+    }
+    
+    let average = sum / effective_window;
+    
+    // Use average as forecast for all periods
+    var forecasts = Vec::new();
+    var forecast_period = 0;
+    while forecast_period < periods {
+        forecasts.push(average);
+        forecast_period = forecast_period + 1;
+    }
+    
+    forecasts
+}
+
+// Calculate linear trend using least squares
+fun calculate_linear_trend(series: Vec<i32>) -> i32 {
+    let n = series.len();
+    if n < 2 {
+        return 0;
+    }
+    
+    // Calculate trend using least squares: y = a + b*x
+    var sum_x = 0;
+    var sum_y = 0;
+    var sum_xy = 0;
+    var sum_x2 = 0;
+    
+    var i = 0;
+    while i < n {
+        let x = i; // Time index
+        let y = series[i];
+        
+        sum_x = sum_x + x;
+        sum_y = sum_y + y;
+        sum_xy = sum_xy + (x * y);
+        sum_x2 = sum_x2 + (x * x);
+        
+        i = i + 1;
+    }
+    
+    // Slope: b = (n*sum_xy - sum_x*sum_y) / (n*sum_x2 - sum_x^2)
+    let numerator = (n * sum_xy) - (sum_x * sum_y);
+    let denominator = (n * sum_x2) - (sum_x * sum_x);
+    
+    if denominator == 0 {
+        return 0;
+    }
+    
+    numerator / denominator
+}
+
+// Seasonal decomposition (additive model)
+fun seasonal_decomposition(series: Vec<i32>, season_length: i32) -> Vec<Vec<i32>> {
+    let n = series.len();
+    
+    // Initialize components
+    var trend = Vec::new();
+    var seasonal = Vec::new();
+    var residual = Vec::new();
+    
+    // Calculate trend using centered moving average
+    var i = 0;
+    while i < n {
+        if i >= season_length / 2 && i < n - season_length / 2 {
+            var sum = 0;
+            var j = i - season_length / 2;
+            while j <= i + season_length / 2 {
+                sum = sum + series[j];
+                j = j + 1;
+            }
+            trend.push(sum / (season_length + 1));
+        } else {
+            trend.push(series[i]); // Use original value at boundaries
+        }
+        i = i + 1;
+    }
+    
+    // Calculate seasonal component
+    var seasonal_sums = Vec::new();
+    var seasonal_counts = Vec::new();
+    i = 0;
+    while i < season_length {
+        seasonal_sums.push(0);
+        seasonal_counts.push(0);
+        i = i + 1;
+    }
+    
+    i = 0;
+    while i < n {
+        let seasonal_index = i % season_length;
+        let detrended = series[i] - trend[i];
+        seasonal_sums[seasonal_index] = seasonal_sums[seasonal_index] + detrended;
+        seasonal_counts[seasonal_index] = seasonal_counts[seasonal_index] + 1;
+        i = i + 1;
+    }
+    
+    // Average seasonal effects
+    i = 0;
+    while i < n {
+        let seasonal_index = i % season_length;
+        if seasonal_counts[seasonal_index] > 0 {
+            seasonal.push(seasonal_sums[seasonal_index] / seasonal_counts[seasonal_index]);
+        } else {
+            seasonal.push(0);
+        }
+        i = i + 1;
+    }
+    
+    // Calculate residuals
+    i = 0;
+    while i < n {
+        residual.push(series[i] - trend[i] - seasonal[i]);
+        i = i + 1;
+    }
+    
+    vec![trend, seasonal, residual]
+}
+
+// Calculate confidence intervals using standard error
+fun calculate_confidence_intervals(series: Vec<i32>, forecast: i32, confidence: i32) -> Vec<i32> {
+    let n = series.len();
+    if n == 0 {
+        return vec![forecast, forecast];
+    }
+    
+    // Calculate standard deviation
+    var sum = 0;
+    var i = 0;
+    while i < n {
+        sum = sum + series[i];
+        i = i + 1;
+    }
+    let mean = sum / n;
+    
+    var sum_squares = 0;
+    i = 0;
+    while i < n {
+        let diff = series[i] - mean;
+        sum_squares = sum_squares + (diff * diff);
+        i = i + 1;
+    }
+    
+    let variance = sum_squares / n;
+    let std_dev = integer_sqrt(variance);
+    
+    // Confidence multiplier (simplified)
+    let multiplier = if confidence >= 95 { 2 } else { 1 };
+    let margin = multiplier * std_dev;
+    
+    vec![forecast - margin, forecast + margin]
+}
+
+// Integer square root approximation
+fun integer_sqrt(value: i32) -> i32 {
+    if value <= 0 {
+        return 0;
+    }
+    
+    var x = value;
+    var prev = 0;
+    
+    // Newton's method for integer square root
+    while x != prev {
+        prev = x;
+        x = (x + value / x) / 2;
+    }
+    
+    x
+}
+
+// Mean Absolute Error (MAE)
+fun calculate_mae(actual: Vec<i32>, predicted: Vec<i32>) -> i32 {
+    let n = actual.len();
+    if n != predicted.len() || n == 0 {
+        return 0;
+    }
+    
+    var sum_abs_error = 0;
+    var i = 0;
+    while i < n {
+        let error = actual[i] - predicted[i];
+        let abs_error = if error >= 0 { error } else { -error };
+        sum_abs_error = sum_abs_error + abs_error;
+        i = i + 1;
+    }
+    
+    sum_abs_error / n
+}
+
+// Root Mean Squared Error (RMSE)
+fun calculate_rmse(actual: Vec<i32>, predicted: Vec<i32>) -> i32 {
+    let n = actual.len();
+    if n != predicted.len() || n == 0 {
+        return 0;
+    }
+    
+    var sum_squared_error = 0;
+    var i = 0;
+    while i < n {
+        let error = actual[i] - predicted[i];
+        sum_squared_error = sum_squared_error + (error * error);
+        i = i + 1;
+    }
+    
+    let mse = sum_squared_error / n;
+    integer_sqrt(mse)
+}
+
+// Mean Absolute Percentage Error (MAPE)
+fun calculate_mape(actual: Vec<i32>, predicted: Vec<i32>) -> i32 {
+    let n = actual.len();
+    if n != predicted.len() || n == 0 {
+        return 0;
+    }
+    
+    var sum_percentage_error = 0;
+    var i = 0;
+    while i < n {
+        if actual[i] != 0 {
+            let error = actual[i] - predicted[i];
+            let abs_error = if error >= 0 { error } else { -error };
+            let percentage_error = (abs_error * 100) / actual[i];
+            sum_percentage_error = sum_percentage_error + percentage_error;
+        }
+        i = i + 1;
+    }
+    
+    sum_percentage_error / n
+}
+
+// Simplified stationarity check using variance ratio
+fun check_stationarity(series: Vec<i32>) -> bool {
+    let n = series.len();
+    if n < 4 {
+        return true;
+    }
+    
+    // Split series in half and compare variances
+    let mid = n / 2;
+    
+    // Calculate variance of first half
+    var sum1 = 0;
+    var i = 0;
+    while i < mid {
+        sum1 = sum1 + series[i];
+        i = i + 1;
+    }
+    let mean1 = sum1 / mid;
+    
+    var var1 = 0;
+    i = 0;
+    while i < mid {
+        let diff = series[i] - mean1;
+        var1 = var1 + (diff * diff);
+        i = i + 1;
+    }
+    var1 = var1 / mid;
+    
+    // Calculate variance of second half
+    var sum2 = 0;
+    i = mid;
+    while i < n {
+        sum2 = sum2 + series[i];
+        i = i + 1;
+    }
+    let mean2 = sum2 / (n - mid);
+    
+    var var2 = 0;
+    i = mid;
+    while i < n {
+        let diff = series[i] - mean2;
+        var2 = var2 + (diff * diff);
+        i = i + 1;
+    }
+    var2 = var2 / (n - mid);
+    
+    // Check if variances are similar (stationarity indicator)
+    let var_ratio = if var1 > var2 { var1 / var2 } else { var2 / var1 };
+    var_ratio < 3 // Arbitrary threshold for stationarity
+}
+
+// Time series differencing
+fun difference_series(series: Vec<i32>, order: i32) -> Vec<i32> {
+    let n = series.len();
+    if n <= order {
+        return Vec::new();
+    }
+    
+    var result = series.clone();
+    var diff_order = 0;
+    
+    while diff_order < order {
+        var new_result = Vec::new();
+        var i = 1;
+        while i < result.len() {
+            new_result.push(result[i] - result[i - 1]);
+            i = i + 1;
+        }
+        result = new_result;
+        diff_order = diff_order + 1;
+    }
+    
+    result
+}
+
+// Autocorrelation function
+fun calculate_autocorrelation(series: Vec<i32>, max_lag: i32) -> Vec<i32> {
+    let n = series.len();
+    var autocorr = Vec::new();
+    
+    // Calculate mean
+    var sum = 0;
+    var i = 0;
+    while i < n {
+        sum = sum + series[i];
+        i = i + 1;
+    }
+    let mean = sum / n;
+    
+    // Calculate variance
+    var variance = 0;
+    i = 0;
+    while i < n {
+        let diff = series[i] - mean;
+        variance = variance + (diff * diff);
+        i = i + 1;
+    }
+    
+    // Calculate autocorrelation for each lag
+    var lag = 0;
+    while lag <= max_lag {
+        if lag == 0 {
+            autocorr.push(100); // Perfect correlation at lag 0
+        } else if lag >= n {
+            autocorr.push(0);
+        } else {
+            var covariance = 0;
+            i = lag;
+            while i < n {
+                let diff1 = series[i] - mean;
+                let diff2 = series[i - lag] - mean;
+                covariance = covariance + (diff1 * diff2);
+                i = i + 1;
+            }
+            
+            let correlation = if variance > 0 { (covariance * 100) / variance } else { 0 };
+            autocorr.push(correlation);
+        }
+        lag = lag + 1;
+    }
+    
+    autocorr
+}
+
+// Time series cross-validation
+fun time_series_cross_validation(series: Vec<i32>, train_size: i32, test_size: i32) -> Vec<i32> {
+    let n = series.len();
+    if n < train_size + test_size {
+        return vec![0];
+    }
+    
+    var results = Vec::new();
+    
+    // Walk-forward validation
+    var start = 0;
+    while start + train_size + test_size <= n {
+        // Extract training and test sets
+        var train_set = Vec::new();
+        var test_set = Vec::new();
+        
+        var i = start;
+        while i < start + train_size {
+            train_set.push(series[i]);
+            i = i + 1;
+        }
+        
+        i = start + train_size;
+        while i < start + train_size + test_size {
+            test_set.push(series[i]);
+            i = i + 1;
+        }
+        
+        // Generate forecast using simple method
+        let forecast = moving_average_forecast(train_set, 3, test_size);
+        
+        // Calculate accuracy
+        let mae = calculate_mae(test_set, forecast);
+        let accuracy = 100 - mae; // Simple accuracy metric
+        results.push(accuracy);
+        
+        start = start + test_size; // Move window forward
+    }
+    
+    if results.len() == 0 {
+        results.push(0);
+    }
+    
+    results
+}
+
+// Calculate residuals
+fun calculate_residuals(actual: Vec<i32>, fitted: Vec<i32>) -> Vec<i32> {
+    let n = actual.len();
+    if n != fitted.len() {
+        return Vec::new();
+    }
+    
+    var residuals = Vec::new();
+    var i = 0;
+    while i < n {
+        residuals.push(actual[i] - fitted[i]);
+        i = i + 1;
+    }
+    
+    residuals
+}
+
+// Main function for testing (optional)
+fun main() {
+    println!("Time Series Forecasting Library");
+    println!("===============================");
+    
+    // Example usage
+    let sample_data = vec![100, 102, 105, 103, 108, 110, 107, 112, 115, 118];
+    let forecast = simple_exponential_smoothing(sample_data, 30, 3);
+    
+    println!("Sample forecast:");
+    var i = 0;
+    while i < forecast.len() {
+        println!("Forecast {}: {}", i + 1, forecast[i]);
+        i = i + 1;
+    }
+}
