@@ -1,0 +1,814 @@
+// machine_learning_pipeline.ruchy - Machine learning with formal correctness guarantees
+// Implements linear regression, logistic regression, decision trees, and ML pipeline
+// Version: Ruchy v1.10.0 compatible
+
+use std::vec::Vec;
+
+// Linear regression with gradient descent
+fun linear_regression_train(X: Vec<Vec<i32>>, y: Vec<i32>, iterations: i32, learning_rate: i32) -> Vec<i32> {
+    let n_samples = X.len();
+    let n_features = if n_samples > 0 { X[0].len() } else { 0 };
+    
+    if n_samples == 0 || n_features == 0 {
+        return Vec::new();
+    }
+    
+    // Initialize weights (including bias term)
+    var weights = Vec::new();
+    var i = 0;
+    while i <= n_features { // +1 for bias term
+        weights.push(0);
+        i = i + 1;
+    }
+    
+    // Gradient descent optimization
+    var iter = 0;
+    while iter < iterations {
+        // Calculate gradients
+        var gradients = Vec::new();
+        i = 0;
+        while i <= n_features {
+            gradients.push(0);
+            i = i + 1;
+        }
+        
+        // For each sample, compute gradient contribution
+        var sample_idx = 0;
+        while sample_idx < n_samples {
+            // Predict with current weights
+            var prediction = weights[n_features]; // bias term
+            var feature_idx = 0;
+            while feature_idx < n_features {
+                prediction = prediction + (weights[feature_idx] * X[sample_idx][feature_idx]);
+                feature_idx = feature_idx + 1;
+            }
+            
+            // Calculate error
+            let error = prediction - y[sample_idx];
+            
+            // Update gradients
+            gradients[n_features] = gradients[n_features] + error; // bias gradient
+            feature_idx = 0;
+            while feature_idx < n_features {
+                gradients[feature_idx] = gradients[feature_idx] + (error * X[sample_idx][feature_idx]);
+                feature_idx = feature_idx + 1;
+            }
+            
+            sample_idx = sample_idx + 1;
+        }
+        
+        // Update weights using gradients
+        i = 0;
+        while i <= n_features {
+            let gradient_avg = gradients[i] / n_samples;
+            let weight_update = (learning_rate * gradient_avg) / 100; // learning_rate as percentage
+            weights[i] = weights[i] - weight_update;
+            i = i + 1;
+        }
+        
+        iter = iter + 1;
+    }
+    
+    weights
+}
+
+// Linear regression prediction
+fun linear_regression_predict(model: Vec<i32>, X: Vec<Vec<i32>>) -> Vec<i32> {
+    let n_samples = X.len();
+    let n_features = if n_samples > 0 { X[0].len() } else { 0 };
+    
+    if model.len() != n_features + 1 {
+        return Vec::new();
+    }
+    
+    var predictions = Vec::new();
+    var sample_idx = 0;
+    
+    while sample_idx < n_samples {
+        var prediction = model[n_features]; // bias term
+        
+        var feature_idx = 0;
+        while feature_idx < n_features {
+            prediction = prediction + (model[feature_idx] * X[sample_idx][feature_idx]);
+            feature_idx = feature_idx + 1;
+        }
+        
+        predictions.push(prediction);
+        sample_idx = sample_idx + 1;
+    }
+    
+    predictions
+}
+
+// Sigmoid activation function (scaled to 0-100)
+fun sigmoid(x: i32) -> i32 {
+    // Approximate sigmoid using integer arithmetic
+    // sigmoid(x) ≈ 1 / (1 + e^(-x))
+    // For x > 10, sigmoid ≈ 1; for x < -10, sigmoid ≈ 0
+    
+    if x > 500 {
+        return 99;
+    } else if x < -500 {
+        return 1;
+    }
+    
+    // Piecewise linear approximation
+    if x >= 0 {
+        let scaled = x / 10;
+        50 + scaled * 4 / 10
+    } else {
+        let scaled = -x / 10;
+        50 - scaled * 4 / 10
+    }
+}
+
+// Logistic regression training
+fun logistic_regression_train(X: Vec<Vec<i32>>, y: Vec<i32>, iterations: i32, learning_rate: i32) -> Vec<i32> {
+    let n_samples = X.len();
+    let n_features = if n_samples > 0 { X[0].len() } else { 0 };
+    
+    if n_samples == 0 || n_features == 0 {
+        return Vec::new();
+    }
+    
+    // Initialize weights
+    var weights = Vec::new();
+    var i = 0;
+    while i <= n_features { // +1 for bias
+        weights.push(0);
+        i = i + 1;
+    }
+    
+    // Gradient descent for logistic regression
+    var iter = 0;
+    while iter < iterations {
+        var gradients = Vec::new();
+        i = 0;
+        while i <= n_features {
+            gradients.push(0);
+            i = i + 1;
+        }
+        
+        var sample_idx = 0;
+        while sample_idx < n_samples {
+            // Calculate linear combination
+            var linear_output = weights[n_features]; // bias
+            var feature_idx = 0;
+            while feature_idx < n_features {
+                linear_output = linear_output + (weights[feature_idx] * X[sample_idx][feature_idx]);
+                feature_idx = feature_idx + 1;
+            }
+            
+            // Apply sigmoid
+            let probability = sigmoid(linear_output);
+            
+            // Calculate error (predicted - actual) * 100 to match scale
+            let error = probability - (y[sample_idx] * 100);
+            
+            // Update gradients
+            gradients[n_features] = gradients[n_features] + error;
+            feature_idx = 0;
+            while feature_idx < n_features {
+                gradients[feature_idx] = gradients[feature_idx] + (error * X[sample_idx][feature_idx]);
+                feature_idx = feature_idx + 1;
+            }
+            
+            sample_idx = sample_idx + 1;
+        }
+        
+        // Update weights
+        i = 0;
+        while i <= n_features {
+            let gradient_avg = gradients[i] / n_samples;
+            let weight_update = (learning_rate * gradient_avg) / 10000; // Scale down for logistic regression
+            weights[i] = weights[i] - weight_update;
+            i = i + 1;
+        }
+        
+        iter = iter + 1;
+    }
+    
+    weights
+}
+
+// Logistic regression prediction
+fun logistic_regression_predict(model: Vec<i32>, X: Vec<Vec<i32>>) -> Vec<i32> {
+    let n_samples = X.len();
+    let n_features = if n_samples > 0 { X[0].len() } else { 0 };
+    
+    var predictions = Vec::new();
+    var sample_idx = 0;
+    
+    while sample_idx < n_samples {
+        var linear_output = model[n_features]; // bias
+        
+        var feature_idx = 0;
+        while feature_idx < n_features {
+            linear_output = linear_output + (model[feature_idx] * X[sample_idx][feature_idx]);
+            feature_idx = feature_idx + 1;
+        }
+        
+        let probability = sigmoid(linear_output);
+        
+        // Convert to binary classification (threshold at 50)
+        let prediction = if probability >= 50 { 1 } else { 0 };
+        predictions.push(prediction);
+        
+        sample_idx = sample_idx + 1;
+    }
+    
+    predictions
+}
+
+// Calculate entropy for decision tree
+fun calculate_entropy(labels: Vec<i32>) -> i32 {
+    let n = labels.len();
+    if n == 0 {
+        return 0;
+    }
+    
+    // Count class frequencies
+    var class_0_count = 0;
+    var class_1_count = 0;
+    
+    var i = 0;
+    while i < n {
+        if labels[i] == 0 {
+            class_0_count = class_0_count + 1;
+        } else {
+            class_1_count = class_1_count + 1;
+        }
+        i = i + 1;
+    }
+    
+    if class_0_count == 0 || class_1_count == 0 {
+        return 0; // Pure node, no entropy
+    }
+    
+    // Approximate entropy calculation using integer arithmetic
+    // H = -p1*log2(p1) - p2*log2(p2)
+    // For simplicity, return a scaled entropy measure
+    let balance = (class_0_count * 100) / n;
+    if balance > 50 {
+        balance - 50
+    } else {
+        50 - balance
+    }
+}
+
+// Calculate information gain
+fun calculate_information_gain(labels: Vec<i32>, left_labels: Vec<i32>, right_labels: Vec<i32>) -> i32 {
+    let parent_entropy = calculate_entropy(labels);
+    let left_entropy = calculate_entropy(left_labels);
+    let right_entropy = calculate_entropy(right_labels);
+    
+    let n = labels.len();
+    let left_n = left_labels.len();
+    let right_n = right_labels.len();
+    
+    if n == 0 {
+        return 0;
+    }
+    
+    // Weighted average of child entropies
+    let weighted_child_entropy = ((left_n * left_entropy) + (right_n * right_entropy)) / n;
+    
+    // Information gain = parent entropy - weighted child entropy
+    parent_entropy - weighted_child_entropy
+}
+
+// Decision tree training (simplified binary tree)
+fun decision_tree_train(X: Vec<Vec<i32>>, y: Vec<i32>, max_depth: i32) -> Vec<i32> {
+    let n_samples = X.len();
+    let n_features = if n_samples > 0 { X[0].len() } else { 0 };
+    
+    if n_samples == 0 || max_depth <= 0 {
+        return vec![0]; // Leaf node with default class
+    }
+    
+    // Check if all labels are the same (pure node)
+    var all_same = true;
+    var first_label = y[0];
+    var i = 1;
+    while i < n_samples {
+        if y[i] != first_label {
+            all_same = false;
+        }
+        i = i + 1;
+    }
+    
+    if all_same {
+        return vec![first_label]; // Pure leaf node
+    }
+    
+    // Find best split
+    var best_feature = 0;
+    var best_threshold = 0;
+    var best_gain = 0;
+    
+    var feature_idx = 0;
+    while feature_idx < n_features {
+        // Try different thresholds for this feature
+        var sample_idx = 0;
+        while sample_idx < n_samples {
+            let threshold = X[sample_idx][feature_idx];
+            
+            // Split data based on threshold
+            var left_labels = Vec::new();
+            var right_labels = Vec::new();
+            
+            var split_idx = 0;
+            while split_idx < n_samples {
+                if X[split_idx][feature_idx] <= threshold {
+                    left_labels.push(y[split_idx]);
+                } else {
+                    right_labels.push(y[split_idx]);
+                }
+                split_idx = split_idx + 1;
+            }
+            
+            // Calculate information gain
+            let gain = calculate_information_gain(y.clone(), left_labels, right_labels);
+            
+            if gain > best_gain {
+                best_gain = gain;
+                best_feature = feature_idx;
+                best_threshold = threshold;
+            }
+            
+            sample_idx = sample_idx + 1;
+        }
+        feature_idx = feature_idx + 1;
+    }
+    
+    // Create decision tree node representation
+    // Format: [is_leaf, feature_idx, threshold, left_class, right_class]
+    if best_gain > 0 {
+        vec![0, best_feature, best_threshold, 0, 1] // Internal node
+    } else {
+        // No good split found, create leaf with majority class
+        var class_0_count = 0;
+        var class_1_count = 0;
+        i = 0;
+        while i < n_samples {
+            if y[i] == 0 {
+                class_0_count = class_0_count + 1;
+            } else {
+                class_1_count = class_1_count + 1;
+            }
+            i = i + 1;
+        }
+        
+        let majority_class = if class_0_count > class_1_count { 0 } else { 1 };
+        vec![1, majority_class] // Leaf node
+    }
+}
+
+// Decision tree prediction
+fun decision_tree_predict(tree: Vec<i32>, X: Vec<Vec<i32>>) -> Vec<i32> {
+    let n_samples = X.len();
+    var predictions = Vec::new();
+    
+    var sample_idx = 0;
+    while sample_idx < n_samples {
+        let prediction = if tree.len() >= 5 && tree[0] == 0 {
+            // Internal node: check feature threshold
+            let feature_idx = tree[1];
+            let threshold = tree[2];
+            
+            if X[sample_idx][feature_idx] <= threshold {
+                tree[3] // Left class
+            } else {
+                tree[4] // Right class
+            }
+        } else if tree.len() >= 2 && tree[0] == 1 {
+            // Leaf node: return class
+            tree[1]
+        } else {
+            // Default prediction
+            0
+        };
+        
+        predictions.push(prediction);
+        sample_idx = sample_idx + 1;
+    }
+    
+    predictions
+}
+
+// Cross-validation for linear regression
+fun cross_validation_linear_regression(X: Vec<Vec<i32>>, y: Vec<i32>, k_folds: i32) -> Vec<i32> {
+    let n_samples = X.len();
+    var cv_scores = Vec::new();
+    
+    let fold_size = n_samples / k_folds;
+    
+    var fold = 0;
+    while fold < k_folds {
+        let start_idx = fold * fold_size;
+        let end_idx = if fold == k_folds - 1 { n_samples } else { (fold + 1) * fold_size };
+        
+        // Create training and validation sets
+        var X_train = Vec::new();
+        var y_train = Vec::new();
+        var X_val = Vec::new();
+        var y_val = Vec::new();
+        
+        var i = 0;
+        while i < n_samples {
+            if i >= start_idx && i < end_idx {
+                // Validation set
+                X_val.push(X[i].clone());
+                y_val.push(y[i]);
+            } else {
+                // Training set
+                X_train.push(X[i].clone());
+                y_train.push(y[i]);
+            }
+            i = i + 1;
+        }
+        
+        // Train model on training set
+        let model = linear_regression_train(X_train, y_train, 50, 1);
+        
+        // Evaluate on validation set
+        let predictions = linear_regression_predict(model, X_val);
+        
+        // Calculate R² score (simplified)
+        var total_error = 0;
+        var mean_val = 0;
+        i = 0;
+        while i < y_val.len() {
+            mean_val = mean_val + y_val[i];
+            i = i + 1;
+        }
+        mean_val = mean_val / y_val.len();
+        
+        var sum_squared_error = 0;
+        var sum_squared_total = 0;
+        i = 0;
+        while i < y_val.len() {
+            let error = y_val[i] - predictions[i];
+            sum_squared_error = sum_squared_error + (error * error);
+            
+            let deviation = y_val[i] - mean_val;
+            sum_squared_total = sum_squared_total + (deviation * deviation);
+            i = i + 1;
+        }
+        
+        let r_squared = if sum_squared_total > 0 {
+            100 - ((sum_squared_error * 100) / sum_squared_total)
+        } else {
+            0
+        };
+        
+        cv_scores.push(r_squared);
+        fold = fold + 1;
+    }
+    
+    cv_scores
+}
+
+// Model evaluation: accuracy
+fun calculate_accuracy(y_true: Vec<i32>, y_pred: Vec<i32>) -> i32 {
+    let n = y_true.len();
+    if n == 0 || n != y_pred.len() {
+        return 0;
+    }
+    
+    var correct = 0;
+    var i = 0;
+    while i < n {
+        if y_true[i] == y_pred[i] {
+            correct = correct + 1;
+        }
+        i = i + 1;
+    }
+    
+    (correct * 100) / n
+}
+
+// Model evaluation: precision
+fun calculate_precision(y_true: Vec<i32>, y_pred: Vec<i32>) -> i32 {
+    let n = y_true.len();
+    if n == 0 || n != y_pred.len() {
+        return 0;
+    }
+    
+    var true_positives = 0;
+    var false_positives = 0;
+    
+    var i = 0;
+    while i < n {
+        if y_pred[i] == 1 {
+            if y_true[i] == 1 {
+                true_positives = true_positives + 1;
+            } else {
+                false_positives = false_positives + 1;
+            }
+        }
+        i = i + 1;
+    }
+    
+    if true_positives + false_positives == 0 {
+        return 0;
+    }
+    
+    (true_positives * 100) / (true_positives + false_positives)
+}
+
+// Model evaluation: recall
+fun calculate_recall(y_true: Vec<i32>, y_pred: Vec<i32>) -> i32 {
+    let n = y_true.len();
+    if n == 0 || n != y_pred.len() {
+        return 0;
+    }
+    
+    var true_positives = 0;
+    var false_negatives = 0;
+    
+    var i = 0;
+    while i < n {
+        if y_true[i] == 1 {
+            if y_pred[i] == 1 {
+                true_positives = true_positives + 1;
+            } else {
+                false_negatives = false_negatives + 1;
+            }
+        }
+        i = i + 1;
+    }
+    
+    if true_positives + false_negatives == 0 {
+        return 0;
+    }
+    
+    (true_positives * 100) / (true_positives + false_negatives)
+}
+
+// Feature normalization (min-max scaling)
+fun normalize_features(X: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+    let n_samples = X.len();
+    let n_features = if n_samples > 0 { X[0].len() } else { 0 };
+    
+    if n_samples == 0 {
+        return Vec::new();
+    }
+    
+    // Find min and max for each feature
+    var feature_mins = Vec::new();
+    var feature_maxs = Vec::new();
+    
+    var feature_idx = 0;
+    while feature_idx < n_features {
+        var min_val = X[0][feature_idx];
+        var max_val = X[0][feature_idx];
+        
+        var sample_idx = 1;
+        while sample_idx < n_samples {
+            if X[sample_idx][feature_idx] < min_val {
+                min_val = X[sample_idx][feature_idx];
+            }
+            if X[sample_idx][feature_idx] > max_val {
+                max_val = X[sample_idx][feature_idx];
+            }
+            sample_idx = sample_idx + 1;
+        }
+        
+        feature_mins.push(min_val);
+        feature_maxs.push(max_val);
+        feature_idx = feature_idx + 1;
+    }
+    
+    // Normalize features
+    var normalized_X = Vec::new();
+    var sample_idx = 0;
+    while sample_idx < n_samples {
+        var normalized_sample = Vec::new();
+        feature_idx = 0;
+        while feature_idx < n_features {
+            let range = feature_maxs[feature_idx] - feature_mins[feature_idx];
+            let normalized_value = if range > 0 {
+                ((X[sample_idx][feature_idx] - feature_mins[feature_idx]) * 100) / range
+            } else {
+                50 // Default to middle value if no range
+            };
+            normalized_sample.push(normalized_value);
+            feature_idx = feature_idx + 1;
+        }
+        normalized_X.push(normalized_sample);
+        sample_idx = sample_idx + 1;
+    }
+    
+    normalized_X
+}
+
+// Simple gradient descent for quadratic function (for testing)
+fun gradient_descent_quadratic(params: Vec<i32>, learning_rate: i32, iterations: i32) -> Vec<i32> {
+    if params.len() == 0 {
+        return Vec::new();
+    }
+    
+    var x = params[0];
+    
+    var iter = 0;
+    while iter < iterations {
+        // Gradient of f(x) = x^2 is 2x
+        let gradient = 2 * x;
+        
+        // Update: x = x - learning_rate * gradient
+        let update = (learning_rate * gradient) / 100;
+        x = x - update;
+        
+        iter = iter + 1;
+    }
+    
+    vec![x]
+}
+
+// Hyperparameter tuning for linear regression learning rate
+fun tune_linear_regression_learning_rate(X: Vec<Vec<i32>>, y: Vec<i32>, learning_rates: Vec<i32>) -> i32 {
+    var best_lr = learning_rates[0];
+    var best_score = 0;
+    
+    var lr_idx = 0;
+    while lr_idx < learning_rates.len() {
+        let lr = learning_rates[lr_idx];
+        
+        // Train model with this learning rate
+        let model = linear_regression_train(X.clone(), y.clone(), 50, lr);
+        let predictions = linear_regression_predict(model, X.clone());
+        
+        // Calculate simple score (negative mean absolute error)
+        var total_error = 0;
+        var i = 0;
+        while i < y.len() {
+            let error = y[i] - predictions[i];
+            let abs_error = if error >= 0 { error } else { -error };
+            total_error = total_error + abs_error;
+            i = i + 1;
+        }
+        
+        let avg_error = total_error / y.len();
+        let score = 1000 - avg_error; // Higher is better
+        
+        if score > best_score {
+            best_score = score;
+            best_lr = lr;
+        }
+        
+        lr_idx = lr_idx + 1;
+    }
+    
+    best_lr
+}
+
+// Overfitting detection (training vs validation error)
+fun detect_overfitting_linear_regression(X_train: Vec<Vec<i32>>, y_train: Vec<i32>, X_val: Vec<Vec<i32>>, y_val: Vec<i32>) -> i32 {
+    let model = linear_regression_train(X_train.clone(), y_train.clone(), 100, 5);
+    
+    // Calculate training error
+    let train_predictions = linear_regression_predict(model.clone(), X_train);
+    var train_error = 0;
+    var i = 0;
+    while i < y_train.len() {
+        let error = y_train[i] - train_predictions[i];
+        let abs_error = if error >= 0 { error } else { -error };
+        train_error = train_error + abs_error;
+        i = i + 1;
+    }
+    train_error = train_error / y_train.len();
+    
+    // Calculate validation error
+    let val_predictions = linear_regression_predict(model, X_val);
+    var val_error = 0;
+    i = 0;
+    while i < y_val.len() {
+        let error = y_val[i] - val_predictions[i];
+        let abs_error = if error >= 0 { error } else { -error };
+        val_error = val_error + abs_error;
+        i = i + 1;
+    }
+    val_error = val_error / y_val.len();
+    
+    // Overfitting score: difference between validation and training error
+    val_error - train_error
+}
+
+// Feature selection (simplified correlation-based)
+fun select_best_features(X: Vec<Vec<i32>>, y: Vec<i32>, num_features: i32) -> Vec<i32> {
+    let n_samples = X.len();
+    let n_features = if n_samples > 0 { X[0].len() } else { 0 };
+    
+    var feature_scores = Vec::new();
+    
+    var feature_idx = 0;
+    while feature_idx < n_features {
+        // Calculate correlation between feature and target (simplified)
+        var sum_xy = 0;
+        var sum_x = 0;
+        var sum_y = 0;
+        
+        var sample_idx = 0;
+        while sample_idx < n_samples {
+            let x_val = X[sample_idx][feature_idx];
+            let y_val = y[sample_idx];
+            
+            sum_xy = sum_xy + (x_val * y_val);
+            sum_x = sum_x + x_val;
+            sum_y = sum_y + y_val;
+            sample_idx = sample_idx + 1;
+        }
+        
+        let correlation_score = if n_samples > 0 {
+            let mean_x = sum_x / n_samples;
+            let mean_y = sum_y / n_samples;
+            let correlation_numerator = (sum_xy / n_samples) - (mean_x * mean_y);
+            
+            // Simplified correlation (absolute value)
+            if correlation_numerator >= 0 { correlation_numerator } else { -correlation_numerator }
+        } else {
+            0
+        };
+        
+        feature_scores.push(correlation_score);
+        feature_idx = feature_idx + 1;
+    }
+    
+    // Select top features (simplified selection)
+    var selected_features = Vec::new();
+    var selected = 0;
+    
+    while selected < num_features && selected < n_features {
+        var best_idx = 0;
+        var best_score = feature_scores[0];
+        
+        var idx = 1;
+        while idx < feature_scores.len() {
+            if feature_scores[idx] > best_score {
+                best_score = feature_scores[idx];
+                best_idx = idx;
+            }
+            idx = idx + 1;
+        }
+        
+        selected_features.push(best_idx);
+        feature_scores[best_idx] = -1; // Mark as selected
+        selected = selected + 1;
+    }
+    
+    selected_features
+}
+
+// Complete ML pipeline
+fun ml_pipeline_full(X: Vec<Vec<i32>>, y: Vec<i32>) -> Vec<i32> {
+    // Step 1: Normalize features
+    let X_normalized = normalize_features(X);
+    
+    // Step 2: Select best features
+    let selected_features = select_best_features(X_normalized.clone(), y.clone(), 2);
+    
+    // Step 3: Create feature-selected dataset
+    var X_selected = Vec::new();
+    var sample_idx = 0;
+    while sample_idx < X_normalized.len() {
+        var selected_sample = Vec::new();
+        var feat_idx = 0;
+        while feat_idx < selected_features.len() {
+            let feature_index = selected_features[feat_idx];
+            selected_sample.push(X_normalized[sample_idx][feature_index]);
+            feat_idx = feat_idx + 1;
+        }
+        X_selected.push(selected_sample);
+        sample_idx = sample_idx + 1;
+    }
+    
+    // Step 4: Train model
+    let model = linear_regression_train(X_selected.clone(), y.clone(), 100, 5);
+    
+    // Step 5: Evaluate with cross-validation
+    let cv_scores = cross_validation_linear_regression(X_selected, y, 3);
+    
+    // Return pipeline results
+    cv_scores
+}
+
+// Main function for testing (optional)
+fun main() {
+    println!("Machine Learning Pipeline Library");
+    println!("=================================");
+    
+    // Example usage
+    let X = vec![vec![1, 2], vec![2, 3], vec![3, 4], vec![4, 5]];
+    let y = vec![3, 5, 7, 9];
+    
+    let model = linear_regression_train(X.clone(), y, 100, 5);
+    let predictions = linear_regression_predict(model, X);
+    
+    println!("Sample predictions:");
+    var i = 0;
+    while i < predictions.len() {
+        println!("Prediction {}: {}", i + 1, predictions[i]);
+        i = i + 1;
+    }
+}
