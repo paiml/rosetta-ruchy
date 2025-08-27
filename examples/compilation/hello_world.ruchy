@@ -1,0 +1,14 @@
+// Minimal compilable Ruchy program
+// Sprint 38: Testing basic compilation
+
+fun main() {
+    println("Hello from compiled Ruchy!");
+    println("Sprint 38: Compilation Test");
+    
+    let x = 42;
+    let y = 58;
+    let sum = x + y;
+    
+    println("42 + 58 = 100");
+    println("Compilation successful!");
+}
