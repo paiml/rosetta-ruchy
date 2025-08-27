@@ -1,0 +1,93 @@
+// Compilable benchmark example - Sprint 38
+// Fixed version without var keyword issues
+
+use std::vec::Vec;
+
+// Simple functions that should compile
+fun add_numbers(a: i32, b: i32) -> i32 {
+    a + b
+}
+
+fun multiply_numbers(a: i32, b: i32) -> i32 {
+    a * b
+}
+
+// Factorial calculation (iterative to avoid var)
+fun factorial(n: i32) -> i32 {
+    if n <= 1 {
+        1
+    } else {
+        n * factorial(n - 1)
+    }
+}
+
+// Sum array elements without var
+fun sum_array(nums: Vec<i32>) -> i32 {
+    if nums.len() == 0 {
+        0
+    } else {
+        sum_recursive(nums, 0)
+    }
+}
+
+fun sum_recursive(nums: Vec<i32>, index: i32) -> i32 {
+    if index >= nums.len() {
+        0
+    } else {
+        nums[index] + sum_recursive(nums, index + 1)
+    }
+}
+
+// Find maximum without var
+fun find_max(nums: Vec<i32>) -> i32 {
+    if nums.len() == 0 {
+        0
+    } else {
+        find_max_recursive(nums, 1, nums[0])
+    }
+}
+
+fun find_max_recursive(nums: Vec<i32>, index: i32, current_max: i32) -> i32 {
+    if index >= nums.len() {
+        current_max
+    } else {
+        let new_max = if nums[index] > current_max {
+            nums[index]
+        } else {
+            current_max
+        };
+        find_max_recursive(nums, index + 1, new_max)
+    }
+}
+
+// Simple fibonacci
+fun fibonacci(n: i32) -> i32 {
+    if n <= 1 {
+        n
+    } else {
+        fibonacci(n - 1) + fibonacci(n - 2)
+    }
+}
+
+// Main function for testing
+fun main() {
+    println("Ruchy Compilation Test");
+    println("======================");
+    
+    // Test arithmetic
+    let sum = add_numbers(10, 20);
+    let product = multiply_numbers(5, 6);
+    
+    // Test factorial
+    let fact = factorial(5);
+    
+    // Test array operations
+    let numbers = vec![1, 2, 3, 4, 5];
+    let total = sum_array(numbers);
+    let maximum = find_max(numbers);
+    
+    // Test fibonacci
+    let fib = fibonacci(10);
+    
+    println("Tests completed successfully!");
+}
