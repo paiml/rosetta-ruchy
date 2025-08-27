@@ -330,21 +330,26 @@ Focus on working compilation features and MCP server deployment. Since WebAssemb
 
 ---
 
-### TICKET-039: Sprint 39 - Advanced Debugging Tools
-**Status**: 📋 Planned  
+### TICKET-039: Sprint 39 - Advanced Debugging Tools (Adjusted)
+**Status**: 🚧 In Progress  
 **Priority**: P1  
-**Duration**: 2 days  
+**Duration**: 2 days (2025-08-27 to 2025-08-29)  
 **Prerequisites**: TICKET-038
 
 #### Description
-Integrate advanced debugging capabilities including actor observatory, dataflow debugging, and interactive theorem proving.
+Focus on working debugging tools: interactive prove, parse, AST analysis. Since actor:observe and dataflow:debug have issues, create alternative debugging patterns and error diagnosis tools.
 
-#### Key Objectives
-- Actor system introspection with `ruchy actor:observe`
-- DataFrame pipeline debugging with `ruchy dataflow:debug`
-- Interactive proofs with `ruchy prove --interactive`
-- Live system visualization
-- Debugging dashboard creation
+#### Acceptance Criteria
+- [ ] Test interactive prove command thoroughly
+- [ ] Document parse and AST analysis patterns
+- [ ] Create error diagnosis tooling
+- [ ] Build debugging helper scripts
+- [ ] Test all verification commands
+- [ ] Document debugging workflows
+- [ ] Create troubleshooting guide
+- [ ] Build error pattern library
+- [ ] Test quality gate integration
+- [ ] Achieve comprehensive debugging toolkit
 
 ---
 
