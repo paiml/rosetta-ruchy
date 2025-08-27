@@ -1,7 +1,7 @@
 # Rosetta Ruchy Sprint Tickets
 
 **Sprint Management System**: Toyota Way with Kaizen principles  
-**Current Sprint**: Sprint 41  
+**Current Sprint**: Sprint 42  
 **Status**: Active Development
 
 ## Active Tickets
@@ -608,3 +608,33 @@ ARIMA and exponential smoothing with statistical guarantees and confidence inter
 ---
 
 *All tickets follow Toyota Way principles: Continuous improvement (Kaizen), Go and see (Genchi Genbutsu), Quality built-in (Jidoka)*
+### TICKET-042: Sprint 42 - Blockchain and Cryptography
+**Status**: 🚧 In Progress  
+**Priority**: P0 - CRITICAL PATH  
+**Duration**: 1 day (2025-08-27)  
+**Prerequisites**: TICKET-041
+
+#### Description
+Implement blockchain and cryptographic primitives in pure Ruchy with formal verification of consensus properties. Create hash functions, Merkle trees, proof-of-work consensus, and smart contract verification. Demonstrates Ruchy for secure distributed systems with Byzantine fault tolerance proofs.
+
+#### Acceptance Criteria
+- [ ] Implement cryptographic hash functions (simplified SHA-256)
+- [ ] Create Merkle tree construction and verification
+- [ ] Build blockchain data structure with immutability
+- [ ] Implement proof-of-work consensus mechanism
+- [ ] Create transaction validation system
+- [ ] Verify Byzantine fault tolerance properties
+- [ ] Prove blockchain immutability
+- [ ] Demonstrate smart contract execution
+- [ ] Generate blockchain visualization
+- [ ] Achieve formal verification of consensus
+
+#### Deliverables
+- `examples/blockchain/blockchain_core.ruchy` - Core blockchain implementation
+- `examples/blockchain/crypto_primitives.ruchy` - Hash and Merkle trees
+- `examples/blockchain/consensus.ruchy` - Proof-of-work and validation
+- `examples/blockchain/smart_contracts.ruchy` - Contract execution
+- `examples/blockchain/test_blockchain.ruchy` - Comprehensive tests
+- `docs/BLOCKCHAIN_GUIDE.md` - Blockchain in Ruchy
+
+---
