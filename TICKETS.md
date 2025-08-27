@@ -1,7 +1,7 @@
 # Rosetta Ruchy Sprint Tickets
 
 **Sprint Management System**: Toyota Way with Kaizen principles  
-**Current Sprint**: Sprint 35  
+**Current Sprint**: Sprint 40  
 **Status**: Active Development
 
 ## Active Tickets
@@ -353,14 +353,50 @@ Focus on working debugging tools: interactive prove, parse, AST analysis. Since 
 
 ---
 
-### TICKET-040: Sprint 40 - VS Code Extension Enhancement
-**Status**: 📋 Planned  
-**Priority**: P1  
-**Duration**: 2 days  
+### TICKET-040: Sprint 40 - Testing Framework Development  
+**Status**: 🚧 In Progress  
+**Priority**: P0 - CRITICAL PATH  
+**Duration**: 1 day (2025-08-27)  
 **Prerequisites**: TICKET-039
 
 #### Description
-Enhance VS Code integration with custom features for Ruchy development including live quality monitoring, inline proofs, and performance hints.
+Create pure Ruchy testing infrastructure to replace external test frameworks. Build comprehensive testing tools including test discovery, assertion libraries, property-based testing, and coverage reporting. This eliminates dependencies on external testing frameworks and showcases Ruchy's capabilities for meta-programming and tooling development.
+
+#### Acceptance Criteria
+- [ ] Create pure Ruchy test runner (no external dependencies)
+- [ ] Build assertion library with common test patterns  
+- [ ] Implement property-based testing framework
+- [ ] Create test discovery system for .ruchy files
+- [ ] Generate test reports and coverage analysis
+- [ ] Build mutation testing capabilities
+- [ ] Create test mocking and stubbing utilities
+- [ ] Document testing patterns and best practices
+- [ ] Integrate with existing `ruchy test` command
+- [ ] Achieve 80%+ test coverage on testing framework itself
+
+#### Technical Requirements
+- Use only Ruchy standard library (no external test crates)
+- Generate machine-readable test results (JSON/XML)
+- Support parallel test execution
+- Provide clear error messages and stack traces
+- Integrate with CI/CD pipelines
+- Support both unit and integration testing
+
+#### Implementation Plan
+1. **Core Framework**: Basic test runner and assertion library
+2. **Discovery System**: Automatic test file detection
+3. **Property Testing**: QuickCheck-style property verification
+4. **Coverage Analysis**: Line and branch coverage tracking
+5. **Mutation Testing**: Fault injection for test quality
+6. **Reporting**: HTML and JSON test result generation
+
+#### Deliverables
+- `framework/ruchy-test/src/test_runner.ruchy` - Core test execution engine
+- `framework/ruchy-test/src/assertions.ruchy` - Comprehensive assertion library
+- `framework/ruchy-test/src/property_testing.ruchy` - Property-based testing
+- `framework/ruchy-test/src/coverage.ruchy` - Coverage analysis
+- `framework/ruchy-test/src/mutation.ruruchy` - Mutation testing
+- `docs/TESTING_GUIDE.md` - Testing patterns and best practices
 
 #### Key Objectives
 - Custom VS Code commands for all tools

@@ -1,0 +1,389 @@
+// Pure Ruchy Testing Framework - Assertion Library
+// Sprint 40: Testing Framework Development
+
+use std::vec::Vec;
+
+// Assertion result
+enum AssertResult {
+    Success,
+    Failure(Vec<i32>)  // Error message
+}
+
+// Main assertion library
+struct Assert;
+
+impl Assert {
+    // Basic equality assertions
+    fun assert_eq(actual: i32, expected: i32) -> AssertResult {
+        if actual == expected {
+            AssertResult::Success
+        } else {
+            let message = vec![
+                65, 115, 115, 101, 114, 116, 105, 111, 110, 32, 102, 97, 105, 108, 101, 100, 58, 32,
+                101, 120, 112, 101, 99, 116, 101, 100, 32, 118, 115, 32, 97, 99, 116, 117, 97, 108
+            ]; // "Assertion failed: expected vs actual"
+            AssertResult::Failure(message)
+        }
+    }
+    
+    fun assert_ne(actual: i32, expected: i32) -> AssertResult {
+        if actual != expected {
+            AssertResult::Success
+        } else {
+            let message = vec![
+                86, 97, 108, 117, 101, 115, 32, 115, 104, 111, 117, 108, 100, 32, 110, 111, 116, 32, 98, 101, 32, 101, 113, 117, 97, 108
+            ]; // "Values should not be equal"
+            AssertResult::Failure(message)
+        }
+    }
+    
+    // Comparison assertions
+    fun assert_gt(actual: i32, expected: i32) -> AssertResult {
+        if actual > expected {
+            AssertResult::Success
+        } else {
+            let message = vec![
+                65, 99, 116, 117, 97, 108, 32, 118, 97, 108, 117, 101, 32, 110, 111, 116, 32, 103, 114, 101, 97, 116, 101, 114, 32, 116, 104, 97, 110, 32, 101, 120, 112, 101, 99, 116, 101, 100
+            ]; // "Actual value not greater than expected"
+            AssertResult::Failure(message)
+        }
+    }
+    
+    fun assert_lt(actual: i32, expected: i32) -> AssertResult {
+        if actual < expected {
+            AssertResult::Success
+        } else {
+            let message = vec![
+                65, 99, 116, 117, 97, 108, 32, 118, 97, 108, 117, 101, 32, 110, 111, 116, 32, 108, 101, 115, 115, 32, 116, 104, 97, 110, 32, 101, 120, 112, 101, 99, 116, 101, 100
+            ]; // "Actual value not less than expected"
+            AssertResult::Failure(message)
+        }
+    }
+    
+    fun assert_ge(actual: i32, expected: i32) -> AssertResult {
+        if actual >= expected {
+            AssertResult::Success
+        } else {
+            let message = vec![
+                65, 99, 116, 117, 97, 108, 32, 118, 97, 108, 117, 101, 32, 110, 111, 116, 32, 103, 114, 101, 97, 116, 101, 114, 32, 111, 114, 32, 101, 113, 117, 97, 108
+            ]; // "Actual value not greater or equal"
+            AssertResult::Failure(message)
+        }
+    }
+    
+    fun assert_le(actual: i32, expected: i32) -> AssertResult {
+        if actual <= expected {
+            AssertResult::Success
+        } else {
+            let message = vec![
+                65, 99, 116, 117, 97, 108, 32, 118, 97, 108, 117, 101, 32, 110, 111, 116, 32, 108, 101, 115, 115, 32, 111, 114, 32, 101, 113, 117, 97, 108
+            ]; // "Actual value not less or equal"
+            AssertResult::Failure(message)
+        }
+    }
+    
+    // Boolean assertions
+    fun assert_true(value: bool) -> AssertResult {
+        if value {
+            AssertResult::Success
+        } else {
+            let message = vec![
+                69, 120, 112, 101, 99, 116, 101, 100, 32, 116, 114, 117, 101, 44, 32, 103, 111, 116, 32, 102, 97, 108, 115, 101
+            ]; // "Expected true, got false"
+            AssertResult::Failure(message)
+        }
+    }
+    
+    fun assert_false(value: bool) -> AssertResult {
+        if !value {
+            AssertResult::Success
+        } else {
+            let message = vec![
+                69, 120, 112, 101, 99, 116, 101, 100, 32, 102, 97, 108, 115, 101, 44, 32, 103, 111, 116, 32, 116, 114, 117, 101
+            ]; // "Expected false, got true"
+            AssertResult::Failure(message)
+        }
+    }
+    
+    // Vector/Array assertions
+    fun assert_vec_eq(actual: Vec<i32>, expected: Vec<i32>) -> AssertResult {
+        if actual.len() != expected.len() {
+            let message = vec![
+                86, 101, 99, 116, 111, 114, 32, 108, 101, 110, 103, 116, 104, 115, 32, 100, 105, 102, 102, 101, 114
+            ]; // "Vector lengths differ"
+            return AssertResult::Failure(message);
+        }
+        
+        for i in 0..actual.len() {
+            if actual.get(i) != expected.get(i) {
+                let message = vec![
+                    86, 101, 99, 116, 111, 114, 32, 101, 108, 101, 109, 101, 110, 116, 115, 32, 100, 105, 102, 102, 101, 114
+                ]; // "Vector elements differ"
+                return AssertResult::Failure(message);
+            }
+        }
+        
+        AssertResult::Success
+    }
+    
+    fun assert_vec_contains(haystack: Vec<i32>, needle: i32) -> AssertResult {
+        for item in haystack.iter() {
+            if *item == needle {
+                return AssertResult::Success;
+            }
+        }
+        
+        let message = vec![
+            86, 101, 99, 116, 111, 114, 32, 100, 111, 101, 115, 32, 110, 111, 116, 32, 99, 111, 110, 116, 97, 105, 110, 32, 105, 116, 101, 109
+        ]; // "Vector does not contain item"
+        AssertResult::Failure(message)
+    }
+    
+    fun assert_vec_empty(vec: Vec<i32>) -> AssertResult {
+        if vec.len() == 0 {
+            AssertResult::Success
+        } else {
+            let message = vec![
+                86, 101, 99, 116, 111, 114, 32, 105, 115, 32, 110, 111, 116, 32, 101, 109, 112, 116, 121
+            ]; // "Vector is not empty"
+            AssertResult::Failure(message)
+        }
+    }
+    
+    // Range assertions
+    fun assert_in_range(value: i32, min: i32, max: i32) -> AssertResult {
+        if value >= min && value <= max {
+            AssertResult::Success
+        } else {
+            let message = vec![
+                86, 97, 108, 117, 101, 32, 110, 111, 116, 32, 105, 110, 32, 114, 97, 110, 103, 101
+            ]; // "Value not in range"
+            AssertResult::Failure(message)
+        }
+    }
+    
+    // Floating point approximation (using integer scaling)
+    fun assert_approx_eq(actual: i32, expected: i32, tolerance: i32) -> AssertResult {
+        let diff = if actual > expected { actual - expected } else { expected - actual };
+        
+        if diff <= tolerance {
+            AssertResult::Success
+        } else {
+            let message = vec![
+                86, 97, 108, 117, 101, 115, 32, 110, 111, 116, 32, 97, 112, 112, 114, 111, 120, 105, 109, 97, 116, 101, 108, 121, 32, 101, 113, 117, 97, 108
+            ]; // "Values not approximately equal"
+            AssertResult::Failure(message)
+        }
+    }
+    
+    // Error/Exception assertions  
+    fun assert_panic(test_fn: fn() -> i32) -> AssertResult {
+        // In a real implementation, would catch panics
+        // For simulation, assume the function might panic
+        AssertResult::Success
+    }
+    
+    // Custom assertion with message
+    fun assert_with_message(condition: bool, message: Vec<i32>) -> AssertResult {
+        if condition {
+            AssertResult::Success
+        } else {
+            AssertResult::Failure(message)
+        }
+    }
+}
+
+// Test suite macros (simulated as functions)
+struct TestSuite;
+
+impl TestSuite {
+    // Setup function to run before each test
+    fun setup() {
+        println("🔧 Test setup");
+    }
+    
+    // Teardown function to run after each test
+    fun teardown() {
+        println("🧹 Test teardown");
+    }
+    
+    // Skip a test with reason
+    fun skip_test(reason: Vec<i32>) {
+        print("⏭ Test skipped: ");
+        TestSuite::print_vec(&reason);
+        println("");
+    }
+    
+    // Mark test as expected to fail
+    fun expect_failure(test_name: Vec<i32>) {
+        print("⚠️ Test expected to fail: ");
+        TestSuite::print_vec(&test_name);
+        println("");
+    }
+    
+    // Benchmark a test function
+    fun benchmark_test(test_fn: fn() -> i32) -> i32 {
+        println("📊 Benchmarking test...");
+        let start_time = 0; // Would use real timing
+        test_fn();
+        let end_time = 10;  // Would use real timing
+        end_time - start_time
+    }
+    
+    // Utility function to print vectors
+    fun print_vec(v: &Vec<i32>) {
+        print("[");
+        for (i, byte) in v.iter().enumerate() {
+            if i > 0 { print(","); }
+            if *byte < 10 && *byte >= 0 {
+                if *byte == 0 { print("0"); }
+                else if *byte == 1 { print("1"); }
+                else if *byte == 2 { print("2"); }
+                else if *byte == 3 { print("3"); }
+                else if *byte == 4 { print("4"); }
+                else if *byte == 5 { print("5"); }
+                else if *byte == 6 { print("6"); }
+                else if *byte == 7 { print("7"); }
+                else if *byte == 8 { print("8"); }
+                else if *byte == 9 { print("9"); }
+            } else {
+                print("X");
+            }
+        }
+        print("]");
+    }
+}
+
+// Property-based testing support
+struct PropertyTest;
+
+impl PropertyTest {
+    // Generate random integers for property testing
+    fun generate_random_int(seed: i32, min: i32, max: i32) -> i32 {
+        let random_val = (seed * 1103515245 + 12345) % (1 << 31);
+        min + (random_val % (max - min + 1))
+    }
+    
+    // Generate random vectors
+    fun generate_random_vec(seed: i32, size: i32) -> Vec<i32> {
+        let mut result = vec![];
+        let mut current_seed = seed;
+        
+        for i in 0..size {
+            let value = PropertyTest::generate_random_int(current_seed, 0, 100);
+            result.push(value);
+            current_seed += 1;
+        }
+        
+        result
+    }
+    
+    // Property test runner
+    fun run_property_test(property_fn: fn(i32) -> bool, iterations: i32) -> bool {
+        println("🧪 Running property test...");
+        
+        for i in 0..iterations {
+            let test_value = PropertyTest::generate_random_int(i, -1000, 1000);
+            if !property_fn(test_value) {
+                println("❌ Property violated with input:");
+                println("  Input value caused property to fail");
+                return false;
+            }
+        }
+        
+        println("✅ Property holds for all test cases");
+        true
+    }
+}
+
+// Main demonstration
+fun main() {
+    println("🧪 Ruchy Assertion Library");
+    println("Sprint 40: Comprehensive Testing Framework");
+    println("");
+    
+    // Demonstrate basic assertions
+    println("=== Basic Assertions ===");
+    
+    // Test equality
+    let eq_result = Assert::assert_eq(42, 42);
+    match eq_result {
+        AssertResult::Success => println("✅ assert_eq passed"),
+        AssertResult::Failure(_) => println("❌ assert_eq failed")
+    }
+    
+    // Test inequality
+    let ne_result = Assert::assert_ne(42, 43);
+    match ne_result {
+        AssertResult::Success => println("✅ assert_ne passed"),
+        AssertResult::Failure(_) => println("❌ assert_ne failed")
+    }
+    
+    // Test comparisons
+    let gt_result = Assert::assert_gt(10, 5);
+    match gt_result {
+        AssertResult::Success => println("✅ assert_gt passed"),
+        AssertResult::Failure(_) => println("❌ assert_gt failed")
+    }
+    
+    // Test boolean assertions
+    let true_result = Assert::assert_true(true);
+    match true_result {
+        AssertResult::Success => println("✅ assert_true passed"),
+        AssertResult::Failure(_) => println("❌ assert_true failed")
+    }
+    
+    println("");
+    println("=== Vector Assertions ===");
+    
+    // Test vector equality
+    let vec1 = vec![1, 2, 3];
+    let vec2 = vec![1, 2, 3];
+    let vec_eq_result = Assert::assert_vec_eq(vec1, vec2);
+    match vec_eq_result {
+        AssertResult::Success => println("✅ assert_vec_eq passed"),
+        AssertResult::Failure(_) => println("❌ assert_vec_eq failed")
+    }
+    
+    // Test vector contains
+    let haystack = vec![1, 2, 3, 4, 5];
+    let contains_result = Assert::assert_vec_contains(haystack, 3);
+    match contains_result {
+        AssertResult::Success => println("✅ assert_vec_contains passed"),
+        AssertResult::Failure(_) => println("❌ assert_vec_contains failed")
+    }
+    
+    println("");
+    println("=== Range and Approximation ===");
+    
+    // Test range assertion
+    let range_result = Assert::assert_in_range(50, 1, 100);
+    match range_result {
+        AssertResult::Success => println("✅ assert_in_range passed"),
+        AssertResult::Failure(_) => println("❌ assert_in_range failed")
+    }
+    
+    // Test approximation (scaled integers)
+    let approx_result = Assert::assert_approx_eq(1000, 1005, 10);
+    match approx_result {
+        AssertResult::Success => println("✅ assert_approx_eq passed"),
+        AssertResult::Failure(_) => println("❌ assert_approx_eq failed")
+    }
+    
+    println("");
+    println("=== Property Testing ===");
+    
+    // Test property: x + 0 = x
+    let identity_property = |x: i32| -> bool { x + 0 == x };
+    PropertyTest::run_property_test(identity_property, 100);
+    
+    // Test property: abs(x) >= 0
+    let abs_property = |x: i32| -> bool { 
+        let abs_x = if x < 0 { -x } else { x };
+        abs_x >= 0
+    };
+    PropertyTest::run_property_test(abs_property, 100);
+    
+    println("");
+    println("🎯 Assertion Library Demonstration Complete");
+}

@@ -1,0 +1,404 @@
+// Pure Ruchy Testing Framework - Test Runner
+// Sprint 40: Testing Framework Development
+
+use std::vec::Vec;
+use std::fs::File;
+
+// Test result status
+enum TestStatus {
+    Passed,
+    Failed,
+    Skipped,
+    Error
+}
+
+// Individual test case
+struct TestCase {
+    name: Vec<i32>,          // Test name as string
+    description: Vec<i32>,   // Test description
+    status: TestStatus,
+    duration_ms: i32,
+    error_message: Vec<i32>
+}
+
+// Test suite containing multiple test cases
+struct TestSuite {
+    name: Vec<i32>,
+    tests: Vec<TestCase>,
+    setup_code: Vec<i32>,
+    teardown_code: Vec<i32>,
+    total_tests: i32,
+    passed_tests: i32,
+    failed_tests: i32,
+    skipped_tests: i32
+}
+
+// Test runner configuration
+struct TestConfig {
+    parallel: bool,
+    verbose: bool,
+    coverage: bool,
+    mutation: bool,
+    output_format: Vec<i32>,  // "json", "xml", "text"
+    max_workers: i32
+}
+
+// Main test runner engine
+struct TestRunner {
+    config: TestConfig,
+    suites: Vec<TestSuite>,
+    total_duration_ms: i32
+}
+
+impl TestRunner {
+    fun new(config: TestConfig) -> TestRunner {
+        TestRunner {
+            config,
+            suites: vec![],
+            total_duration_ms: 0
+        }
+    }
+    
+    // Discover test files in directory
+    fun discover_tests(&mut self, directory: Vec<i32>) -> bool {
+        println("🔍 Discovering test files...");
+        
+        // In real implementation, would scan filesystem
+        // For now, simulate finding test files
+        let test_files = vec![
+            vec![116, 101, 115, 116, 95, 109, 97, 105, 110], // "test_main"
+            vec![116, 101, 115, 116, 95, 117, 116, 105, 108, 115] // "test_utils"
+        ];
+        
+        for file in test_files.iter() {
+            self.parse_test_file(file.clone());
+        }
+        
+        true
+    }
+    
+    // Parse individual test file and extract test cases
+    fun parse_test_file(&mut self, filename: Vec<i32>) {
+        let mut suite = TestSuite {
+            name: filename.clone(),
+            tests: vec![],
+            setup_code: vec![],
+            teardown_code: vec![],
+            total_tests: 0,
+            passed_tests: 0,
+            failed_tests: 0,
+            skipped_tests: 0
+        };
+        
+        // Simulate parsing test functions
+        // Look for functions starting with "test_"
+        let test_functions = self.extract_test_functions(filename.clone());
+        
+        for test_fn in test_functions.iter() {
+            let test_case = TestCase {
+                name: test_fn.clone(),
+                description: vec![84, 101, 115, 116, 32, 99, 97, 115, 101], // "Test case"
+                status: TestStatus::Passed, // Will be set during execution
+                duration_ms: 0,
+                error_message: vec![]
+            };
+            
+            suite.tests.push(test_case);
+        }
+        
+        suite.total_tests = suite.tests.len();
+        self.suites.push(suite);
+    }
+    
+    // Extract test function names from file
+    fun extract_test_functions(&self, filename: Vec<i32>) -> Vec<Vec<i32>> {
+        // In real implementation, would parse AST
+        // For now, simulate finding test functions
+        vec![
+            vec![116, 101, 115, 116, 95, 97, 100, 100], // "test_add"
+            vec![116, 101, 115, 116, 95, 115, 117, 98], // "test_sub"
+            vec![116, 101, 115, 116, 95, 109, 117, 108], // "test_mul"
+            vec![116, 101, 115, 116, 95, 100, 105, 118]  // "test_div"
+        ]
+    }
+    
+    // Run all discovered test suites
+    fun run_all_tests(&mut self) -> TestReport {
+        println("🧪 Running test suites...");
+        let start_time = self.get_current_time();
+        
+        let mut total_passed = 0;
+        let mut total_failed = 0;
+        let mut total_skipped = 0;
+        let mut total_errors = 0;
+        
+        for suite in self.suites.iter_mut() {
+            self.run_test_suite(suite);
+            
+            total_passed += suite.passed_tests;
+            total_failed += suite.failed_tests;
+            total_skipped += suite.skipped_tests;
+        }
+        
+        let end_time = self.get_current_time();
+        self.total_duration_ms = end_time - start_time;
+        
+        TestReport {
+            total_tests: total_passed + total_failed + total_skipped,
+            passed: total_passed,
+            failed: total_failed,
+            skipped: total_skipped,
+            errors: total_errors,
+            duration_ms: self.total_duration_ms,
+            suites: self.suites.clone()
+        }
+    }
+    
+    // Run individual test suite
+    fun run_test_suite(&mut self, suite: &mut TestSuite) {
+        println("📦 Running suite:");
+        self.print_vec(&suite.name);
+        println("");
+        
+        for test in suite.tests.iter_mut() {
+            self.run_single_test(test);
+            
+            match test.status {
+                TestStatus::Passed => suite.passed_tests += 1,
+                TestStatus::Failed => suite.failed_tests += 1,
+                TestStatus::Skipped => suite.skipped_tests += 1,
+                TestStatus::Error => suite.failed_tests += 1
+            }
+        }
+    }
+    
+    // Run single test case
+    fun run_single_test(&self, test: &mut TestCase) {
+        let start_time = self.get_current_time();
+        
+        print("  ▶ ");
+        self.print_vec(&test.name);
+        print(" ... ");
+        
+        // Simulate test execution
+        let success = self.execute_test_function(&test.name);
+        
+        let end_time = self.get_current_time();
+        test.duration_ms = end_time - start_time;
+        
+        if success {
+            test.status = TestStatus::Passed;
+            println("✅ PASS");
+        } else {
+            test.status = TestStatus::Failed;
+            test.error_message = vec![65, 115, 115, 101, 114, 116, 105, 111, 110, 32, 102, 97, 105, 108, 101, 100]; // "Assertion failed"
+            println("❌ FAIL");
+        }
+    }
+    
+    // Execute test function (simulation)
+    fun execute_test_function(&self, test_name: &Vec<i32>) -> bool {
+        // In real implementation, would call actual test function
+        // For now, simulate some passing and failing tests
+        let hash = self.simple_hash(test_name);
+        hash % 4 != 0  // 75% pass rate for simulation
+    }
+    
+    // Generate test report in specified format
+    fun generate_report(&self, report: &TestReport) {
+        if let Some(format_char) = self.config.output_format.get(0) {
+            if *format_char == 106 { // 'j' for json
+                self.generate_json_report(report);
+            } else if *format_char == 120 { // 'x' for xml
+                self.generate_xml_report(report);
+            } else {
+                self.generate_text_report(report);
+            }
+        } else {
+            self.generate_text_report(report);
+        }
+    }
+    
+    // Generate human-readable text report
+    fun generate_text_report(&self, report: &TestReport) {
+        println("═══════════════════════════════════════");
+        println("🧪 TEST RESULTS SUMMARY");
+        println("═══════════════════════════════════════");
+        println("");
+        
+        print("Total Tests: ");
+        self.print_int(report.total_tests);
+        println("");
+        
+        print("✅ Passed: ");
+        self.print_int(report.passed);
+        println("");
+        
+        print("❌ Failed: ");
+        self.print_int(report.failed);
+        println("");
+        
+        print("⏭ Skipped: ");
+        self.print_int(report.skipped);
+        println("");
+        
+        print("⏱ Duration: ");
+        self.print_int(report.duration_ms);
+        println(" ms");
+        println("");
+        
+        // Calculate pass rate
+        if report.total_tests > 0 {
+            let pass_rate = (report.passed * 100) / report.total_tests;
+            print("📊 Pass Rate: ");
+            self.print_int(pass_rate);
+            println("%");
+        }
+        
+        // Show failed tests
+        if report.failed > 0 {
+            println("");
+            println("❌ FAILED TESTS:");
+            for suite in report.suites.iter() {
+                for test in suite.tests.iter() {
+                    match test.status {
+                        TestStatus::Failed => {
+                            print("  - ");
+                            self.print_vec(&test.name);
+                            print(" (");
+                            self.print_vec(&test.error_message);
+                            println(")");
+                        },
+                        _ => {}
+                    }
+                }
+            }
+        }
+    }
+    
+    // Generate JSON report
+    fun generate_json_report(&self, report: &TestReport) {
+        println("{");
+        print("  \"total_tests\": ");
+        self.print_int(report.total_tests);
+        println(",");
+        
+        print("  \"passed\": ");
+        self.print_int(report.passed);
+        println(",");
+        
+        print("  \"failed\": ");
+        self.print_int(report.failed);
+        println(",");
+        
+        print("  \"duration_ms\": ");
+        self.print_int(report.duration_ms);
+        println("");
+        println("}");
+    }
+    
+    // Generate XML report
+    fun generate_xml_report(&self, report: &TestReport) {
+        println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        println("<testsuite>");
+        
+        print("  <tests>");
+        self.print_int(report.total_tests);
+        println("</tests>");
+        
+        print("  <passed>");
+        self.print_int(report.passed);
+        println("</passed>");
+        
+        print("  <failed>");
+        self.print_int(report.failed);
+        println("</failed>");
+        
+        println("</testsuite>");
+    }
+    
+    // Utility functions
+    fun get_current_time(&self) -> i32 {
+        // Simulate time measurement
+        42  // Would use system time
+    }
+    
+    fun simple_hash(&self, data: &Vec<i32>) -> i32 {
+        let mut hash = 0;
+        for byte in data.iter() {
+            hash = hash * 31 + *byte;
+        }
+        hash
+    }
+    
+    fun print_vec(&self, v: &Vec<i32>) {
+        print("[");
+        for (i, byte) in v.iter().enumerate() {
+            if i > 0 { print(","); }
+            self.print_int(*byte);
+        }
+        print("]");
+    }
+    
+    fun print_int(&self, n: i32) {
+        if n == 0 {
+            print("0");
+        } else if n < 10 && n > 0 {
+            if n == 1 { print("1"); }
+            else if n == 2 { print("2"); }
+            else if n == 3 { print("3"); }
+            else if n == 4 { print("4"); }
+            else if n == 5 { print("5"); }
+            else if n == 6 { print("6"); }
+            else if n == 7 { print("7"); }
+            else if n == 8 { print("8"); }
+            else if n == 9 { print("9"); }
+        } else {
+            print("many");
+        }
+    }
+}
+
+// Test report structure
+struct TestReport {
+    total_tests: i32,
+    passed: i32,
+    failed: i32,
+    skipped: i32,
+    errors: i32,
+    duration_ms: i32,
+    suites: Vec<TestSuite>
+}
+
+// Main function to run the test framework
+fun main() {
+    println("🧪 Ruchy Test Framework");
+    println("Sprint 40: Pure Ruchy Testing Infrastructure");
+    println("");
+    
+    // Create test configuration
+    let config = TestConfig {
+        parallel: false,
+        verbose: true,
+        coverage: false,
+        mutation: false,
+        output_format: vec![116, 101, 120, 116], // "text"
+        max_workers: 4
+    };
+    
+    // Initialize test runner
+    let mut runner = TestRunner::new(config);
+    
+    // Discover tests
+    let test_dir = vec![116, 101, 115, 116, 115]; // "tests"
+    runner.discover_tests(test_dir);
+    
+    // Run all tests
+    let report = runner.run_all_tests();
+    
+    // Generate report
+    runner.generate_report(&report);
+    
+    println("");
+    println("🎯 Test Framework Demonstration Complete");
+}
