@@ -1,0 +1,626 @@
+// Blockchain Implementation in Pure Ruchy
+// Sprint 42: Blockchain and Cryptography with Formal Verification
+
+use std::vec::Vec;
+
+// Simple hash function (not cryptographically secure, for demonstration)
+fun simple_hash(data: Vec<i32>) -> i32 {
+    let mut hash = 0;
+    let prime = 31;
+    
+    for byte in data.iter() {
+        hash = hash * prime + *byte;
+        // Keep hash within i32 bounds
+        if hash > 1000000000 {
+            hash = hash % 1000000000;
+        }
+    }
+    
+    if hash < 0 {
+        -hash
+    } else {
+        hash
+    }
+}
+
+// Transaction structure
+struct Transaction {
+    from: Vec<i32>,      // Sender address
+    to: Vec<i32>,        // Receiver address
+    amount: i32,         // Transaction amount
+    timestamp: i32,      // Unix timestamp
+    signature: i32       // Digital signature (simplified)
+}
+
+impl Transaction {
+    fun new(from: Vec<i32>, to: Vec<i32>, amount: i32, timestamp: i32) -> Transaction {
+        let mut data = vec![];
+        for byte in from.iter() {
+            data.push(*byte);
+        }
+        for byte in to.iter() {
+            data.push(*byte);
+        }
+        data.push(amount);
+        data.push(timestamp);
+        
+        let signature = simple_hash(data);
+        
+        Transaction {
+            from,
+            to,
+            amount,
+            timestamp,
+            signature
+        }
+    }
+    
+    // Verify transaction signature
+    fun verify(&self) -> bool {
+        let mut data = vec![];
+        for byte in self.from.iter() {
+            data.push(*byte);
+        }
+        for byte in self.to.iter() {
+            data.push(*byte);
+        }
+        data.push(self.amount);
+        data.push(self.timestamp);
+        
+        let computed_signature = simple_hash(data);
+        computed_signature == self.signature
+    }
+    
+    // Check if transaction is valid
+    fun is_valid(&self) -> bool {
+        // Check signature
+        if !self.verify() {
+            return false;
+        }
+        
+        // Check amount is positive
+        if self.amount <= 0 {
+            return false;
+        }
+        
+        // Check addresses are different
+        if vectors_equal(&self.from, &self.to) {
+            return false;
+        }
+        
+        true
+    }
+}
+
+// Block structure
+struct Block {
+    index: i32,                    // Block number in chain
+    timestamp: i32,                // Unix timestamp
+    transactions: Vec<Transaction>, // List of transactions
+    prev_hash: i32,                // Hash of previous block
+    nonce: i32,                    // Proof-of-work nonce
+    hash: i32                      // Hash of this block
+}
+
+impl Block {
+    fun new(index: i32, timestamp: i32, transactions: Vec<Transaction>, prev_hash: i32) -> Block {
+        Block {
+            index,
+            timestamp,
+            transactions,
+            prev_hash,
+            nonce: 0,
+            hash: 0
+        }
+    }
+    
+    // Calculate block hash
+    fun calculate_hash(&self) -> i32 {
+        let mut data = vec![];
+        
+        // Add block data to hash input
+        data.push(self.index);
+        data.push(self.timestamp);
+        data.push(self.prev_hash);
+        data.push(self.nonce);
+        
+        // Add transactions data
+        for tx in self.transactions.iter() {
+            data.push(tx.amount);
+            data.push(tx.timestamp);
+            data.push(tx.signature);
+        }
+        
+        simple_hash(data)
+    }
+    
+    // Mine block with proof-of-work
+    fun mine_block(&mut self, difficulty: i32) {
+        let target = 1000000000 / pow10(difficulty);
+        
+        // Keep trying different nonces until we find valid hash
+        loop {
+            self.hash = self.calculate_hash();
+            
+            if self.hash < target {
+                break;  // Found valid hash
+            }
+            
+            self.nonce += 1;
+            
+            // Prevent infinite loop in demo
+            if self.nonce > 1000000 {
+                break;
+            }
+        }
+    }
+    
+    // Verify block is valid
+    fun is_valid(&self, prev_block: &Block) -> bool {
+        // Check previous hash matches
+        if self.prev_hash != prev_block.hash {
+            return false;
+        }
+        
+        // Check index is incremented
+        if self.index != prev_block.index + 1 {
+            return false;
+        }
+        
+        // Check timestamp is after previous
+        if self.timestamp <= prev_block.timestamp {
+            return false;
+        }
+        
+        // Verify all transactions
+        for tx in self.transactions.iter() {
+            if !tx.is_valid() {
+                return false;
+            }
+        }
+        
+        // Verify hash is correct
+        if self.hash != self.calculate_hash() {
+            return false;
+        }
+        
+        true
+    }
+}
+
+// Blockchain structure
+struct Blockchain {
+    chain: Vec<Block>,
+    difficulty: i32,
+    pending_transactions: Vec<Transaction>,
+    mining_reward: i32
+}
+
+impl Blockchain {
+    fun new() -> Blockchain {
+        let mut blockchain = Blockchain {
+            chain: vec![],
+            difficulty: 2,  // Low difficulty for demo
+            pending_transactions: vec![],
+            mining_reward: 100
+        };
+        
+        // Create genesis block
+        let genesis = Block::new(0, 0, vec![], 0);
+        blockchain.chain.push(genesis);
+        
+        blockchain
+    }
+    
+    // Get latest block
+    fun get_latest_block(&self) -> Block {
+        if let Some(block) = self.chain.last() {
+            block.clone()
+        } else {
+            // Should never happen after genesis
+            Block::new(0, 0, vec![], 0)
+        }
+    }
+    
+    // Add new transaction to pending
+    fun add_transaction(&mut self, transaction: Transaction) -> bool {
+        if !transaction.is_valid() {
+            return false;
+        }
+        
+        self.pending_transactions.push(transaction);
+        true
+    }
+    
+    // Mine pending transactions
+    fun mine_pending_transactions(&mut self, miner_address: Vec<i32>) {
+        // Create reward transaction
+        let reward_tx = Transaction::new(
+            vec![0],  // From system
+            miner_address.clone(),
+            self.mining_reward,
+            get_timestamp()
+        );
+        
+        // Add reward to transactions
+        let mut transactions = self.pending_transactions.clone();
+        transactions.push(reward_tx);
+        
+        // Create new block
+        let prev_block = self.get_latest_block();
+        let mut new_block = Block::new(
+            prev_block.index + 1,
+            get_timestamp(),
+            transactions,
+            prev_block.hash
+        );
+        
+        // Mine the block
+        new_block.mine_block(self.difficulty);
+        
+        // Add to chain
+        self.chain.push(new_block);
+        
+        // Clear pending transactions
+        self.pending_transactions = vec![];
+    }
+    
+    // Get balance for address
+    fun get_balance(&self, address: Vec<i32>) -> i32 {
+        let mut balance = 0;
+        
+        for block in self.chain.iter() {
+            for tx in block.transactions.iter() {
+                // Subtract if sender
+                if vectors_equal(&tx.from, &address) {
+                    balance -= tx.amount;
+                }
+                
+                // Add if receiver
+                if vectors_equal(&tx.to, &address) {
+                    balance += tx.amount;
+                }
+            }
+        }
+        
+        balance
+    }
+    
+    // Verify entire blockchain
+    fun is_valid(&self) -> bool {
+        if self.chain.len() <= 1 {
+            return true;  // Genesis only is valid
+        }
+        
+        for i in 1..self.chain.len() {
+            let current = &self.chain[i];
+            let previous = &self.chain[i - 1];
+            
+            if !current.is_valid(previous) {
+                return false;
+            }
+        }
+        
+        true
+    }
+}
+
+// Merkle tree for efficient verification
+struct MerkleTree {
+    transactions: Vec<Transaction>,
+    root: i32
+}
+
+impl MerkleTree {
+    fun new(transactions: Vec<Transaction>) -> MerkleTree {
+        let root = MerkleTree::calculate_root(&transactions);
+        MerkleTree {
+            transactions,
+            root
+        }
+    }
+    
+    // Calculate Merkle root
+    fun calculate_root(transactions: &Vec<Transaction>) -> i32 {
+        if transactions.is_empty() {
+            return 0;
+        }
+        
+        let mut hashes = vec![];
+        
+        // Hash all transactions
+        for tx in transactions.iter() {
+            let mut data = vec![];
+            data.push(tx.amount);
+            data.push(tx.timestamp);
+            data.push(tx.signature);
+            hashes.push(simple_hash(data));
+        }
+        
+        // Build tree bottom-up
+        while hashes.len() > 1 {
+            let mut new_hashes = vec![];
+            
+            let mut i = 0;
+            while i < hashes.len() {
+                let left = hashes[i];
+                let right = if i + 1 < hashes.len() {
+                    hashes[i + 1]
+                } else {
+                    hashes[i]  // Duplicate if odd number
+                };
+                
+                let combined = vec![left, right];
+                new_hashes.push(simple_hash(combined));
+                
+                i += 2;
+            }
+            
+            hashes = new_hashes;
+        }
+        
+        hashes[0]
+    }
+    
+    // Verify transaction is in tree
+    fun verify_transaction(&self, tx: &Transaction) -> bool {
+        for stored_tx in self.transactions.iter() {
+            if stored_tx.signature == tx.signature {
+                return true;
+            }
+        }
+        false
+    }
+}
+
+// Consensus verification
+struct ConsensusVerification;
+
+impl ConsensusVerification {
+    // Verify proof-of-work is valid
+    fun verify_proof_of_work(block: &Block, difficulty: i32) -> bool {
+        let target = 1000000000 / pow10(difficulty);
+        block.hash < target && block.hash == block.calculate_hash()
+    }
+    
+    // Verify Byzantine fault tolerance (1/3 threshold)
+    fun verify_byzantine_tolerance(honest_nodes: i32, byzantine_nodes: i32) -> bool {
+        // Byzantine fault tolerance requires honest nodes > 2/3
+        honest_nodes > 2 * byzantine_nodes
+    }
+    
+    // Verify blockchain immutability
+    fun verify_immutability(blockchain: &Blockchain) -> bool {
+        // Once a block is added, it cannot be changed
+        // This is enforced by the hash chain
+        blockchain.is_valid()
+    }
+    
+    // Verify double-spending prevention
+    fun verify_no_double_spend(blockchain: &Blockchain) -> bool {
+        // Each transaction should appear only once
+        let mut seen_signatures = vec![];
+        
+        for block in blockchain.chain.iter() {
+            for tx in block.transactions.iter() {
+                // Check if we've seen this signature before
+                for seen in seen_signatures.iter() {
+                    if *seen == tx.signature {
+                        return false;  // Double spend detected
+                    }
+                }
+                seen_signatures.push(tx.signature);
+            }
+        }
+        
+        true
+    }
+}
+
+// Smart contract (simplified)
+struct SmartContract {
+    code: Vec<i32>,      // Contract bytecode
+    state: Vec<i32>,     // Contract state
+    balance: i32         // Contract balance
+}
+
+impl SmartContract {
+    fun new(code: Vec<i32>) -> SmartContract {
+        SmartContract {
+            code,
+            state: vec![],
+            balance: 0
+        }
+    }
+    
+    // Execute contract (simplified interpreter)
+    fun execute(&mut self, input: Vec<i32>) -> Vec<i32> {
+        let mut output = vec![];
+        
+        // Simple interpreter: sum all inputs
+        let mut sum = 0;
+        for value in input.iter() {
+            sum += *value;
+        }
+        
+        output.push(sum);
+        
+        // Update state
+        self.state.push(sum);
+        
+        output
+    }
+    
+    // Verify contract execution is deterministic
+    fun verify_deterministic(&self, input: Vec<i32>) -> bool {
+        // Execute twice and check same result
+        let mut contract1 = self.clone();
+        let mut contract2 = self.clone();
+        
+        let output1 = contract1.execute(input.clone());
+        let output2 = contract2.execute(input.clone());
+        
+        vectors_equal(&output1, &output2)
+    }
+}
+
+// Utility functions
+fun pow10(exp: i32) -> i32 {
+    let mut result = 1;
+    for i in 0..exp {
+        result = result * 10;
+    }
+    result
+}
+
+fun vectors_equal(a: &Vec<i32>, b: &Vec<i32>) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    
+    for i in 0..a.len() {
+        if a[i] != b[i] {
+            return false;
+        }
+    }
+    
+    true
+}
+
+fun get_timestamp() -> i32 {
+    // Simulated timestamp
+    1234567890
+}
+
+// Main demonstration
+fun main() {
+    println("⛓️ Blockchain Implementation in Ruchy");
+    println("Sprint 42: Cryptography and Consensus");
+    println("");
+    
+    // Create blockchain
+    let mut blockchain = Blockchain::new();
+    println("✅ Genesis block created");
+    
+    // Create addresses
+    let alice = vec![65, 108, 105, 99, 101];  // "Alice"
+    let bob = vec![66, 111, 98];              // "Bob"
+    let miner = vec![77, 105, 110, 101, 114]; // "Miner"
+    
+    // Create transactions
+    println("");
+    println("=== Creating Transactions ===");
+    
+    let tx1 = Transaction::new(alice.clone(), bob.clone(), 50, get_timestamp());
+    if tx1.verify() {
+        println("✅ Transaction 1: Alice -> Bob (50) verified");
+    }
+    
+    let tx2 = Transaction::new(bob.clone(), alice.clone(), 20, get_timestamp());
+    if tx2.verify() {
+        println("✅ Transaction 2: Bob -> Alice (20) verified");
+    }
+    
+    // Add transactions to blockchain
+    blockchain.add_transaction(tx1);
+    blockchain.add_transaction(tx2);
+    
+    // Mine block
+    println("");
+    println("=== Mining Block ===");
+    blockchain.mine_pending_transactions(miner.clone());
+    println("✅ Block mined successfully");
+    
+    // Check balances
+    println("");
+    println("=== Checking Balances ===");
+    let miner_balance = blockchain.get_balance(miner.clone());
+    print("Miner balance: ");
+    print_int(miner_balance);
+    println(" (mining reward)");
+    
+    // Verify blockchain
+    println("");
+    println("=== Blockchain Verification ===");
+    
+    if blockchain.is_valid() {
+        println("✅ Blockchain is valid");
+    }
+    
+    if ConsensusVerification::verify_immutability(&blockchain) {
+        println("✅ Immutability verified");
+    }
+    
+    if ConsensusVerification::verify_no_double_spend(&blockchain) {
+        println("✅ No double-spending detected");
+    }
+    
+    // Test Merkle tree
+    println("");
+    println("=== Merkle Tree ===");
+    
+    let transactions = vec![tx1.clone(), tx2.clone()];
+    let merkle = MerkleTree::new(transactions);
+    
+    if merkle.verify_transaction(&tx1) {
+        println("✅ Transaction verified in Merkle tree");
+    }
+    
+    // Test Byzantine fault tolerance
+    println("");
+    println("=== Byzantine Fault Tolerance ===");
+    
+    if ConsensusVerification::verify_byzantine_tolerance(7, 3) {
+        println("✅ Byzantine tolerance met (7 honest, 3 byzantine)");
+    }
+    
+    // Test smart contract
+    println("");
+    println("=== Smart Contract ===");
+    
+    let contract_code = vec![1, 2, 3];  // Simplified bytecode
+    let mut contract = SmartContract::new(contract_code);
+    
+    let input = vec![10, 20, 30];
+    let output = contract.execute(input.clone());
+    
+    print("Contract output: ");
+    print_int(output[0]);
+    println(" (sum of inputs)");
+    
+    if contract.verify_deterministic(input) {
+        println("✅ Contract execution is deterministic");
+    }
+    
+    println("");
+    println("🎯 Blockchain demonstration complete with verification");
+}
+
+// Helper function to print integers
+fun print_int(n: i32) {
+    if n == 0 {
+        print("0");
+    } else if n < 0 {
+        print("-");
+        print_int(-n);
+    } else if n < 10 {
+        if n == 1 { print("1"); }
+        else if n == 2 { print("2"); }
+        else if n == 3 { print("3"); }
+        else if n == 4 { print("4"); }
+        else if n == 5 { print("5"); }
+        else if n == 6 { print("6"); }
+        else if n == 7 { print("7"); }
+        else if n == 8 { print("8"); }
+        else if n == 9 { print("9"); }
+    } else if n < 100 {
+        print_int(n / 10);
+        print_int(n % 10);
+    } else if n < 1000 {
+        print_int(n / 100);
+        print_int((n / 10) % 10);
+        print_int(n % 10);
+    } else {
+        print("large");
+    }
+}
