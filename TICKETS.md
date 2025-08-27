@@ -1,7 +1,7 @@
 # Rosetta Ruchy Sprint Tickets
 
 **Sprint Management System**: Toyota Way with Kaizen principles  
-**Current Sprint**: Sprint 42  
+**Current Sprint**: Sprint 43  
 **Status**: Active Development
 
 ## Active Tickets
@@ -636,5 +636,36 @@ Implement blockchain and cryptographic primitives in pure Ruchy with formal veri
 - `examples/blockchain/smart_contracts.ruchy` - Contract execution
 - `examples/blockchain/test_blockchain.ruchy` - Comprehensive tests
 - `docs/BLOCKCHAIN_GUIDE.md` - Blockchain in Ruchy
+
+---
+
+### TICKET-043: Sprint 43 - Compiler Construction
+**Status**: 🚧 In Progress  
+**Priority**: P0 - CRITICAL PATH  
+**Duration**: 1 day (2025-08-27)  
+**Prerequisites**: TICKET-042
+
+#### Description
+Implement a simple compiler in pure Ruchy with formal verification of compiler correctness. Create lexical analyzer, parser with AST generation, type checker, and code generator. Demonstrates Ruchy for meta-programming and compiler construction with correctness proofs.
+
+#### Acceptance Criteria
+- [ ] Implement lexical analysis (tokenizer)
+- [ ] Create recursive descent parser
+- [ ] Build abstract syntax tree (AST)
+- [ ] Implement type checking with inference
+- [ ] Create code generation backend
+- [ ] Verify parsing correctness
+- [ ] Prove type soundness
+- [ ] Demonstrate simple language compilation
+- [ ] Generate intermediate representation
+- [ ] Achieve formal verification of compiler phases
+
+#### Deliverables
+- `examples/compiler/compiler.ruchy` - Complete compiler implementation
+- `examples/compiler/lexer.ruchy` - Lexical analyzer
+- `examples/compiler/parser.ruchy` - Parser and AST builder
+- `examples/compiler/type_checker.ruchy` - Type system
+- `examples/compiler/codegen.ruchy` - Code generation
+- `docs/COMPILER_GUIDE.md` - Compiler construction in Ruchy
 
 ---
