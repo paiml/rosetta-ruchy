@@ -1,0 +1,4 @@
+=== Quality Score ===
+File: implementations/ruchy/computer_vision_pipeline.ruchy
+Score: 0.85/1.0
+Analysis Depth: standard
