@@ -1,0 +1,706 @@
+// computer_vision_pipeline.ruchy - Computer vision with mathematical correctness guarantees
+// Implements convolution operations, edge detection, image filtering, and feature extraction
+// Version: Ruchy v1.10.0 compatible
+
+use std::vec::Vec;
+
+// 2D convolution operation with mathematical correctness
+fun convolution_2d(image: Vec<Vec<i32>>, kernel: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+    let image_height = image.len();
+    let image_width = if image_height > 0 { image[0].len() } else { 0 };
+    let kernel_height = kernel.len();
+    let kernel_width = if kernel_height > 0 { kernel[0].len() } else { 0 };
+    
+    if image_height == 0 || image_width == 0 || kernel_height == 0 || kernel_width == 0 {
+        return Vec::new();
+    }
+    
+    // Output dimensions (valid convolution - no padding)
+    let output_height = image_height - kernel_height + 1;
+    let output_width = image_width - kernel_width + 1;
+    
+    if output_height <= 0 || output_width <= 0 {
+        return Vec::new();
+    }
+    
+    var result = Vec::new();
+    
+    var i = 0;
+    while i < output_height {
+        var row = Vec::new();
+        
+        var j = 0;
+        while j < output_width {
+            var sum = 0;
+            
+            // Apply kernel
+            var ki = 0;
+            while ki < kernel_height {
+                var kj = 0;
+                while kj < kernel_width {
+                    sum = sum + (image[i + ki][j + kj] * kernel[ki][kj]);
+                    kj = kj + 1;
+                }
+                ki = ki + 1;
+            }
+            
+            // Clamp to valid pixel range
+            if sum < 0 {
+                sum = 0;
+            }
+            if sum > 255 {
+                sum = 255;
+            }
+            
+            row.push(sum);
+            j = j + 1;
+        }
+        
+        result.push(row);
+        i = i + 1;
+    }
+    
+    result
+}
+
+// Sobel edge detection with gradient magnitude calculation
+fun sobel_edge_detection(image: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+    // Sobel X kernel
+    let sobel_x = vec![
+        vec![-1, 0, 1],
+        vec![-2, 0, 2],
+        vec![-1, 0, 1]
+    ];
+    
+    // Sobel Y kernel
+    let sobel_y = vec![
+        vec![-1, -2, -1],
+        vec![0, 0, 0],
+        vec![1, 2, 1]
+    ];
+    
+    let grad_x = convolution_2d(image.clone(), sobel_x);
+    let grad_y = convolution_2d(image, sobel_y);
+    
+    // Calculate magnitude: |G| = sqrt(Gx² + Gy²)
+    let height = grad_x.len();
+    let width = if height > 0 { grad_x[0].len() } else { 0 };
+    
+    var magnitude = Vec::new();
+    
+    var i = 0;
+    while i < height {
+        var row = Vec::new();
+        
+        var j = 0;
+        while j < width {
+            let gx = grad_x[i][j];
+            let gy = grad_y[i][j];
+            let mag = integer_sqrt((gx * gx) + (gy * gy));
+            
+            // Clamp to valid range
+            let clamped_mag = if mag > 255 { 255 } else { mag };
+            row.push(clamped_mag);
+            j = j + 1;
+        }
+        
+        magnitude.push(row);
+        i = i + 1;
+    }
+    
+    magnitude
+}
+
+// Prewitt edge detection
+fun prewitt_edge_detection(image: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+    // Prewitt X kernel
+    let prewitt_x = vec![
+        vec![-1, 0, 1],
+        vec![-1, 0, 1],
+        vec![-1, 0, 1]
+    ];
+    
+    // Prewitt Y kernel
+    let prewitt_y = vec![
+        vec![-1, -1, -1],
+        vec![0, 0, 0],
+        vec![1, 1, 1]
+    ];
+    
+    let grad_x = convolution_2d(image.clone(), prewitt_x);
+    let grad_y = convolution_2d(image, prewitt_y);
+    
+    // Calculate magnitude
+    let height = grad_x.len();
+    let width = if height > 0 { grad_x[0].len() } else { 0 };
+    
+    var magnitude = Vec::new();
+    
+    var i = 0;
+    while i < height {
+        var row = Vec::new();
+        
+        var j = 0;
+        while j < width {
+            let gx = grad_x[i][j];
+            let gy = grad_y[i][j];
+            let mag = integer_sqrt((gx * gx) + (gy * gy));
+            
+            let clamped_mag = if mag > 255 { 255 } else { mag };
+            row.push(clamped_mag);
+            j = j + 1;
+        }
+        
+        magnitude.push(row);
+        i = i + 1;
+    }
+    
+    magnitude
+}
+
+// Integer square root using binary search
+fun integer_sqrt(value: i32) -> i32 {
+    if value <= 0 {
+        return 0;
+    }
+    if value == 1 {
+        return 1;
+    }
+    
+    var left = 1;
+    var right = value / 2 + 1;
+    var result = 1;
+    
+    while left <= right {
+        let mid = (left + right) / 2;
+        let square = mid * mid;
+        
+        if square == value {
+            return mid;
+        } else if square < value {
+            result = mid;
+            left = mid + 1;
+        } else {
+            right = mid - 1;
+        }
+    }
+    
+    result
+}
+
+// Gaussian blur with approximated Gaussian kernel
+fun gaussian_blur(image: Vec<Vec<i32>>, sigma: i32) -> Vec<Vec<i32>> {
+    // Simplified Gaussian kernel approximation
+    // For sigma=1, use a normalized 3x3 kernel
+    let kernel = if sigma == 1 {
+        vec![
+            vec![1, 2, 1],
+            vec![2, 4, 2],
+            vec![1, 2, 1]
+        ]
+    } else {
+        // For other sigma values, use a simple averaging kernel
+        vec![
+            vec![1, 1, 1],
+            vec![1, 1, 1],
+            vec![1, 1, 1]
+        ]
+    };
+    
+    let convolved = convolution_2d(image, kernel);
+    
+    // Normalize by kernel sum
+    let kernel_sum = if sigma == 1 { 16 } else { 9 };
+    
+    let height = convolved.len();
+    let width = if height > 0 { convolved[0].len() } else { 0 };
+    
+    var normalized = Vec::new();
+    
+    var i = 0;
+    while i < height {
+        var row = Vec::new();
+        
+        var j = 0;
+        while j < width {
+            let normalized_value = convolved[i][j] / kernel_sum;
+            row.push(normalized_value);
+            j = j + 1;
+        }
+        
+        normalized.push(row);
+        i = i + 1;
+    }
+    
+    normalized
+}
+
+// Image sharpening using unsharp masking
+fun sharpen_image(image: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+    // Sharpening kernel
+    let sharpen_kernel = vec![
+        vec![0, -1, 0],
+        vec![-1, 5, -1],
+        vec![0, -1, 0]
+    ];
+    
+    convolution_2d(image, sharpen_kernel)
+}
+
+// Calculate image histogram
+fun calculate_histogram(image: Vec<Vec<i32>>, bins: i32) -> Vec<i32> {
+    var histogram = Vec::new();
+    
+    // Initialize histogram bins
+    var i = 0;
+    while i < bins {
+        histogram.push(0);
+        i = i + 1;
+    }
+    
+    // Count pixel intensities
+    let height = image.len();
+    let width = if height > 0 { image[0].len() } else { 0 };
+    
+    i = 0;
+    while i < height {
+        var j = 0;
+        while j < width {
+            let pixel_value = image[i][j];
+            
+            // Ensure pixel value is within histogram range
+            if pixel_value >= 0 && pixel_value < bins {
+                histogram[pixel_value] = histogram[pixel_value] + 1;
+            }
+            
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    
+    histogram
+}
+
+// Binary thresholding
+fun threshold_image(image: Vec<Vec<i32>>, threshold: i32) -> Vec<Vec<i32>> {
+    let height = image.len();
+    let width = if height > 0 { image[0].len() } else { 0 };
+    
+    var binary_image = Vec::new();
+    
+    var i = 0;
+    while i < height {
+        var row = Vec::new();
+        
+        var j = 0;
+        while j < width {
+            let binary_value = if image[i][j] >= threshold { 255 } else { 0 };
+            row.push(binary_value);
+            j = j + 1;
+        }
+        
+        binary_image.push(row);
+        i = i + 1;
+    }
+    
+    binary_image
+}
+
+// Morphological erosion
+fun morphological_erosion(image: Vec<Vec<i32>>, kernel: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+    let image_height = image.len();
+    let image_width = if image_height > 0 { image[0].len() } else { 0 };
+    let kernel_height = kernel.len();
+    let kernel_width = if kernel_height > 0 { kernel[0].len() } else { 0 };
+    
+    if image_height == 0 || image_width == 0 || kernel_height == 0 || kernel_width == 0 {
+        return Vec::new();
+    }
+    
+    let output_height = image_height - kernel_height + 1;
+    let output_width = image_width - kernel_width + 1;
+    
+    var result = Vec::new();
+    
+    var i = 0;
+    while i < output_height {
+        var row = Vec::new();
+        
+        var j = 0;
+        while j < output_width {
+            var min_val = 255;
+            
+            // Find minimum value under kernel
+            var ki = 0;
+            while ki < kernel_height {
+                var kj = 0;
+                while kj < kernel_width {
+                    if kernel[ki][kj] == 1 {
+                        let pixel_val = image[i + ki][j + kj];
+                        if pixel_val < min_val {
+                            min_val = pixel_val;
+                        }
+                    }
+                    kj = kj + 1;
+                }
+                ki = ki + 1;
+            }
+            
+            row.push(min_val);
+            j = j + 1;
+        }
+        
+        result.push(row);
+        i = i + 1;
+    }
+    
+    result
+}
+
+// Morphological dilation
+fun morphological_dilation(image: Vec<Vec<i32>>, kernel: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+    let image_height = image.len();
+    let image_width = if image_height > 0 { image[0].len() } else { 0 };
+    let kernel_height = kernel.len();
+    let kernel_width = if kernel_height > 0 { kernel[0].len() } else { 0 };
+    
+    if image_height == 0 || image_width == 0 || kernel_height == 0 || kernel_width == 0 {
+        return Vec::new();
+    }
+    
+    let output_height = image_height - kernel_height + 1;
+    let output_width = image_width - kernel_width + 1;
+    
+    var result = Vec::new();
+    
+    var i = 0;
+    while i < output_height {
+        var row = Vec::new();
+        
+        var j = 0;
+        while j < output_width {
+            var max_val = 0;
+            
+            // Find maximum value under kernel
+            var ki = 0;
+            while ki < kernel_height {
+                var kj = 0;
+                while kj < kernel_width {
+                    if kernel[ki][kj] == 1 {
+                        let pixel_val = image[i + ki][j + kj];
+                        if pixel_val > max_val {
+                            max_val = pixel_val;
+                        }
+                    }
+                    kj = kj + 1;
+                }
+                ki = ki + 1;
+            }
+            
+            row.push(max_val);
+            j = j + 1;
+        }
+        
+        result.push(row);
+        i = i + 1;
+    }
+    
+    result
+}
+
+// Template matching using normalized cross-correlation
+fun template_matching(image: Vec<Vec<i32>>, template: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+    let image_height = image.len();
+    let image_width = if image_height > 0 { image[0].len() } else { 0 };
+    let template_height = template.len();
+    let template_width = if template_height > 0 { template[0].len() } else { 0 };
+    
+    if image_height == 0 || template_height == 0 {
+        return Vec::new();
+    }
+    
+    let output_height = image_height - template_height + 1;
+    let output_width = image_width - template_width + 1;
+    
+    var result = Vec::new();
+    
+    var i = 0;
+    while i < output_height {
+        var row = Vec::new();
+        
+        var j = 0;
+        while j < output_width {
+            var correlation = 0;
+            
+            // Calculate normalized cross-correlation
+            var ti = 0;
+            while ti < template_height {
+                var tj = 0;
+                while tj < template_width {
+                    correlation = correlation + (image[i + ti][j + tj] * template[ti][tj]);
+                    tj = tj + 1;
+                }
+                ti = ti + 1;
+            }
+            
+            // Normalize correlation (simplified)
+            let template_size = template_height * template_width;
+            let normalized_correlation = correlation / template_size;
+            
+            // Convert to 0-255 range
+            let correlation_score = if normalized_correlation > 255 { 255 } else { normalized_correlation };
+            row.push(correlation_score);
+            j = j + 1;
+        }
+        
+        result.push(row);
+        i = i + 1;
+    }
+    
+    result
+}
+
+// Corner detection using Harris corner response
+fun detect_corners(image: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+    // Calculate gradients
+    let gradients = calculate_gradients(image);
+    let grad_x = gradients[0].clone();
+    let grad_y = gradients[1].clone();
+    
+    let height = grad_x.len();
+    let width = if height > 0 { grad_x[0].len() } else { 0 };
+    
+    var corner_response = Vec::new();
+    
+    var i = 0;
+    while i < height {
+        var row = Vec::new();
+        
+        var j = 0;
+        while j < width {
+            let gx = grad_x[i][j];
+            let gy = grad_y[i][j];
+            
+            // Simplified Harris corner response: R = det(M) - k * trace(M)²
+            // Where M is the structure tensor [gx², gx*gy; gx*gy, gy²]
+            let gx2 = gx * gx;
+            let gy2 = gy * gy;
+            let gxgy = gx * gy;
+            
+            let det = gx2 * gy2 - gxgy * gxgy;
+            let trace = gx2 + gy2;
+            let k = 4; // Harris parameter (typically 0.04, scaled by 100)
+            
+            let response = det - (k * trace * trace) / 100;
+            
+            // Convert to positive range for visualization
+            let positive_response = if response > 0 { response / 1000 } else { 0 };
+            let clamped_response = if positive_response > 255 { 255 } else { positive_response };
+            
+            row.push(clamped_response);
+            j = j + 1;
+        }
+        
+        corner_response.push(row);
+        i = i + 1;
+    }
+    
+    corner_response
+}
+
+// Calculate image gradients using simple finite differences
+fun calculate_gradients(image: Vec<Vec<i32>>) -> Vec<Vec<Vec<i32>>> {
+    let height = image.len();
+    let width = if height > 0 { image[0].len() } else { 0 };
+    
+    var grad_x = Vec::new();
+    var grad_y = Vec::new();
+    
+    var i = 0;
+    while i < height {
+        var gx_row = Vec::new();
+        var gy_row = Vec::new();
+        
+        var j = 0;
+        while j < width {
+            // X gradient (horizontal difference)
+            let gx = if j < width - 1 {
+                image[i][j + 1] - image[i][j]
+            } else if j > 0 {
+                image[i][j] - image[i][j - 1]
+            } else {
+                0
+            };
+            
+            // Y gradient (vertical difference)
+            let gy = if i < height - 1 {
+                image[i + 1][j] - image[i][j]
+            } else if i > 0 {
+                image[i][j] - image[i - 1][j]
+            } else {
+                0
+            };
+            
+            gx_row.push(gx);
+            gy_row.push(gy);
+            j = j + 1;
+        }
+        
+        grad_x.push(gx_row);
+        grad_y.push(gy_row);
+        i = i + 1;
+    }
+    
+    vec![grad_x, grad_y]
+}
+
+// Image normalization (min-max scaling to 0-255)
+fun normalize_image(image: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+    let height = image.len();
+    let width = if height > 0 { image[0].len() } else { 0 };
+    
+    if height == 0 || width == 0 {
+        return Vec::new();
+    }
+    
+    // Find min and max values
+    var min_val = image[0][0];
+    var max_val = image[0][0];
+    
+    var i = 0;
+    while i < height {
+        var j = 0;
+        while j < width {
+            if image[i][j] < min_val {
+                min_val = image[i][j];
+            }
+            if image[i][j] > max_val {
+                max_val = image[i][j];
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    
+    let range = max_val - min_val;
+    
+    var normalized = Vec::new();
+    
+    i = 0;
+    while i < height {
+        var row = Vec::new();
+        
+        var j = 0;
+        while j < width {
+            let normalized_value = if range > 0 {
+                ((image[i][j] - min_val) * 255) / range
+            } else {
+                128 // Default to middle gray if no range
+            };
+            
+            row.push(normalized_value);
+            j = j + 1;
+        }
+        
+        normalized.push(row);
+        i = i + 1;
+    }
+    
+    normalized
+}
+
+// Simple contour detection using edge following
+fun detect_contours(binary_image: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+    let height = binary_image.len();
+    let width = if height > 0 { binary_image[0].len() } else { 0 };
+    
+    var contour_points = Vec::new();
+    
+    // Find contour points by detecting edge pixels
+    var i = 1;
+    while i < height - 1 {
+        var j = 1;
+        while j < width - 1 {
+            if binary_image[i][j] == 255 {
+                // Check if it's a boundary pixel (has at least one background neighbor)
+                var is_boundary = false;
+                
+                var di = -1;
+                while di <= 1 && !is_boundary {
+                    var dj = -1;
+                    while dj <= 1 && !is_boundary {
+                        if binary_image[i + di][j + dj] == 0 {
+                            is_boundary = true;
+                        }
+                        dj = dj + 1;
+                    }
+                    di = di + 1;
+                }
+                
+                if is_boundary {
+                    contour_points.push(vec![i, j]);
+                }
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    
+    contour_points
+}
+
+// Complete computer vision pipeline
+fun cv_pipeline_full(image: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+    // Step 1: Gaussian blur for noise reduction
+    let blurred = gaussian_blur(image, 1);
+    
+    // Step 2: Edge detection
+    let edges = sobel_edge_detection(blurred);
+    
+    // Step 3: Thresholding to create binary image
+    let binary = threshold_image(edges, 50);
+    
+    // Step 4: Morphological operations to clean up
+    let kernel = vec![
+        vec![1, 1, 1],
+        vec![1, 1, 1],
+        vec![1, 1, 1]
+    ];
+    
+    let cleaned = morphological_erosion(binary, kernel);
+    
+    // Return final processed image
+    cleaned
+}
+
+// Main function for testing (optional)
+fun main() {
+    println!("Computer Vision Pipeline Library");
+    println!("================================");
+    
+    // Example usage
+    let sample_image = vec![
+        vec![10, 20, 30],
+        vec![40, 50, 60],
+        vec![70, 80, 90]
+    ];
+    
+    let kernel = vec![
+        vec![0, -1, 0],
+        vec![-1, 5, -1],
+        vec![0, -1, 0]
+    ];
+    
+    let result = convolution_2d(sample_image, kernel);
+    
+    println!("Sample convolution result:");
+    var i = 0;
+    while i < result.len() {
+        var j = 0;
+        while j < result[i].len() {
+            println!("Result[{}][{}]: {}", i, j, result[i][j]);
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+}
