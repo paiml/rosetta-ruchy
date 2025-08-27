@@ -1,0 +1,7 @@
+error: unexpected argument '--min' found
+
+  tip: to pass '--min' as a value, use '-- --min'
+
+Usage: ruchy test --coverage <PATH>
+
+For more information, try '--help'.
