@@ -1,0 +1,125 @@
+// Benchmark harness for deep learning algorithms
+// Sprint 37: Testing ruchy bench capabilities
+
+use std::vec::Vec;
+
+// Benchmark configuration
+fun ITERATIONS() -> i32 { 1000 }
+fun WARMUP() -> i32 { 100 }
+
+// Simple benchmark: Perceptron forward pass
+fun bench_perceptron() {
+    let inputs = vec![100, 200, 300];
+    let weights = vec![10, 20, 30];
+    let bias = 50;
+    
+    var i = 0;
+    while i < ITERATIONS() {
+        let result = perceptron_compute(inputs, weights, bias);
+        i = i + 1;
+    }
+}
+
+// Helper function for perceptron
+fun perceptron_compute(inputs: Vec<i32>, weights: Vec<i32>, bias: i32) -> i32 {
+    var sum = bias;
+    var i = 0;
+    while i < inputs.len() {
+        sum = sum + inputs[i] * weights[i];
+        i = i + 1;
+    }
+    return sum;
+}
+
+// Benchmark: Matrix multiplication
+fun bench_matrix_multiply() {
+    let mat_a = vec![vec![1, 2], vec![3, 4]];
+    let mat_b = vec![vec![5, 6], vec![7, 8]];
+    
+    var i = 0;
+    while i < ITERATIONS() {
+        let result = matrix_multiply(mat_a, mat_b);
+        i = i + 1;
+    }
+}
+
+// Simple matrix multiplication
+fun matrix_multiply(a: Vec<Vec<i32>>, b: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+    var result = Vec::new();
+    var i = 0;
+    
+    while i < a.len() {
+        var row = Vec::new();
+        var j = 0;
+        
+        while j < b[0].len() {
+            var sum = 0;
+            var k = 0;
+            
+            while k < a[0].len() {
+                sum = sum + a[i][k] * b[k][j];
+                k = k + 1;
+            }
+            
+            row.push(sum);
+            j = j + 1;
+        }
+        
+        result.push(row);
+        i = i + 1;
+    }
+    
+    return result;
+}
+
+// Benchmark: Activation functions
+fun bench_activation_functions() {
+    var i = 0;
+    while i < ITERATIONS() {
+        let sig = sigmoid_approx(i);
+        let relu = relu_activation(i - 500);
+        let tanh_val = tanh_approx(i);
+        i = i + 1;
+    }
+}
+
+fun sigmoid_approx(x: i32) -> i32 {
+    if x > 100 { return 999; }
+    if x < -100 { return 1; }
+    return 500 + x * 4;
+}
+
+fun relu_activation(x: i32) -> i32 {
+    if x > 0 { x } else { 0 }
+}
+
+fun tanh_approx(x: i32) -> i32 {
+    if x > 100 { return 1000; }
+    if x < -100 { return -1000; }
+    return x * 10;
+}
+
+// Main benchmark runner
+fun main() {
+    println("=== Deep Learning Benchmarks ===");
+    println("");
+    
+    println("Warming up...");
+    var w = 0;
+    while w < WARMUP() {
+        bench_perceptron();
+        w = w + 1;
+    }
+    
+    println("Benchmark 1: Perceptron Forward Pass");
+    bench_perceptron();
+    
+    println("Benchmark 2: Matrix Multiplication");
+    bench_matrix_multiply();
+    
+    println("Benchmark 3: Activation Functions");
+    bench_activation_functions();
+    
+    println("");
+    println("Benchmarks complete!");
+}
