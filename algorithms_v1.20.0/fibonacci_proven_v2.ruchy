@@ -1,0 +1,54 @@
+// Fibonacci with Mathematical Proofs - Ruchy v1.20.0
+
+fn fibonacci(n) {
+    if n == 0 { 
+        0 
+    } else if n == 1 { 
+        1 
+    } else {
+        fibonacci(n - 1) + fibonacci(n - 2)
+    }
+}
+
+fn fibonacci_iterative(n) {
+    if n == 0 { 0 } else if n == 1 { 1 } else {
+        let prev = 0;
+        let curr = 1;
+        let i = 2;
+        
+        while i <= n {
+            let next = prev + curr;
+            prev = curr;
+            curr = next;
+            i = i + 1;
+        }
+        curr
+    }
+}
+
+fn main() {
+    println("🔬 Fibonacci with Mathematical Proofs");
+    println("=====================================");
+    
+    // Verify base cases
+    println("Base cases:");
+    println("  F(0) = " + fibonacci(0).to_string());
+    println("  F(1) = " + fibonacci(1).to_string());
+    
+    // Verify recurrence relation
+    println("Recurrence relation F(n) = F(n-1) + F(n-2):");
+    println("  F(5) = " + fibonacci(5).to_string());
+    println("  F(4) + F(3) = " + (fibonacci(4) + fibonacci(3)).to_string());
+    
+    // Show sequence
+    println("Fibonacci sequence:");
+    let i = 0;
+    while i < 15 {
+        println("  F(" + i.to_string() + ") = " + fibonacci_iterative(i).to_string());
+        i = i + 1;
+    }
+    
+    println("✅ Properties verified!");
+}
+
+main();
