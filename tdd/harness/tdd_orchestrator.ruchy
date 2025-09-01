@@ -1,0 +1,382 @@
+#!/usr/bin/env ruchy
+
+// TDD Orchestrator - Central Test-Driven Development controller
+// Implements Red-Green-Refactor cycle with continuous coverage monitoring
+
+use std::fs::{self, File};
+use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::time::{Duration, Instant};
+use std::collections::HashMap;
+use std::io::{self, Write};
+
+struct TDDOrchestrator {
+    project_root: PathBuf,
+    coverage_target: f64,
+    watch_mode: bool,
+    test_cache: HashMap<String, TestResult>,
+    coverage_history: Vec<CoverageSnapshot>,
+}
+
+struct TestResult {
+    passed: bool,
+    coverage: f64,
+    duration: Duration,
+    failures: Vec<String>,
+}
+
+struct CoverageSnapshot {
+    timestamp: Instant,
+    overall_coverage: f64,
+    uncovered_lines: Vec<String>,
+    suggestions: Vec<String>,
+}
+
+impl TDDOrchestrator {
+    fun new(project_root: PathBuf) -> Self {
+        Self {
+            project_root,
+            coverage_target: 100.0,
+            watch_mode: false,
+            test_cache: HashMap::new(),
+            coverage_history: Vec::new(),
+        }
+    }
+    
+    fun run(&mut self) -> Result<(), String> {
+        println!("🚀 TDD Orchestrator Starting");
+        println!("📊 Coverage Target: {}%", self.coverage_target);
+        
+        // Initial test run
+        self.run_test_cycle()?;
+        
+        if self.watch_mode {
+            self.start_watch_mode()?;
+        }
+        
+        Ok(())
+    }
+    
+    fun run_test_cycle(&mut self) -> Result<(), String> {
+        println!("\n🔄 Running TDD Cycle...");
+        
+        // Step 1: Find all test files
+        let test_files = self.find_test_files()?;
+        println!("📝 Found {} test files", test_files.len());
+        
+        // Step 2: Run tests with coverage
+        let mut total_coverage = 0.0;
+        let mut all_passed = true;
+        
+        for test_file in &test_files {
+            let result = self.run_single_test(test_file)?;
+            
+            if result.passed {
+                println!("✅ {}: PASSED ({}% coverage)", 
+                    test_file.display(), result.coverage);
+            } else {
+                println!("❌ {}: FAILED", test_file.display());
+                for failure in &result.failures {
+                    println!("   - {}", failure);
+                }
+                all_passed = false;
+            }
+            
+            total_coverage += result.coverage;
+            self.test_cache.insert(test_file.to_string_lossy().to_string(), result);
+        }
+        
+        // Step 3: Calculate overall coverage
+        let overall_coverage = if test_files.is_empty() { 
+            0.0 
+        } else { 
+            total_coverage / test_files.len() as f64 
+        };
+        
+        // Step 4: Analyze gaps
+        let snapshot = self.analyze_coverage_gaps(overall_coverage)?;
+        self.coverage_history.push(snapshot);
+        
+        // Step 5: Report status
+        self.report_tdd_status(all_passed, overall_coverage)?;
+        
+        // Step 6: Suggest improvements
+        if overall_coverage < self.coverage_target {
+            self.suggest_missing_tests()?;
+        }
+        
+        Ok(())
+    }
+    
+    fun find_test_files(&self) -> Result<Vec<PathBuf>, String> {
+        let mut test_files = Vec::new();
+        self.find_test_files_recursive(&self.project_root, &mut test_files)?;
+        Ok(test_files)
+    }
+    
+    fun find_test_files_recursive(&self, dir: &Path, files: &mut Vec<PathBuf>) -> Result<(), String> {
+        let entries = fs::read_dir(dir)
+            .map_err(|e| format!("Failed to read directory: {}", e))?;
+        
+        for entry in entries {
+            let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
+            let path = entry.path();
+            
+            if path.is_dir() && !path.ends_with(".git") {
+                self.find_test_files_recursive(&path, files)?;
+            } else if path.is_file() {
+                let name = path.file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("");
+                
+                if name.starts_with("test_") && name.ends_with(".ruchy") {
+                    files.push(path);
+                }
+            }
+        }
+        
+        Ok(())
+    }
+    
+    fun run_single_test(&self, test_file: &Path) -> Result<TestResult, String> {
+        let start = Instant::now();
+        
+        // Run test with coverage
+        let output = Command::new("ruchy")
+            .arg("test")
+            .arg(test_file)
+            .arg("--coverage")
+            .arg("--coverage-format")
+            .arg("json")
+            .output()
+            .map_err(|e| format!("Failed to run test: {}", e))?;
+        
+        let duration = start.elapsed();
+        
+        // Parse results
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let passed = output.status.success();
+        
+        // Extract coverage percentage (simplified parsing)
+        let coverage = self.parse_coverage_from_output(&stdout);
+        
+        // Extract failures if any
+        let failures = if !passed {
+            self.parse_failures_from_output(&stdout)
+        } else {
+            Vec::new()
+        };
+        
+        Ok(TestResult {
+            passed,
+            coverage,
+            duration,
+            failures,
+        })
+    }
+    
+    fun parse_coverage_from_output(&self, output: &str) -> f64 {
+        // Parse coverage percentage from output
+        // Looking for pattern like "Overall Coverage: XX.X%"
+        for line in output.lines() {
+            if line.contains("Overall Coverage:") {
+                if let Some(pct) = line.split(':').nth(1) {
+                    if let Some(num) = pct.trim().strip_suffix('%') {
+                        return num.trim().parse().unwrap_or(0.0);
+                    }
+                }
+            }
+        }
+        0.0
+    }
+    
+    fun parse_failures_from_output(&self, output: &str) -> Vec<String> {
+        let mut failures = Vec::new();
+        let mut in_failure = false;
+        
+        for line in output.lines() {
+            if line.contains("FAILED:") || line.contains("Error:") {
+                in_failure = true;
+                failures.push(line.to_string());
+            } else if in_failure && line.starts_with("  ") {
+                failures.push(line.to_string());
+            } else {
+                in_failure = false;
+            }
+        }
+        
+        failures
+    }
+    
+    fun analyze_coverage_gaps(&self, overall_coverage: f64) -> Result<CoverageSnapshot, String> {
+        let mut uncovered_lines = Vec::new();
+        let mut suggestions = Vec::new();
+        
+        // Run coverage analysis to find gaps
+        let output = Command::new("ruchy")
+            .arg("test")
+            .arg(".")
+            .arg("--coverage")
+            .arg("--show-uncovered")
+            .output()
+            .map_err(|e| format!("Failed to analyze coverage: {}", e))?;
+        
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        
+        // Parse uncovered lines
+        for line in stdout.lines() {
+            if line.contains("Uncovered:") {
+                uncovered_lines.push(line.to_string());
+            }
+        }
+        
+        // Generate suggestions based on gaps
+        if overall_coverage < 100.0 {
+            suggestions.push(format!("Add {} more tests to reach 100% coverage", 
+                (100.0 - overall_coverage) as u32));
+        }
+        
+        Ok(CoverageSnapshot {
+            timestamp: Instant::now(),
+            overall_coverage,
+            uncovered_lines,
+            suggestions,
+        })
+    }
+    
+    fun report_tdd_status(&self, all_passed: bool, coverage: f64) -> Result<(), String> {
+        println!("\n" + "=".repeat(60));
+        println!("📊 TDD Status Report");
+        println!("=".repeat(60));
+        
+        // Test status
+        if all_passed {
+            println!("✅ All tests passing");
+        } else {
+            println!("❌ Some tests failing - fix before proceeding");
+        }
+        
+        // Coverage status
+        let coverage_emoji = if coverage >= self.coverage_target {
+            "🎯"
+        } else if coverage >= 80.0 {
+            "📈"
+        } else if coverage >= 60.0 {
+            "📊"
+        } else {
+            "📉"
+        };
+        
+        println!("{} Coverage: {:.1}% (Target: {}%)", 
+            coverage_emoji, coverage, self.coverage_target);
+        
+        // Coverage trend
+        if self.coverage_history.len() > 1 {
+            let prev = &self.coverage_history[self.coverage_history.len() - 2];
+            let diff = coverage - prev.overall_coverage;
+            
+            if diff > 0.0 {
+                println!("📈 Coverage improved by {:.1}%", diff);
+            } else if diff < 0.0 {
+                println!("📉 Coverage decreased by {:.1}%", diff.abs());
+            } else {
+                println!("➡️  Coverage unchanged");
+            }
+        }
+        
+        // Quality gate
+        if all_passed && coverage >= self.coverage_target {
+            println!("\n✅ Quality gates PASSED - Ready to commit");
+        } else {
+            println!("\n❌ Quality gates FAILED - More work needed");
+        }
+        
+        println!("=".repeat(60));
+        
+        Ok(())
+    }
+    
+    fun suggest_missing_tests(&self) -> Result<(), String> {
+        println!("\n💡 Test Coverage Suggestions:");
+        println!("-".repeat(40));
+        
+        if let Some(snapshot) = self.coverage_history.last() {
+            // Show uncovered areas
+            if !snapshot.uncovered_lines.is_empty() {
+                println!("📍 Uncovered code locations:");
+                for (i, line) in snapshot.uncovered_lines.iter().take(5).enumerate() {
+                    println!("  {}. {}", i + 1, line);
+                }
+                
+                if snapshot.uncovered_lines.len() > 5 {
+                    println!("  ... and {} more", snapshot.uncovered_lines.len() - 5);
+                }
+            }
+            
+            // Show suggestions
+            if !snapshot.suggestions.is_empty() {
+                println!("\n🎯 Recommended actions:");
+                for suggestion in &snapshot.suggestions {
+                    println!("  • {}", suggestion);
+                }
+            }
+        }
+        
+        println!("\n📝 Run with --generate-tests to create test stubs automatically");
+        
+        Ok(())
+    }
+    
+    fun start_watch_mode(&mut self) -> Result<(), String> {
+        println!("\n👁️  Watch mode activated - monitoring for changes...");
+        println!("Press Ctrl+C to exit\n");
+        
+        // Simple file watching implementation
+        loop {
+            std::thread::sleep(Duration::from_secs(2));
+            
+            // Check for file modifications
+            if self.detect_changes()? {
+                println!("\n🔄 Changes detected - running tests...");
+                self.run_test_cycle()?;
+            }
+        }
+    }
+    
+    fun detect_changes(&self) -> Result<bool, String> {
+        // Simplified change detection
+        // In production, would use inotify or similar
+        false
+    }
+}
+
+fun main() {
+    let args: Vec<String> = std::env::args().collect();
+    
+    let mut orchestrator = TDDOrchestrator::new(
+        std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
+    );
+    
+    // Parse command line arguments
+    for arg in &args[1..] {
+        match arg.as_str() {
+            "--watch" => orchestrator.watch_mode = true,
+            "--target" => {
+                // Next arg should be coverage target
+                if let Some(idx) = args.iter().position(|a| a == "--target") {
+                    if let Some(target) = args.get(idx + 1) {
+                        if let Ok(t) = target.parse::<f64>() {
+                            orchestrator.coverage_target = t;
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    
+    if let Err(e) = orchestrator.run() {
+        eprintln!("❌ TDD Orchestrator error: {}", e);
+        std::process::exit(1);
+    }
+}

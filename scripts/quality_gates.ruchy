@@ -1,0 +1,440 @@
+#!/usr/bin/env ruchy
+
+// Quality Gates - Comprehensive quality enforcement with all Ruchy tools
+// Enforces strict quality standards using lint, score, and verification tools
+
+use std::process::Command;
+use std::path::PathBuf;
+use std::fs;
+use std::collections::HashMap;
+
+struct QualityGates {
+    project_root: PathBuf,
+    gates: Vec<QualityGate>,
+    results: HashMap<String, GateResult>,
+    blocking: bool,
+    verbose: bool,
+}
+
+struct QualityGate {
+    name: String,
+    command: String,
+    args: Vec<String>,
+    success_criteria: SuccessCriteria,
+    weight: f64,
+}
+
+enum SuccessCriteria {
+    ExitCode(i32),
+    OutputContains(String),
+    OutputNotContains(String),
+    NumericThreshold { value: f64, operator: ComparisonOp },
+    Grade(String),
+}
+
+enum ComparisonOp {
+    GreaterThan,
+    GreaterThanOrEqual,
+    LessThan,
+    LessThanOrEqual,
+    Equal,
+}
+
+struct GateResult {
+    passed: bool,
+    message: String,
+    score: f64,
+}
+
+impl QualityGates {
+    fun new() -> Self {
+        let mut gates = Self {
+            project_root: std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
+            gates: Vec::new(),
+            results: HashMap::new(),
+            blocking: true,
+            verbose: false,
+        };
+        
+        // Configure default quality gates
+        gates.configure_default_gates();
+        gates
+    }
+    
+    fun configure_default_gates(&mut self) {
+        // Gate 1: Test Coverage (100%)
+        self.gates.push(QualityGate {
+            name: "Test Coverage".to_string(),
+            command: "ruchy".to_string(),
+            args: vec![
+                "test".to_string(),
+                ".".to_string(),
+                "--coverage".to_string(),
+                "--threshold".to_string(),
+                "100".to_string(),
+            ],
+            success_criteria: SuccessCriteria::ExitCode(0),
+            weight: 0.3,
+        });
+        
+        // Gate 2: Lint (Strict Mode)
+        self.gates.push(QualityGate {
+            name: "Lint Check".to_string(),
+            command: "ruchy".to_string(),
+            args: vec![
+                "lint".to_string(),
+                "--all".to_string(),
+                "--strict".to_string(),
+            ],
+            success_criteria: SuccessCriteria::OutputNotContains("error:".to_string()),
+            weight: 0.2,
+        });
+        
+        // Gate 3: Quality Score (A+)
+        self.gates.push(QualityGate {
+            name: "Quality Score".to_string(),
+            command: "ruchy".to_string(),
+            args: vec![
+                "score".to_string(),
+                ".".to_string(),
+            ],
+            success_criteria: SuccessCriteria::Grade("A+".to_string()),
+            weight: 0.2,
+        });
+        
+        // Gate 4: Provability (95%+)
+        self.gates.push(QualityGate {
+            name: "Provability".to_string(),
+            command: "ruchy".to_string(),
+            args: vec![
+                "provability".to_string(),
+                ".".to_string(),
+            ],
+            success_criteria: SuccessCriteria::NumericThreshold {
+                value: 95.0,
+                operator: ComparisonOp::GreaterThanOrEqual,
+            },
+            weight: 0.15,
+        });
+        
+        // Gate 5: Complexity (≤10)
+        self.gates.push(QualityGate {
+            name: "Complexity".to_string(),
+            command: "ruchy".to_string(),
+            args: vec![
+                "runtime".to_string(),
+                ".".to_string(),
+                "--complexity-analysis".to_string(),
+            ],
+            success_criteria: SuccessCriteria::NumericThreshold {
+                value: 10.0,
+                operator: ComparisonOp::LessThanOrEqual,
+            },
+            weight: 0.15,
+        });
+    }
+    
+    fun run_all_gates(&mut self) -> Result<(), String> {
+        println!("🔒 Running Quality Gates");
+        println!("=" * 60);
+        
+        let total_gates = self.gates.len();
+        let mut passed_gates = 0;
+        let mut total_score = 0.0;
+        
+        for gate in &self.gates {
+            println!("\n🔍 Running: {}", gate.name);
+            println!("-" * 40);
+            
+            let result = self.run_single_gate(gate)?;
+            
+            if result.passed {
+                println!("✅ PASSED: {}", result.message);
+                passed_gates += 1;
+                total_score += gate.weight;
+            } else {
+                println!("❌ FAILED: {}", result.message);
+            }
+            
+            self.results.insert(gate.name.clone(), result);
+        }
+        
+        // Calculate overall score
+        let overall_score = (total_score * 100.0) as u32;
+        
+        // Generate report
+        self.generate_report(passed_gates, total_gates, overall_score);
+        
+        // Check if all gates passed
+        if passed_gates == total_gates {
+            println!("\n🎉 ALL QUALITY GATES PASSED!");
+            println!("Your code meets all quality standards.");
+            Ok(())
+        } else if self.blocking {
+            Err(format!("{} of {} quality gates failed", 
+                total_gates - passed_gates, total_gates))
+        } else {
+            println!("\n⚠️  Some quality gates failed (non-blocking mode)");
+            Ok(())
+        }
+    }
+    
+    fun run_single_gate(&self, gate: &QualityGate) -> Result<GateResult, String> {
+        // Execute the command
+        let output = Command::new(&gate.command)
+            .args(&gate.args)
+            .output()
+            .map_err(|e| format!("Failed to run {}: {}", gate.name, e))?;
+        
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        
+        if self.verbose {
+            println!("Output: {}", stdout);
+            if !stderr.is_empty() {
+                println!("Stderr: {}", stderr);
+            }
+        }
+        
+        // Check success criteria
+        let (passed, message) = match &gate.success_criteria {
+            SuccessCriteria::ExitCode(expected) => {
+                let actual = output.status.code().unwrap_or(-1);
+                (
+                    actual == *expected,
+                    format!("Exit code: {} (expected {})", actual, expected)
+                )
+            }
+            
+            SuccessCriteria::OutputContains(text) => {
+                let found = stdout.contains(text) || stderr.contains(text);
+                (
+                    found,
+                    format!("Output {} '{}'", 
+                        if found { "contains" } else { "does not contain" }, text)
+                )
+            }
+            
+            SuccessCriteria::OutputNotContains(text) => {
+                let found = stdout.contains(text) || stderr.contains(text);
+                (
+                    !found,
+                    format!("Output {} '{}'", 
+                        if found { "contains" } else { "does not contain" }, text)
+                )
+            }
+            
+            SuccessCriteria::NumericThreshold { value, operator } => {
+                let extracted = self.extract_numeric_value(&stdout);
+                let passed = if let Some(actual) = extracted {
+                    self.compare_values(actual, *value, operator)
+                } else {
+                    false
+                };
+                
+                (
+                    passed,
+                    format!("Value: {:?} (threshold: {} {:?})", 
+                        extracted, value, operator)
+                )
+            }
+            
+            SuccessCriteria::Grade(expected) => {
+                let actual = self.extract_grade(&stdout);
+                (
+                    actual.as_ref() == Some(expected),
+                    format!("Grade: {} (expected {})", 
+                        actual.unwrap_or("None".to_string()), expected)
+                )
+            }
+        };
+        
+        Ok(GateResult {
+            passed,
+            message,
+            score: if passed { gate.weight } else { 0.0 },
+        })
+    }
+    
+    fun extract_numeric_value(&self, output: &str) -> Option<f64> {
+        // Look for patterns like "Score: 95.5" or "95.5%"
+        for line in output.lines() {
+            // Try to find a number
+            for word in line.split_whitespace() {
+                // Remove percentage sign if present
+                let cleaned = word.trim_end_matches('%');
+                if let Ok(num) = cleaned.parse::<f64>() {
+                    return Some(num);
+                }
+            }
+        }
+        None
+    }
+    
+    fun extract_grade(&self, output: &str) -> Option<String> {
+        // Look for grade patterns like "Grade: A+" or "(A+)"
+        for line in output.lines() {
+            if line.contains("Grade:") || line.contains("Score:") {
+                // Look for grade patterns: A+, A, B+, etc.
+                for word in line.split_whitespace() {
+                    let cleaned = word.trim_matches(|c| c == '(' || c == ')');
+                    if Self::is_grade(cleaned) {
+                        return Some(cleaned.to_string());
+                    }
+                }
+            }
+        }
+        None
+    }
+    
+    fun is_grade(s: &str) -> bool {
+        matches!(s, "A+" | "A" | "A-" | "B+" | "B" | "B-" | "C+" | "C" | "C-" | "D" | "F")
+    }
+    
+    fun compare_values(&self, actual: f64, threshold: f64, op: &ComparisonOp) -> bool {
+        match op {
+            ComparisonOp::GreaterThan => actual > threshold,
+            ComparisonOp::GreaterThanOrEqual => actual >= threshold,
+            ComparisonOp::LessThan => actual < threshold,
+            ComparisonOp::LessThanOrEqual => actual <= threshold,
+            ComparisonOp::Equal => (actual - threshold).abs() < 0.001,
+        }
+    }
+    
+    fun generate_report(&self, passed: usize, total: usize, score: u32) {
+        println!("\n" + "=" * 60);
+        println!("📊 QUALITY GATES REPORT");
+        println!("=" * 60);
+        
+        // Summary
+        println!("\n📈 Summary:");
+        println!("  • Gates Passed: {}/{}", passed, total);
+        println!("  • Overall Score: {}%", score);
+        println!("  • Status: {}", 
+            if passed == total { "✅ PASSED" } else { "❌ FAILED" });
+        
+        // Detailed results
+        println!("\n📋 Detailed Results:");
+        for gate in &self.gates {
+            if let Some(result) = self.results.get(&gate.name) {
+                let icon = if result.passed { "✅" } else { "❌" };
+                println!("  {} {} - {}", icon, gate.name, result.message);
+            }
+        }
+        
+        // Recommendations
+        if passed < total {
+            println!("\n💡 Recommendations:");
+            for gate in &self.gates {
+                if let Some(result) = self.results.get(&gate.name) {
+                    if !result.passed {
+                        println!("  • Fix {}: {}", gate.name, 
+                            self.get_recommendation(&gate.name));
+                    }
+                }
+            }
+        }
+        
+        println!("=" * 60);
+    }
+    
+    fun get_recommendation(&self, gate_name: &str) -> String {
+        match gate_name {
+            "Test Coverage" => "Write more tests to cover uncovered code paths",
+            "Lint Check" => "Fix lint violations with 'ruchy lint --fix' or manually",
+            "Quality Score" => "Improve code quality, reduce complexity, add documentation",
+            "Provability" => "Add formal verification annotations and simplify logic",
+            "Complexity" => "Refactor complex functions into smaller, simpler ones",
+            _ => "Review the specific gate requirements",
+        }.to_string()
+    }
+    
+    fun run_pre_commit_hook(&mut self) -> Result<(), String> {
+        println!("🪝 Running Pre-Commit Quality Gates");
+        println!("This ensures code quality before committing.\n");
+        
+        // Run all gates
+        self.run_all_gates()?;
+        
+        // Additional pre-commit specific checks
+        self.check_no_debug_code()?;
+        self.check_no_todo_comments()?;
+        
+        println!("\n✅ Pre-commit checks passed!");
+        println!("Your code is ready to commit.");
+        
+        Ok(())
+    }
+    
+    fun check_no_debug_code(&self) -> Result<(), String> {
+        println!("\n🔍 Checking for debug code...");
+        
+        let output = Command::new("grep")
+            .args(&["-r", "println!", ".", "--include=*.ruchy"])
+            .output()
+            .map_err(|e| format!("Failed to check for debug code: {}", e))?;
+        
+        if output.status.success() && !output.stdout.is_empty() {
+            println!("⚠️  Found debug print statements - consider removing");
+        } else {
+            println!("✅ No debug code found");
+        }
+        
+        Ok(())
+    }
+    
+    fun check_no_todo_comments(&self) -> Result<(), String> {
+        println!("🔍 Checking for TODO comments...");
+        
+        let output = Command::new("grep")
+            .args(&["-r", "TODO\\|FIXME\\|HACK", ".", "--include=*.ruchy"])
+            .output()
+            .map_err(|e| format!("Failed to check for TODOs: {}", e))?;
+        
+        if output.status.success() && !output.stdout.is_empty() {
+            if self.blocking {
+                return Err("Found TODO/FIXME/HACK comments - resolve before committing".to_string());
+            } else {
+                println!("⚠️  Found TODO comments (non-blocking)");
+            }
+        } else {
+            println!("✅ No TODO comments found");
+        }
+        
+        Ok(())
+    }
+}
+
+fun main() {
+    let args: Vec<String> = std::env::args().collect();
+    let mut gates = QualityGates::new();
+    
+    // Parse command line arguments
+    let mut pre_commit = false;
+    
+    for arg in &args[1..] {
+        match arg.as_str() {
+            "--non-blocking" => gates.blocking = false,
+            "--verbose" | "-v" => gates.verbose = true,
+            "--pre-commit" => pre_commit = true,
+            _ => {}
+        }
+    }
+    
+    // Run appropriate checks
+    let result = if pre_commit {
+        gates.run_pre_commit_hook()
+    } else {
+        gates.run_all_gates()
+    };
+    
+    match result {
+        Ok(_) => {
+            std::process::exit(0);
+        }
+        Err(e) => {
+            eprintln!("\n❌ Quality gates failed: {}", e);
+            std::process::exit(1);
+        }
+    }
+}

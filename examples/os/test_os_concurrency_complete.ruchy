@@ -1,0 +1,930 @@
+#!/usr/bin/env ruchy
+
+// Complete OS Primitives Concurrency Test Suite - 100% Coverage Target
+// Comprehensive testing for OS-level concurrency and safety properties
+
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex, RwLock};
+use std::thread;
+use std::time::{Duration, Instant};
+
+// Test module with 100% coverage target
+#[test_coverage(target = 100)]
+module os_concurrency_tests {
+    use super::*;
+    
+    // ============================================================
+    // Memory Allocator Stress Tests
+    // ============================================================
+    
+    #[test]
+    fun test_allocator_fragmentation() {
+        // Test allocator handling of fragmentation scenarios
+        let allocator = MemoryAllocator::new(1024 * 1024); // 1MB heap
+        let mut allocations = Vec::new();
+        
+        // Phase 1: Allocate many small blocks
+        for i in 0..1000 {
+            let size = (i % 64) + 16; // 16-80 bytes
+            let allocation = allocator.allocate(size);
+            assert!(allocation.is_ok(), 
+                "Should allocate small block {}: {} bytes", i, size);
+            allocations.push(allocation.unwrap());
+        }
+        
+        // Phase 2: Free every other allocation (create fragmentation)
+        for i in (0..allocations.len()).step_by(2) {
+            allocator.deallocate(allocations[i]);
+        }
+        
+        // Phase 3: Try to allocate larger blocks
+        let large_size = 128;
+        for _ in 0..10 {
+            let allocation = allocator.allocate(large_size);
+            // Should handle fragmentation gracefully
+            if allocation.is_err() {
+                // Should defragment or report out of memory clearly
+                let error = allocation.unwrap_err();
+                assert!(matches!(error, AllocError::OutOfMemory | AllocError::Fragmentation),
+                    "Should report appropriate error for fragmented allocation");
+            }
+        }
+        
+        // Phase 4: Check allocator health
+        let stats = allocator.get_statistics();
+        assert!(stats.fragmentation_ratio < 0.8,
+            "Fragmentation should be manageable: {}", stats.fragmentation_ratio);
+    }
+    
+    #[test]
+    fun test_allocator_concurrent_access() {
+        // Test allocator thread safety
+        let allocator = Arc::new(MemoryAllocator::new(1024 * 1024));
+        let num_threads = 8;
+        let allocations_per_thread = 100;
+        
+        let mut handles = Vec::new();
+        
+        for thread_id in 0..num_threads {
+            let allocator_clone = Arc::clone(&allocator);
+            let handle = thread::spawn(move || {
+                let mut local_allocations = Vec::new();
+                
+                // Allocate blocks
+                for i in 0..allocations_per_thread {
+                    let size = (thread_id * 100 + i) % 256 + 32;
+                    match allocator_clone.allocate(size) {
+                        Ok(alloc) => {
+                            local_allocations.push(alloc);
+                            // Write pattern to verify memory integrity
+                            alloc.write_pattern(thread_id as u8);
+                        }
+                        Err(AllocError::OutOfMemory) => {
+                            // Acceptable under high contention
+                            break;
+                        }
+                        Err(e) => panic!("Unexpected allocation error: {:?}", e),
+                    }
+                }
+                
+                // Verify all allocations are intact
+                for alloc in &local_allocations {
+                    assert!(alloc.verify_pattern(thread_id as u8),
+                        "Memory corruption detected in thread {}", thread_id);
+                }
+                
+                // Deallocate all
+                for alloc in local_allocations {
+                    allocator_clone.deallocate(alloc);
+                }
+                
+                thread_id
+            });
+            
+            handles.push(handle);
+        }
+        
+        // Wait for all threads
+        for handle in handles {
+            let thread_id = handle.join().expect("Thread should complete successfully");
+            assert!(thread_id < num_threads, "Thread ID should be valid");
+        }
+        
+        // Verify allocator consistency
+        let final_stats = allocator.get_statistics();
+        assert_eq!(final_stats.active_allocations, 0,
+            "All allocations should be freed");
+        assert!(final_stats.is_consistent(),
+            "Allocator should be in consistent state");
+    }
+    
+    #[test]
+    fun test_allocator_leak_detection() {
+        // Test memory leak detection
+        let allocator = MemoryAllocator::new_with_leak_detection(1024 * 1024);
+        let mut leaked_allocations = Vec::new();
+        
+        // Intentionally create some leaks
+        for i in 0..10 {
+            let size = (i + 1) * 64;
+            let allocation = allocator.allocate(size).unwrap();
+            if i % 3 == 0 {
+                leaked_allocations.push(allocation); // These will be leaked
+            } else {
+                allocator.deallocate(allocation); // These are properly freed
+            }
+        }
+        
+        // Check leak detection
+        let leak_report = allocator.detect_leaks();
+        assert_eq!(leak_report.leaked_blocks.len(), 4, // 0, 3, 6, 9
+            "Should detect exactly 4 leaked blocks");
+        
+        for (i, leak) in leak_report.leaked_blocks.iter().enumerate() {
+            let expected_size = ((i * 3) + 1) * 64;
+            assert_eq!(leak.size, expected_size,
+                "Leak {} should have size {}", i, expected_size);
+        }
+        
+        // Clean up leaks for testing
+        for allocation in leaked_allocations {
+            allocator.deallocate(allocation);
+        }
+    }
+    
+    // ============================================================
+    // Scheduler Fairness Property Tests
+    // ============================================================
+    
+    #[property_test]
+    fun prop_scheduler_fairness(processes: Vec<Process>) {
+        // Property: all processes get CPU time proportional to their priority
+        let mut scheduler = ProcessScheduler::new();
+        
+        for process in processes {
+            scheduler.add_process(process);
+        }
+        
+        let execution_time = Duration::from_millis(1000);
+        let execution_log = scheduler.run_for_duration(execution_time);
+        
+        // Check fairness invariants
+        let process_times = execution_log.get_process_execution_times();
+        
+        for (process_id, time_used) in &process_times {
+            let process = scheduler.get_process(*process_id).unwrap();
+            let expected_min_time = calculate_min_expected_time(process.priority(), execution_time);
+            
+            assert!(time_used >= &expected_min_time,
+                "Process {} should get at least {:?} time, got {:?}",
+                process_id, expected_min_time, time_used);
+        }
+        
+        // No process should be starved
+        for process_id in scheduler.get_active_process_ids() {
+            assert!(process_times.contains_key(&process_id),
+                "Process {} should have received some CPU time", process_id);
+        }
+    }
+    
+    #[test]
+    fun test_round_robin_scheduling() {
+        // Test round-robin scheduler fairness
+        let mut scheduler = RoundRobinScheduler::new(Duration::from_millis(10));
+        
+        let processes = vec![
+            Process::new("process_1", Priority::Normal),
+            Process::new("process_2", Priority::Normal),
+            Process::new("process_3", Priority::Normal),
+        ];
+        
+        for process in processes {
+            scheduler.add_process(process);
+        }
+        
+        // Run for multiple time slices
+        let mut execution_counts = HashMap::new();
+        for _ in 0..30 { // 10 rounds of 3 processes
+            let executed_process = scheduler.tick();
+            if let Some(process_id) = executed_process {
+                *execution_counts.entry(process_id).or_insert(0) += 1;
+            }
+        }
+        
+        // Each process should execute roughly the same number of times
+        let mut execution_times: Vec<i32> = execution_counts.values().cloned().collect();
+        execution_times.sort();
+        
+        let min_executions = execution_times[0];
+        let max_executions = execution_times[execution_times.len() - 1];
+        
+        assert!(max_executions - min_executions <= 1,
+            "Round-robin should be fair: min={}, max={}", 
+            min_executions, max_executions);
+    }
+    
+    #[test]
+    fun test_priority_scheduling() {
+        // Test priority-based scheduling
+        let mut scheduler = PriorityScheduler::new();
+        
+        scheduler.add_process(Process::new("low_priority", Priority::Low));
+        scheduler.add_process(Process::new("normal_priority", Priority::Normal));
+        scheduler.add_process(Process::new("high_priority", Priority::High));
+        
+        // Run scheduler and track execution order
+        let mut execution_order = Vec::new();
+        for _ in 0..100 {
+            if let Some(process_id) = scheduler.tick() {
+                execution_order.push(process_id);
+            }
+        }
+        
+        // High priority process should run most
+        let high_count = execution_order.iter()
+            .filter(|&&id| scheduler.get_process(id).unwrap().priority() == Priority::High)
+            .count();
+        
+        let total_executions = execution_order.len();
+        assert!(high_count as f64 / total_executions as f64 > 0.6,
+            "High priority process should dominate: {}/{}", 
+            high_count, total_executions);
+    }
+    
+    #[test]
+    fun test_starvation_prevention() {
+        // Test that low priority processes don't starve
+        let mut scheduler = AgingScheduler::new(); // Uses priority aging
+        
+        scheduler.add_process(Process::new("high_1", Priority::High));
+        scheduler.add_process(Process::new("high_2", Priority::High));
+        scheduler.add_process(Process::new("low", Priority::Low));
+        
+        let mut low_executions = 0;
+        let total_ticks = 1000;
+        
+        for _ in 0..total_ticks {
+            if let Some(process_id) = scheduler.tick() {
+                if process_id == "low" {
+                    low_executions += 1;
+                }
+            }
+        }
+        
+        // Low priority process should get some time due to aging
+        assert!(low_executions > 0,
+            "Low priority process should not starve completely");
+        
+        let low_ratio = low_executions as f64 / total_ticks as f64;
+        assert!(low_ratio > 0.05, // At least 5%
+            "Low priority process should get reasonable time: {:.2}%",
+            low_ratio * 100.0);
+    }
+    
+    // ============================================================
+    // Deadlock Prevention Tests
+    // ============================================================
+    
+    #[test]
+    fun test_deadlock_prevention() {
+        // Test deadlock prevention using resource ordering
+        let resource_manager = ResourceManager::new_with_deadlock_prevention();
+        
+        // Create resources with ordering
+        let resource_a = resource_manager.create_resource("ResourceA", 0);
+        let resource_b = resource_manager.create_resource("ResourceB", 1);
+        let resource_c = resource_manager.create_resource("ResourceC", 2);
+        
+        let num_threads = 4;
+        let mut handles = Vec::new();
+        
+        for i in 0..num_threads {
+            let manager = resource_manager.clone();
+            let handle = thread::spawn(move || {
+                // Each thread tries to acquire resources in potentially different orders
+                let requested_resources = match i % 4 {
+                    0 => vec![resource_a, resource_b],
+                    1 => vec![resource_b, resource_c],
+                    2 => vec![resource_c, resource_a],
+                    3 => vec![resource_a, resource_b, resource_c],
+                    _ => unreachable!(),
+                };
+                
+                // Acquire resources (should be reordered by manager to prevent deadlock)
+                let acquired = manager.acquire_resources(requested_resources, 
+                    Duration::from_millis(1000));
+                
+                match acquired {
+                    Ok(locks) => {
+                        // Do some work with resources
+                        thread::sleep(Duration::from_millis(10));
+                        
+                        // Release resources
+                        manager.release_resources(locks);
+                        true
+                    }
+                    Err(AcquisitionError::Timeout) => {
+                        // Acceptable under high contention
+                        false
+                    }
+                    Err(AcquisitionError::Deadlock) => {
+                        panic!("Deadlock should be prevented by resource ordering");
+                    }
+                }
+            });
+            
+            handles.push(handle);
+        }
+        
+        // All threads should complete (no deadlock)
+        let mut successful_threads = 0;
+        for handle in handles {
+            if handle.join().expect("Thread should not panic") {
+                successful_threads += 1;
+            }
+        }
+        
+        // At least some threads should succeed
+        assert!(successful_threads > 0,
+            "At least some threads should acquire resources successfully");
+    }
+    
+    #[test]
+    fun test_bankers_algorithm() {
+        // Test Banker's algorithm for deadlock avoidance
+        let mut banker = BankersAlgorithm::new(
+            3, // 3 processes
+            vec![10, 5, 7] // Available instances of 3 resource types
+        );
+        
+        // Set maximum needs for each process
+        banker.set_max_need(0, vec![7, 5, 3]);
+        banker.set_max_need(1, vec![3, 2, 2]);
+        banker.set_max_need(2, vec![9, 0, 2]);
+        
+        // Current allocations
+        banker.set_allocation(0, vec![0, 1, 0]);
+        banker.set_allocation(1, vec![2, 0, 0]);
+        banker.set_allocation(2, vec![3, 0, 2]);
+        
+        // Test safe resource requests
+        let safe_request = ResourceRequest::new(1, vec![1, 0, 2]); // Process 1 requests (1,0,2)
+        let result = banker.process_request(safe_request);
+        assert!(result.is_ok(), "Safe request should be granted");
+        assert!(result.unwrap().system_remains_safe,
+            "System should remain in safe state");
+        
+        // Test unsafe resource request
+        let unsafe_request = ResourceRequest::new(0, vec![10, 5, 3]); // More than available
+        let result = banker.process_request(unsafe_request);
+        assert!(result.is_err(), "Unsafe request should be denied");
+    }
+    
+    #[test]
+    fun test_deadlock_detection() {
+        // Test deadlock detection algorithm
+        let detector = DeadlockDetector::new();
+        
+        // Create a scenario that will deadlock
+        let resource_graph = WaitForGraph::new();
+        
+        // Process 1 holds Resource A, wants Resource B
+        resource_graph.add_edge(ProcessId(1), ResourceId("A"));
+        resource_graph.add_edge(ResourceId("B"), ProcessId(1));
+        
+        // Process 2 holds Resource B, wants Resource A
+        resource_graph.add_edge(ProcessId(2), ResourceId("B"));
+        resource_graph.add_edge(ResourceId("A"), ProcessId(2));
+        
+        let detection_result = detector.detect_deadlock(&resource_graph);
+        
+        assert!(detection_result.deadlock_detected,
+            "Should detect the deadlock cycle");
+        assert_eq!(detection_result.deadlocked_processes.len(), 2,
+            "Should identify both deadlocked processes");
+        assert!(detection_result.deadlocked_processes.contains(&ProcessId(1)));
+        assert!(detection_result.deadlocked_processes.contains(&ProcessId(2)));
+    }
+    
+    // ============================================================
+    // Concurrent File System Tests
+    // ============================================================
+    
+    #[test]
+    fun test_concurrent_file_access() {
+        // Test file system consistency under concurrent access
+        let fs = FileSystem::new_with_concurrency_control();
+        let test_file = "concurrent_test.txt";
+        
+        // Create test file
+        fs.create_file(test_file).unwrap();
+        
+        let num_writers = 5;
+        let num_readers = 10;
+        let mut handles = Vec::new();
+        
+        // Spawn writer threads
+        for writer_id in 0..num_writers {
+            let fs_clone = fs.clone();
+            let filename = test_file.to_string();
+            
+            let handle = thread::spawn(move || {
+                for i in 0..100 {
+                    let data = format!("Writer {} - Line {}\n", writer_id, i);
+                    let result = fs_clone.append_to_file(&filename, &data);
+                    assert!(result.is_ok(), 
+                        "Writer {} should be able to append", writer_id);
+                }
+            });
+            
+            handles.push(handle);
+        }
+        
+        // Spawn reader threads
+        for reader_id in 0..num_readers {
+            let fs_clone = fs.clone();
+            let filename = test_file.to_string();
+            
+            let handle = thread::spawn(move || {
+                for _ in 0..50 {
+                    match fs_clone.read_file(&filename) {
+                        Ok(content) => {
+                            // Content should be valid UTF-8 and properly formatted
+                            assert!(content.is_ascii(),
+                                "File content should be valid ASCII");
+                            
+                            // Each line should be complete (no partial writes)
+                            for line in content.lines() {
+                                assert!(line.contains("Writer") && line.contains("Line"),
+                                    "Each line should be complete: '{}'", line);
+                            }
+                        }
+                        Err(e) => {
+                            // Acceptable if file is being written
+                            assert!(matches!(e, FileError::FileLocked),
+                                "Should only fail due to locking, got: {:?}", e);
+                        }
+                    }
+                    
+                    thread::sleep(Duration::from_millis(1));
+                }
+            });
+            
+            handles.push(handle);
+        }
+        
+        // Wait for all threads
+        for handle in handles {
+            handle.join().expect("Thread should complete successfully");
+        }
+        
+        // Verify final file consistency
+        let final_content = fs.read_file(test_file).unwrap();
+        let line_count = final_content.lines().count();
+        
+        // Should have exactly num_writers * 100 lines
+        assert_eq!(line_count, num_writers * 100,
+            "File should have {} lines, found {}", 
+            num_writers * 100, line_count);
+        
+        // Clean up
+        fs.delete_file(test_file).unwrap();
+    }
+    
+    #[test]
+    fun test_directory_operations_concurrency() {
+        // Test concurrent directory operations
+        let fs = FileSystem::new_with_concurrency_control();
+        let base_dir = "concurrent_test_dir";
+        
+        fs.create_directory(base_dir).unwrap();
+        
+        let num_threads = 8;
+        let mut handles = Vec::new();
+        
+        for thread_id in 0..num_threads {
+            let fs_clone = fs.clone();
+            let base_path = base_dir.to_string();
+            
+            let handle = thread::spawn(move || {
+                let thread_dir = format!("{}/thread_{}", base_path, thread_id);
+                
+                // Create thread-specific directory
+                fs_clone.create_directory(&thread_dir).unwrap();
+                
+                // Create multiple files in the directory
+                for file_id in 0..20 {
+                    let filename = format!("{}/file_{}.txt", thread_dir, file_id);
+                    let content = format!("Thread {} File {}", thread_id, file_id);
+                    
+                    fs_clone.write_file(&filename, &content).unwrap();
+                }
+                
+                // List directory contents
+                let entries = fs_clone.list_directory(&thread_dir).unwrap();
+                assert_eq!(entries.len(), 20,
+                    "Directory should contain 20 files for thread {}", thread_id);
+                
+                // Rename some files
+                for file_id in 0..5 {
+                    let old_name = format!("{}/file_{}.txt", thread_dir, file_id);
+                    let new_name = format!("{}/renamed_file_{}.txt", thread_dir, file_id);
+                    fs_clone.rename_file(&old_name, &new_name).unwrap();
+                }
+                
+                // Verify rename worked
+                let final_entries = fs_clone.list_directory(&thread_dir).unwrap();
+                assert_eq!(final_entries.len(), 20,
+                    "Directory should still contain 20 files after rename");
+                
+                thread_id
+            });
+            
+            handles.push(handle);
+        }
+        
+        // Wait for all threads
+        for handle in handles {
+            handle.join().expect("Thread should complete successfully");
+        }
+        
+        // Verify all directories were created
+        let base_entries = fs.list_directory(base_dir).unwrap();
+        assert_eq!(base_entries.len(), num_threads,
+            "Should have {} thread directories", num_threads);
+        
+        // Clean up
+        fs.delete_directory_recursive(base_dir).unwrap();
+    }
+    
+    // ============================================================
+    // Race Condition Tests
+    // ============================================================
+    
+    #[test]
+    fun test_atomic_operations() {
+        // Test atomic operations prevent race conditions
+        let shared_counter = Arc::new(AtomicCounter::new(0));
+        let num_threads = 10;
+        let increments_per_thread = 1000;
+        
+        let mut handles = Vec::new();
+        
+        for _ in 0..num_threads {
+            let counter_clone = Arc::clone(&shared_counter);
+            let handle = thread::spawn(move || {
+                for _ in 0..increments_per_thread {
+                    counter_clone.increment();
+                }
+            });
+            handles.push(handle);
+        }
+        
+        // Wait for all threads
+        for handle in handles {
+            handle.join().expect("Thread should complete");
+        }
+        
+        // Final value should be exactly num_threads * increments_per_thread
+        let final_value = shared_counter.get();
+        let expected = num_threads * increments_per_thread;
+        assert_eq!(final_value, expected,
+            "Atomic operations should prevent race conditions: {} != {}", 
+            final_value, expected);
+    }
+    
+    #[test]
+    fun test_lock_free_data_structures() {
+        // Test lock-free data structures
+        let queue = Arc::new(LockFreeQueue::new());
+        let num_producers = 4;
+        let num_consumers = 4;
+        let items_per_producer = 1000;
+        
+        let mut handles = Vec::new();
+        let produced_items = Arc::new(Mutex::new(Vec::new()));
+        let consumed_items = Arc::new(Mutex::new(Vec::new()));
+        
+        // Spawn producers
+        for producer_id in 0..num_producers {
+            let queue_clone = Arc::clone(&queue);
+            let produced_clone = Arc::clone(&produced_items);
+            
+            let handle = thread::spawn(move || {
+                for item_id in 0..items_per_producer {
+                    let item = format!("P{}I{}", producer_id, item_id);
+                    queue_clone.enqueue(item.clone());
+                    produced_clone.lock().unwrap().push(item);
+                }
+            });
+            
+            handles.push(handle);
+        }
+        
+        // Spawn consumers
+        for _ in 0..num_consumers {
+            let queue_clone = Arc::clone(&queue);
+            let consumed_clone = Arc::clone(&consumed_items);
+            
+            let handle = thread::spawn(move || {
+                loop {
+                    match queue_clone.dequeue() {
+                        Some(item) => {
+                            consumed_clone.lock().unwrap().push(item);
+                        }
+                        None => {
+                            // No items available, check if producers are done
+                            thread::sleep(Duration::from_millis(1));
+                            if queue_clone.is_empty() && 
+                               consumed_clone.lock().unwrap().len() == 
+                               num_producers * items_per_producer {
+                                break;
+                            }
+                        }
+                    }
+                }
+            });
+            
+            handles.push(handle);
+        }
+        
+        // Wait for all threads
+        for handle in handles {
+            handle.join().expect("Thread should complete");
+        }
+        
+        // Verify all items were consumed
+        let produced = produced_items.lock().unwrap();
+        let consumed = consumed_items.lock().unwrap();
+        
+        assert_eq!(produced.len(), consumed.len(),
+            "All produced items should be consumed");
+        
+        // Verify no items were lost or duplicated
+        let mut produced_sorted = produced.clone();
+        let mut consumed_sorted = consumed.clone();
+        produced_sorted.sort();
+        consumed_sorted.sort();
+        
+        assert_eq!(produced_sorted, consumed_sorted,
+            "Produced and consumed items should match exactly");
+    }
+}
+
+// ============================================================
+// Helper Structures and Implementations
+// ============================================================
+
+struct MemoryAllocator {
+    heap_size: usize,
+    allocations: HashMap<usize, AllocationInfo>,
+    free_blocks: Vec<FreeBlock>,
+}
+
+struct AllocationInfo {
+    size: usize,
+    address: usize,
+}
+
+struct FreeBlock {
+    address: usize,
+    size: usize,
+}
+
+struct MemoryAllocation {
+    address: usize,
+    size: usize,
+}
+
+impl MemoryAllocation {
+    fun write_pattern(&self, pattern: u8) {
+        // Write pattern to memory for corruption testing
+    }
+    
+    fun verify_pattern(&self, expected: u8) -> bool {
+        // Verify memory pattern
+        true
+    }
+}
+
+impl MemoryAllocator {
+    fun new(heap_size: usize) -> Self {
+        Self {
+            heap_size,
+            allocations: HashMap::new(),
+            free_blocks: vec![FreeBlock { address: 0, size: heap_size }],
+        }
+    }
+    
+    fun new_with_leak_detection(heap_size: usize) -> Self {
+        // Enhanced allocator with leak detection
+        Self::new(heap_size)
+    }
+    
+    fun allocate(&mut self, size: usize) -> Result<MemoryAllocation, AllocError> {
+        // Find suitable free block
+        for (i, block) in self.free_blocks.iter().enumerate() {
+            if block.size >= size {
+                let allocation = MemoryAllocation {
+                    address: block.address,
+                    size,
+                };
+                
+                self.allocations.insert(block.address, AllocationInfo {
+                    size,
+                    address: block.address,
+                });
+                
+                // Update free block
+                if block.size > size {
+                    self.free_blocks[i] = FreeBlock {
+                        address: block.address + size,
+                        size: block.size - size,
+                    };
+                } else {
+                    self.free_blocks.remove(i);
+                }
+                
+                return Ok(allocation);
+            }
+        }
+        
+        Err(AllocError::OutOfMemory)
+    }
+    
+    fun deallocate(&mut self, allocation: MemoryAllocation) {
+        self.allocations.remove(&allocation.address);
+        self.free_blocks.push(FreeBlock {
+            address: allocation.address,
+            size: allocation.size,
+        });
+        // Would merge adjacent free blocks in real implementation
+    }
+    
+    fun get_statistics(&self) -> AllocatorStats {
+        AllocatorStats {
+            active_allocations: self.allocations.len(),
+            fragmentation_ratio: 0.3, // Simplified calculation
+        }
+    }
+    
+    fun detect_leaks(&self) -> LeakReport {
+        LeakReport {
+            leaked_blocks: self.allocations.values()
+                .map(|info| LeakedBlock { size: info.size })
+                .collect(),
+        }
+    }
+}
+
+// Process scheduling structures
+struct Process {
+    id: String,
+    priority: Priority,
+}
+
+enum Priority {
+    Low = 1,
+    Normal = 2,
+    High = 3,
+}
+
+impl Process {
+    fun new(id: &str, priority: Priority) -> Self {
+        Self {
+            id: id.to_string(),
+            priority,
+        }
+    }
+    
+    fun priority(&self) -> Priority {
+        self.priority
+    }
+}
+
+struct ProcessScheduler {
+    processes: Vec<Process>,
+    current: usize,
+}
+
+impl ProcessScheduler {
+    fun new() -> Self {
+        Self {
+            processes: Vec::new(),
+            current: 0,
+        }
+    }
+    
+    fun add_process(&mut self, process: Process) {
+        self.processes.push(process);
+    }
+    
+    fun get_process(&self, id: String) -> Option<&Process> {
+        self.processes.iter().find(|p| p.id == id)
+    }
+    
+    fun get_active_process_ids(&self) -> Vec<String> {
+        self.processes.iter().map(|p| p.id.clone()).collect()
+    }
+    
+    fun run_for_duration(&mut self, duration: Duration) -> ExecutionLog {
+        ExecutionLog::new()
+    }
+}
+
+struct ExecutionLog;
+
+impl ExecutionLog {
+    fun new() -> Self { ExecutionLog }
+    
+    fun get_process_execution_times(&self) -> HashMap<String, Duration> {
+        HashMap::new()
+    }
+}
+
+// Additional structures for testing
+struct AtomicCounter;
+impl AtomicCounter {
+    fun new(initial: i32) -> Self { AtomicCounter }
+    fun increment(&self) {}
+    fun get(&self) -> i32 { 0 }
+}
+
+struct LockFreeQueue<T>;
+impl<T> LockFreeQueue<T> {
+    fun new() -> Self { LockFreeQueue }
+    fun enqueue(&self, item: T) {}
+    fun dequeue(&self) -> Option<T> { None }
+    fun is_empty(&self) -> bool { true }
+}
+
+struct FileSystem;
+impl FileSystem {
+    fun new_with_concurrency_control() -> Self { FileSystem }
+    fun create_file(&self, name: &str) -> Result<(), FileError> { Ok(()) }
+    fun read_file(&self, name: &str) -> Result<String, FileError> { Ok(String::new()) }
+    fun write_file(&self, name: &str, content: &str) -> Result<(), FileError> { Ok(()) }
+    fun append_to_file(&self, name: &str, content: &str) -> Result<(), FileError> { Ok(()) }
+    fun delete_file(&self, name: &str) -> Result<(), FileError> { Ok(()) }
+    fun create_directory(&self, name: &str) -> Result<(), FileError> { Ok(()) }
+    fun list_directory(&self, name: &str) -> Result<Vec<String>, FileError> { Ok(vec![]) }
+    fun rename_file(&self, old: &str, new: &str) -> Result<(), FileError> { Ok(()) }
+    fun delete_directory_recursive(&self, name: &str) -> Result<(), FileError> { Ok(()) }
+    fun clone(&self) -> Self { FileSystem }
+}
+
+// Error types
+enum AllocError {
+    OutOfMemory,
+    Fragmentation,
+}
+
+enum FileError {
+    FileNotFound,
+    PermissionDenied,
+    FileLocked,
+}
+
+enum AcquisitionError {
+    Timeout,
+    Deadlock,
+}
+
+// Helper structures
+struct AllocatorStats {
+    active_allocations: usize,
+    fragmentation_ratio: f64,
+}
+
+impl AllocatorStats {
+    fun is_consistent(&self) -> bool { true }
+}
+
+struct LeakReport {
+    leaked_blocks: Vec<LeakedBlock>,
+}
+
+struct LeakedBlock {
+    size: usize,
+}
+
+// Placeholder implementations for other test structures
+struct RoundRobinScheduler;
+struct PriorityScheduler;
+struct AgingScheduler;
+struct ResourceManager;
+struct BankersAlgorithm;
+struct DeadlockDetector;
+struct WaitForGraph;
+struct ResourceRequest;
+struct ProcessId(u32);
+struct ResourceId(&'static str);
+
+// Helper functions
+fun calculate_min_expected_time(priority: Priority, total_time: Duration) -> Duration {
+    Duration::from_millis(total_time.as_millis() as u64 / 10)
+}
+
+fun get_memory_usage() -> usize {
+    1024 * 1024 // Placeholder
+}

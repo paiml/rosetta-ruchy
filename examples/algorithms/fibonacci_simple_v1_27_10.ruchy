@@ -1,0 +1,67 @@
+// Simple Fibonacci Test - v1.27.10 Compatible
+
+fun fibonacci(n: i32) -> i32 {
+    if n <= 1 {
+        return n;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+fun test_base_cases() {
+    println!("Testing base cases");
+    
+    let f0 = fibonacci(0);
+    if f0 == 0 {
+        println!("F(0) = 0 passed");
+    }
+    
+    let f1 = fibonacci(1);
+    if f1 == 1 {
+        println!("F(1) = 1 passed");
+    }
+}
+
+fun test_sequence() {
+    println!("Testing sequence");
+    
+    let f2 = fibonacci(2);
+    if f2 == 1 {
+        println!("F(2) = 1 passed");
+    }
+    
+    let f3 = fibonacci(3);
+    if f3 == 2 {
+        println!("F(3) = 2 passed");
+    }
+    
+    let f5 = fibonacci(5);
+    if f5 == 5 {
+        println!("F(5) = 5 passed");
+    }
+}
+
+fun test_properties() {
+    println!("Testing properties");
+    
+    let n = 8;
+    let fn = fibonacci(n);
+    println!("F({}) = {}", n, fn);
+    
+    if fn > 0 {
+        println!("Positive value property passed");
+    }
+}
+
+fun run_tests() {
+    println!("Fibonacci Test Suite");
+    
+    test_base_cases();
+    test_sequence();
+    test_properties();
+    
+    println!("All tests completed");
+}
+
+fun main() {
+    run_tests();
+}

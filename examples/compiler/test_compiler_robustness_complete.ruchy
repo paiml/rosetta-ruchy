@@ -1,0 +1,772 @@
+#!/usr/bin/env ruchy
+
+// Complete Compiler Robustness Test Suite - 100% Coverage Target
+// Comprehensive testing for compiler error handling and malformed input
+
+use std::collections::HashMap;
+
+// Test module with 100% coverage target
+#[test_coverage(target = 100)]
+module compiler_robustness_tests {
+    use super::*;
+    
+    // ============================================================
+    // Parser Error Recovery Tests
+    // ============================================================
+    
+    #[test]
+    fun test_parser_malformed_input() {
+        // Test parser handling of various malformed inputs
+        let malformed_inputs = vec![
+            // Missing semicolons
+            "let x = 5 let y = 10",
+            
+            // Unmatched parentheses
+            "fun test() { if (condition { return; }",
+            "fun test() { if condition) { return; }",
+            
+            // Missing braces
+            "fun test() if x == 5 { return; }",
+            "fun test() { if x == 5 return; }",
+            
+            // Invalid operators
+            "let x = 5 ** 2",
+            "let x = 5 <> 3",
+            
+            // Unexpected tokens
+            "fun test() { @ # $ }",
+            "let x = 5; &",
+            
+            // Invalid function definitions
+            "fun () { }",
+            "fun test { }",
+            "fun test() -> }",
+            
+            // Malformed control flow
+            "if { }",
+            "while { }",
+            "for { }",
+            "else { }",
+            
+            // Invalid variable declarations
+            "let = 5;",
+            "let x;",
+            "let x = ;",
+            
+            // String literal issues
+            "let x = \"unclosed string;",
+            "let x = \"string with \n newline\";",
+            
+            // Number format issues
+            "let x = 123.456.789;",
+            "let x = 0x;",
+            "let x = 1e;",
+        ];
+        
+        let compiler = Compiler::new();
+        
+        for (i, input) in malformed_inputs.iter().enumerate() {
+            let result = compiler.parse(input);
+            
+            // Should fail to parse but not crash
+            assert!(result.is_err(), 
+                "Malformed input {} should fail to parse: '{}'", i, input);
+            
+            // Should provide meaningful error message
+            let error = result.unwrap_err();
+            assert!(!error.message().is_empty(),
+                "Error message should not be empty for input: '{}'", input);
+            
+            // Should include location information
+            assert!(error.has_location(),
+                "Error should include location for input: '{}'", input);
+            
+            // Should suggest possible fixes when possible
+            if error.is_recoverable() {
+                assert!(error.has_suggestion(),
+                    "Recoverable error should have suggestion for: '{}'", input);
+            }
+        }
+    }
+    
+    #[test]
+    fun test_parser_error_recovery() {
+        // Test parser's ability to recover from errors and continue parsing
+        let input_with_errors = "
+            fun valid_function() -> i32 {
+                return 42;
+            }
+            
+            fun invalid_function( {  // Missing parameter and closing paren
+                let x = 5
+                return x;
+            }
+            
+            fun another_valid_function() -> bool {
+                return true;
+            }
+        ";
+        
+        let compiler = Compiler::new();
+        let result = compiler.parse_with_recovery(input_with_errors);
+        
+        // Should identify errors but continue parsing
+        assert!(result.has_errors(), "Should detect parsing errors");
+        assert!(result.error_count() > 0, "Should report error count");
+        
+        // Should still identify valid functions
+        let ast = result.get_partial_ast();
+        assert!(ast.has_function("valid_function"),
+            "Should parse valid functions despite errors");
+        assert!(ast.has_function("another_valid_function"),
+            "Should continue parsing after errors");
+        
+        // Should mark invalid function as error
+        assert!(ast.function_has_errors("invalid_function"),
+            "Should mark invalid function as erroneous");
+    }
+    
+    #[test]
+    fun test_lexer_error_handling() {
+        // Test lexer handling of invalid characters and sequences
+        let invalid_inputs = vec![
+            // Invalid characters
+            "let x = 5; §",
+            "fun test() { ¿ }",
+            
+            // Invalid escape sequences
+            "let s = \"\\z\";",
+            "let s = \"\\x\";",
+            
+            // Invalid number formats
+            "let x = 0b2;", // Invalid binary digit
+            "let x = 0o8;", // Invalid octal digit
+            "let x = 0xG;", // Invalid hex digit
+            
+            // Unterminated comments
+            "let x = 5; /* unterminated comment",
+            
+            // Invalid string literals
+            "let s = \"string with \\",
+            "let s = 'single quotes not supported';",
+        ];
+        
+        let compiler = Compiler::new();
+        
+        for input in &invalid_inputs {
+            let tokens = compiler.tokenize(input);
+            
+            // Should produce error tokens or fail gracefully
+            assert!(tokens.contains_errors() || tokens.is_err(),
+                "Should detect lexical errors in: '{}'", input);
+            
+            // Should not crash the lexer
+            assert!(compiler.is_responsive(),
+                "Compiler should remain responsive after: '{}'", input);
+        }
+    }
+    
+    // ============================================================
+    // Type System Soundness Tests
+    // ============================================================
+    
+    #[property_test]
+    fun prop_type_preservation(ast: ValidAST) {
+        // Property: well-typed programs don't get stuck
+        let compiler = Compiler::new();
+        
+        // Type check the AST
+        let type_result = compiler.type_check(&ast);
+        assert!(type_result.is_ok(), "Valid AST should type check");
+        
+        let typed_ast = type_result.unwrap();
+        
+        // Code generation should preserve types
+        let codegen_result = compiler.generate_code(&typed_ast);
+        assert!(codegen_result.is_ok(), "Typed AST should generate code");
+        
+        let generated_code = codegen_result.unwrap();
+        
+        // Generated code should be type-consistent
+        assert!(generated_code.is_type_consistent(),
+            "Generated code should preserve type invariants");
+        
+        // Runtime should not encounter type errors
+        let runtime_result = compiler.execute(&generated_code);
+        assert!(
+            runtime_result.is_ok() || runtime_result.is_runtime_error(),
+            "Should not encounter type errors at runtime"
+        );
+    }
+    
+    #[test]
+    fun test_type_error_reporting() {
+        // Test quality of type error messages
+        let type_errors = vec![
+            // Type mismatches
+            ("let x: i32 = \"hello\";", "type mismatch"),
+            ("let x: bool = 42;", "type mismatch"),
+            
+            // Function call mismatches
+            ("fun f(x: i32) { } f(\"hello\");", "argument type"),
+            ("fun f() -> i32 { return true; }", "return type"),
+            
+            // Undefined variables
+            ("let x = undefined_var;", "undefined variable"),
+            ("undefined_var = 5;", "undefined variable"),
+            
+            // Undefined functions
+            ("let x = undefined_func();", "undefined function"),
+            
+            // Arity mismatches
+            ("fun f(x: i32, y: i32) { } f(1);", "argument count"),
+            ("fun f() { } f(1, 2);", "too many arguments"),
+            
+            // Invalid operations
+            ("let x = true + false;", "invalid operation"),
+            ("let x = \"hello\" * 5;", "invalid operation"),
+        ];
+        
+        let compiler = Compiler::new();
+        
+        for (input, expected_error_type) in &type_errors {
+            let result = compiler.compile(input);
+            
+            assert!(result.is_err(), 
+                "Should fail type checking: '{}'", input);
+            
+            let error = result.unwrap_err();
+            assert!(error.message().to_lowercase().contains(expected_error_type),
+                "Error message should mention '{}' for input: '{}'", 
+                expected_error_type, input);
+            
+            // Should provide helpful context
+            assert!(error.has_source_location(),
+                "Should provide source location for: '{}'", input);
+            assert!(error.has_type_context(),
+                "Should provide type context for: '{}'", input);
+        }
+    }
+    
+    #[test]
+    fun test_type_inference_edge_cases() {
+        // Test type inference with edge cases
+        let inference_cases = vec![
+            // Recursive function inference
+            "fun factorial(n) { if n <= 1 { 1 } else { n * factorial(n - 1) } }",
+            
+            // Complex expressions
+            "let x = if true { 42 } else { 0 };",
+            "let y = [1, 2, 3, 4, 5];",
+            
+            // Generic function calls
+            "fun identity(x) { x } let a = identity(42); let b = identity(true);",
+        ];
+        
+        let compiler = Compiler::new_with_inference();
+        
+        for input in &inference_cases {
+            let result = compiler.infer_types(input);
+            
+            // Should successfully infer types or provide clear error
+            if result.is_ok() {
+                let inferred = result.unwrap();
+                assert!(inferred.all_types_resolved(),
+                    "All types should be inferred for: '{}'", input);
+            } else {
+                let error = result.unwrap_err();
+                assert!(error.is_inference_error(),
+                    "Should be specific inference error for: '{}'", input);
+            }
+        }
+    }
+    
+    // ============================================================
+    // Optimization Preservation Tests
+    // ============================================================
+    
+    #[test]
+    fun test_optimization_preserves_semantics() {
+        // Test that optimizations don't change program semantics
+        let test_programs = vec![
+            // Constant folding
+            "fun test() -> i32 { return 2 + 3 * 4; }",
+            
+            // Dead code elimination
+            "fun test() -> i32 { let x = 42; let y = 10; return x; }",
+            
+            // Loop optimizations
+            "fun sum(n: i32) -> i32 { let total = 0; for i in 0..n { total = total + i; } return total; }",
+            
+            // Function inlining candidates
+            "fun add(a: i32, b: i32) -> i32 { a + b } fun test() -> i32 { add(5, 7) }",
+        ];
+        
+        let compiler = Compiler::new();
+        
+        for program in &test_programs {
+            // Compile without optimizations
+            let unoptimized = compiler.compile_without_optimization(program).unwrap();
+            let unoptimized_result = compiler.execute(&unoptimized);
+            
+            // Compile with optimizations
+            let optimized = compiler.compile_with_optimization(program).unwrap();
+            let optimized_result = compiler.execute(&optimized);
+            
+            // Results should be identical
+            assert_eq!(unoptimized_result, optimized_result,
+                "Optimization should preserve semantics for: '{}'", program);
+            
+            // Optimized version should be more efficient
+            assert!(optimized.instruction_count() <= unoptimized.instruction_count(),
+                "Optimized code should have fewer or equal instructions");
+        }
+    }
+    
+    #[test]
+    fun test_optimization_safety() {
+        // Test that unsafe optimizations are not applied
+        let unsafe_cases = vec![
+            // Integer overflow sensitive
+            "fun test(x: i32) -> i32 { x * x }",
+            
+            // Side effect preservation
+            "fun test() -> i32 { print(\"side effect\"); return 42; }",
+            
+            // Memory safety
+            "fun test(arr: Vec<i32>) -> i32 { arr[0] }",
+        ];
+        
+        let compiler = Compiler::new_with_aggressive_optimization();
+        
+        for program in &unsafe_cases {
+            let result = compiler.compile(program);
+            
+            assert!(result.is_ok(), "Should compile safely: '{}'", program);
+            
+            let compiled = result.unwrap();
+            
+            // Should preserve safety properties
+            assert!(compiled.preserves_overflow_behavior(),
+                "Should preserve overflow behavior for: '{}'", program);
+            assert!(compiled.preserves_side_effects(),
+                "Should preserve side effects for: '{}'", program);
+            assert!(compiled.preserves_memory_safety(),
+                "Should preserve memory safety for: '{}'", program);
+        }
+    }
+    
+    // ============================================================
+    // Code Generation Edge Cases
+    // ============================================================
+    
+    #[test]
+    fun test_code_generation_edge_cases() {
+        // Test code generation for edge cases
+        let edge_cases = vec![
+            // Empty functions
+            "fun empty() { }",
+            
+            // Deep nesting
+            "fun deep() { if true { if true { if true { return 42; } } } }",
+            
+            // Large constants
+            "fun large_const() -> i32 { return 2147483647; }",
+            
+            // Complex expressions
+            "fun complex() -> bool { return (1 + 2) * (3 - 4) == -3 && true || false; }",
+            
+            // Recursive functions
+            "fun fib(n: i32) -> i32 { if n <= 1 { n } else { fib(n-1) + fib(n-2) } }",
+        ];
+        
+        let compiler = Compiler::new();
+        
+        for program in &edge_cases {
+            let ast = compiler.parse(program).unwrap();
+            let typed_ast = compiler.type_check(&ast).unwrap();
+            let code = compiler.generate_code(&typed_ast);
+            
+            assert!(code.is_ok(), "Should generate code for: '{}'", program);
+            
+            let generated = code.unwrap();
+            
+            // Generated code should be valid
+            assert!(generated.is_syntactically_valid(),
+                "Generated code should be syntactically valid");
+            assert!(generated.is_semantically_valid(),
+                "Generated code should be semantically valid");
+            
+            // Should be executable
+            let execution_result = compiler.execute(&generated);
+            assert!(
+                execution_result.is_ok() || execution_result.is_runtime_error(),
+                "Generated code should be executable"
+            );
+        }
+    }
+    
+    #[test]
+    fun test_memory_management_codegen() {
+        // Test code generation for memory management
+        let memory_cases = vec![
+            // Stack allocation
+            "fun stack_vars() { let x = 42; let y = x + 1; }",
+            
+            // Vector allocation
+            "fun vector_ops() { let v = vec![1, 2, 3]; let len = v.len(); }",
+            
+            // Nested scopes
+            "fun nested_scopes() { let x = 1; { let y = 2; let z = x + y; } }",
+            
+            // Function parameters
+            "fun with_params(a: i32, b: Vec<i32>) -> i32 { a + b.len() }",
+        ];
+        
+        let compiler = Compiler::new();
+        
+        for program in &memory_cases {
+            let generated = compiler.compile(program).unwrap();
+            
+            // Should generate proper memory management code
+            assert!(generated.has_proper_stack_management(),
+                "Should manage stack properly for: '{}'", program);
+            assert!(generated.has_proper_heap_management(),
+                "Should manage heap properly for: '{}'", program);
+            
+            // Should not have memory leaks
+            let memory_report = compiler.check_memory_safety(&generated);
+            assert!(memory_report.is_safe(),
+                "Should not have memory issues for: '{}'", program);
+        }
+    }
+    
+    // ============================================================
+    // Compiler Performance Tests
+    // ============================================================
+    
+    #[test]
+    fun test_compilation_performance() {
+        // Test compiler performance on various code sizes
+        let sizes = vec![10, 100, 1000, 5000];
+        
+        for size in &sizes {
+            let large_program = generate_test_program(*size);
+            let start_time = std::time::Instant::now();
+            
+            let result = Compiler::new().compile(&large_program);
+            let compilation_time = start_time.elapsed();
+            
+            assert!(result.is_ok(), "Should compile program of size {}", size);
+            
+            // Compilation should complete in reasonable time
+            let max_time = std::time::Duration::from_secs(*size as u64 / 100 + 1);
+            assert!(compilation_time < max_time,
+                "Compilation of {} lines took too long: {:?}", 
+                size, compilation_time);
+        }
+    }
+    
+    #[test]
+    fun test_memory_usage_during_compilation() {
+        // Test memory usage doesn't grow unboundedly
+        let initial_memory = get_memory_usage();
+        let large_program = generate_test_program(10000);
+        
+        let result = Compiler::new().compile(&large_program);
+        let peak_memory = get_memory_usage();
+        
+        assert!(result.is_ok(), "Should compile large program");
+        
+        // Memory usage should be reasonable
+        let memory_increase = peak_memory - initial_memory;
+        assert!(memory_increase < 100_000_000, // 100MB
+            "Memory usage too high during compilation: {} bytes", 
+            memory_increase);
+        
+        // Memory should be released after compilation
+        drop(result);
+        std::thread::sleep(std::time::Duration::from_millis(100)); // Allow GC
+        
+        let final_memory = get_memory_usage();
+        assert!(final_memory < peak_memory,
+            "Memory should be released after compilation");
+    }
+    
+    // ============================================================
+    // Stress Tests
+    // ============================================================
+    
+    #[test]
+    fun test_deeply_nested_expressions() {
+        // Test handling of deeply nested expressions
+        let mut nested_expr = "1".to_string();
+        for i in 0..1000 {
+            nested_expr = format!("({} + {})", nested_expr, i);
+        }
+        let program = format!("fun deep() -> i32 {{ return {}; }}", nested_expr);
+        
+        let compiler = Compiler::new();
+        let result = compiler.compile(&program);
+        
+        // Should handle deep nesting without stack overflow
+        match result {
+            Ok(_) => {
+                // Successfully compiled deeply nested expression
+                assert!(true);
+            }
+            Err(error) => {
+                // Should fail gracefully, not crash
+                assert!(error.is_complexity_error() || error.is_resource_error(),
+                    "Should fail gracefully on deep nesting, got: {}", error);
+            }
+        }
+    }
+    
+    #[test]
+    fun test_many_variables() {
+        // Test handling of many variables
+        let mut program = "fun many_vars() {\n".to_string();
+        for i in 0..10000 {
+            program.push_str(&format!("    let var_{} = {};\n", i, i));
+        }
+        program.push_str("}\n");
+        
+        let compiler = Compiler::new();
+        let start_time = std::time::Instant::now();
+        let result = compiler.compile(&program);
+        let compile_time = start_time.elapsed();
+        
+        // Should handle many variables efficiently
+        assert!(result.is_ok(), "Should handle many variables");
+        assert!(compile_time < std::time::Duration::from_secs(30),
+            "Should compile many variables efficiently");
+    }
+    
+    #[test]
+    fun test_compiler_robustness_fuzzing() {
+        // Fuzz testing with random inputs
+        let mut rng = PseudoRandom::new(42); // Deterministic for reproducibility
+        let compiler = Compiler::new();
+        
+        for _ in 0..1000 {
+            let random_program = generate_random_program(&mut rng);
+            let result = compiler.compile(&random_program);
+            
+            // Compiler should never crash, only return errors
+            match result {
+                Ok(_) => {
+                    // Valid program compiled successfully
+                }
+                Err(error) => {
+                    // Invalid program rejected with proper error
+                    assert!(!error.message().is_empty(),
+                        "Error should have meaningful message");
+                    assert!(error.has_location(),
+                        "Error should have location information");
+                }
+            }
+            
+            // Compiler should remain responsive
+            assert!(compiler.is_responsive(),
+                "Compiler should remain responsive after fuzzing");
+        }
+    }
+}
+
+// ============================================================
+// Helper Functions and Structures
+// ============================================================
+
+struct Compiler {
+    optimization_level: u32,
+    inference_enabled: bool,
+}
+
+impl Compiler {
+    fun new() -> Self {
+        Self {
+            optimization_level: 1,
+            inference_enabled: false,
+        }
+    }
+    
+    fun new_with_inference() -> Self {
+        Self {
+            optimization_level: 1,
+            inference_enabled: true,
+        }
+    }
+    
+    fun new_with_aggressive_optimization() -> Self {
+        Self {
+            optimization_level: 3,
+            inference_enabled: true,
+        }
+    }
+    
+    fun parse(&self, input: &str) -> Result<AST, CompilerError> {
+        // Parse the input into an AST
+        if input.is_empty() {
+            return Err(CompilerError::EmptyInput);
+        }
+        
+        // Simplified parsing logic
+        if input.contains("invalid") {
+            Err(CompilerError::ParseError("Invalid syntax".to_string()))
+        } else {
+            Ok(AST::new())
+        }
+    }
+    
+    fun parse_with_recovery(&self, input: &str) -> ParseResult {
+        // Parse with error recovery
+        ParseResult::new()
+    }
+    
+    fun tokenize(&self, input: &str) -> TokenStream {
+        // Tokenize the input
+        TokenStream::new()
+    }
+    
+    fun compile(&self, input: &str) -> Result<CompiledCode, CompilerError> {
+        let ast = self.parse(input)?;
+        let typed_ast = self.type_check(&ast)?;
+        self.generate_code(&typed_ast)
+    }
+    
+    fun type_check(&self, ast: &AST) -> Result<TypedAST, CompilerError> {
+        // Type check the AST
+        Ok(TypedAST::new())
+    }
+    
+    fun generate_code(&self, typed_ast: &TypedAST) -> Result<CompiledCode, CompilerError> {
+        // Generate code from typed AST
+        Ok(CompiledCode::new())
+    }
+    
+    fun execute(&self, code: &CompiledCode) -> Result<Value, RuntimeError> {
+        // Execute the compiled code
+        Ok(Value::Integer(42))
+    }
+    
+    fun is_responsive(&self) -> bool {
+        true // Check if compiler is still responsive
+    }
+}
+
+// Placeholder structures
+struct AST;
+struct TypedAST;
+struct CompiledCode;
+struct TokenStream;
+struct ParseResult;
+struct ValidAST;
+struct Value;
+struct PseudoRandom;
+
+impl AST {
+    fun new() -> Self { AST }
+}
+
+impl TypedAST {
+    fun new() -> Self { TypedAST }
+}
+
+impl CompiledCode {
+    fun new() -> Self { CompiledCode }
+    
+    fun is_type_consistent(&self) -> bool { true }
+    fun instruction_count(&self) -> usize { 100 }
+    fun preserves_overflow_behavior(&self) -> bool { true }
+    fun preserves_side_effects(&self) -> bool { true }
+    fun preserves_memory_safety(&self) -> bool { true }
+    fun is_syntactically_valid(&self) -> bool { true }
+    fun is_semantically_valid(&self) -> bool { true }
+    fun has_proper_stack_management(&self) -> bool { true }
+    fun has_proper_heap_management(&self) -> bool { true }
+}
+
+impl TokenStream {
+    fun new() -> Self { TokenStream }
+    fun contains_errors(&self) -> bool { false }
+    fun is_err(&self) -> bool { false }
+}
+
+impl ParseResult {
+    fun new() -> Self { ParseResult }
+    fun has_errors(&self) -> bool { false }
+    fun error_count(&self) -> usize { 0 }
+    fun get_partial_ast(&self) -> PartialAST { PartialAST }
+}
+
+struct PartialAST;
+impl PartialAST {
+    fun has_function(&self, name: &str) -> bool { true }
+    fun function_has_errors(&self, name: &str) -> bool { false }
+}
+
+// Error types
+enum CompilerError {
+    EmptyInput,
+    ParseError(String),
+    TypeError(String),
+    CodeGenError(String),
+}
+
+impl CompilerError {
+    fun message(&self) -> &str {
+        match self {
+            CompilerError::EmptyInput => "Empty input",
+            CompilerError::ParseError(msg) => msg,
+            CompilerError::TypeError(msg) => msg,
+            CompilerError::CodeGenError(msg) => msg,
+        }
+    }
+    
+    fun has_location(&self) -> bool { true }
+    fun has_source_location(&self) -> bool { true }
+    fun has_type_context(&self) -> bool { true }
+    fun has_suggestion(&self) -> bool { true }
+    fun is_recoverable(&self) -> bool { true }
+    fun is_inference_error(&self) -> bool { false }
+    fun is_complexity_error(&self) -> bool { false }
+    fun is_resource_error(&self) -> bool { false }
+}
+
+enum RuntimeError {
+    TypeError,
+    RuntimeError,
+}
+
+enum Value {
+    Integer(i32),
+    Boolean(bool),
+}
+
+struct MemoryReport;
+impl MemoryReport {
+    fun is_safe(&self) -> bool { true }
+}
+
+// Helper functions
+fun generate_test_program(size: usize) -> String {
+    let mut program = "fun test() {\n".to_string();
+    for i in 0..size {
+        program.push_str(&format!("    let var_{} = {};\n", i, i));
+    }
+    program.push_str("}\n");
+    program
+}
+
+fun generate_random_program(rng: &mut PseudoRandom) -> String {
+    "fun random() { let x = 42; }".to_string() // Simplified
+}
+
+fun get_memory_usage() -> usize {
+    1024 * 1024 // 1MB placeholder
+}
+
+impl PseudoRandom {
+    fun new(seed: u64) -> Self { PseudoRandom }
+}

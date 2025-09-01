@@ -1,0 +1,21 @@
+fun fibonacci(n: i32) -> i32 {
+    if n <= 1 {
+        return n;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+fun test_fibonacci() {
+    println!("Testing Fibonacci");
+    
+    let result = fibonacci(5);
+    if result == 5 {
+        println!("Test passed");
+    } else {
+        println!("Test failed");
+    }
+}
+
+fun main() {
+    test_fibonacci();
+}
