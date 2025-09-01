@@ -57,25 +57,46 @@ fun tsp_demo(num_cities: i32) -> i32 {
     return total_distance;
 }
 
-fun main() {
-    println!("🎯 Traveling Salesman Problem 100% Coverage");
-    println!("============================================");
-    
-    // Test distance calculation
+fun run_distance_calculation_tests() -> bool {
+    // Test distance calculation with invalid inputs and edge cases
     let _invalid_city1: i32 = calculate_distance(-1, 3);
     let _invalid_city2: i32 = calculate_distance(3, -1);
     let _same_city: i32 = calculate_distance(2, 2);
+    return true;
+}
+
+fun run_normal_distance_tests() -> bool {
+    // Test distance calculation with normal city pairs
     let _normal_distance: i32 = calculate_distance(1, 5);
     let _reverse_distance: i32 = calculate_distance(7, 2);
-    
-    // Test TSP approximation
+    return true;
+}
+
+fun run_tsp_boundary_tests() -> bool {
+    // Test TSP with boundary conditions and invalid inputs
     let _no_cities: i32 = tsp_demo(0);
     let _negative_cities: i32 = tsp_demo(-1);
     let _single_city: i32 = tsp_demo(1);
     let _two_cities: i32 = tsp_demo(2);
+    return true;
+}
+
+fun run_tsp_scaling_tests() -> bool {
+    // Test TSP approximation with various tour sizes
     let _small_tour: i32 = tsp_demo(3);
     let _medium_tour: i32 = tsp_demo(5);
     let _large_tour: i32 = tsp_demo(10);
+    return true;
+}
+
+fun main() {
+    println!("🎯 Traveling Salesman Problem 100% Coverage");
+    println!("============================================");
+    
+    let _distance_invalid: bool = run_distance_calculation_tests();
+    let _distance_normal: bool = run_normal_distance_tests();
+    let _tsp_boundary: bool = run_tsp_boundary_tests();
+    let _tsp_scaling: bool = run_tsp_scaling_tests();
     
     println!("✅ Distance calculation tested");
     println!("✅ Tour construction tested");

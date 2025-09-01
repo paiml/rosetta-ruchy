@@ -55,26 +55,47 @@ fun graph_coloring_demo(num_nodes: i32, num_colors: i32) -> i32 {
     return colored_nodes;
 }
 
-fun main() {
-    println!("🎯 Graph Coloring 100% Coverage");
-    println!("===============================");
-    
-    // Test coloring validation
+fun run_coloring_validation_tests() -> bool {
+    // Test invalid inputs and boundary conditions for coloring validation
     let _invalid_node: bool = is_valid_coloring(-1, 0, 3);
     let _invalid_color: bool = is_valid_coloring(1, -1, 3);
     let _no_colors: bool = is_valid_coloring(1, 0, 0);
     let _color_out_of_range: bool = is_valid_coloring(1, 5, 3);
+    return true;
+}
+
+fun run_normal_coloring_tests() -> bool {
+    // Test valid coloring scenarios and adjacency rules
     let _valid_first_node: bool = is_valid_coloring(0, 0, 3);
     let _valid_coloring: bool = is_valid_coloring(2, 1, 3);
     let _invalid_adjacent: bool = is_valid_coloring(2, 1, 2);
-    
-    // Test graph coloring process
+    return true;
+}
+
+fun run_graph_boundary_tests() -> bool {
+    // Test boundary conditions for graph coloring process
     let _empty_graph: i32 = graph_coloring_demo(0, 3);
     let _no_colors_available: i32 = graph_coloring_demo(5, 0);
     let _single_node: i32 = graph_coloring_demo(1, 3);
+    return true;
+}
+
+fun run_graph_scaling_tests() -> bool {
+    // Test graph coloring with various sizes and color constraints
     let _small_graph: i32 = graph_coloring_demo(3, 3);
     let _insufficient_colors: i32 = graph_coloring_demo(10, 1);
     let _large_graph: i32 = graph_coloring_demo(8, 4);
+    return true;
+}
+
+fun main() {
+    println!("🎯 Graph Coloring 100% Coverage");
+    println!("===============================");
+    
+    let _validation: bool = run_coloring_validation_tests();
+    let _normal: bool = run_normal_coloring_tests();
+    let _boundary: bool = run_graph_boundary_tests();
+    let _scaling: bool = run_graph_scaling_tests();
     
     println!("✅ Color validation tested");
     println!("✅ Adjacency checking tested");

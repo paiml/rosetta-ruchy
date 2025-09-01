@@ -91,23 +91,44 @@ fun bst_search_demo(target: i32, tree_size: i32) -> bool {
     return current == target;
 }
 
+fun run_insertion_boundary_tests() -> bool {
+    // Test BST insertion with boundary conditions and invalid inputs
+    let _invalid_size: i32 = bst_insert_demo(5, -1);
+    let _empty_tree: i32 = bst_insert_demo(5, 0);
+    let _single_insert: i32 = bst_insert_demo(5, 1);
+    return true;
+}
+
+fun run_insertion_scaling_tests() -> bool {
+    // Test BST insertion with various tree sizes
+    let _multiple_inserts: i32 = bst_insert_demo(10, 7);
+    let _large_tree: i32 = bst_insert_demo(15, 15);
+    return true;
+}
+
+fun run_search_boundary_tests() -> bool {
+    // Test BST search with boundary conditions and edge cases
+    let _search_empty: bool = bst_search_demo(5, 0);
+    let _search_negative: bool = bst_search_demo(-1, 5);
+    return true;
+}
+
+fun run_search_normal_tests() -> bool {
+    // Test BST search operations with normal scenarios
+    let _search_found: bool = bst_search_demo(5, 10);
+    let _search_not_found: bool = bst_search_demo(100, 10);
+    let _search_large: bool = bst_search_demo(7, 15);
+    return true;
+}
+
 fun main() {
     println!("🎯 Binary Search Tree 100% Coverage");
     println!("===================================");
     
-    // Test insertion operations
-    let _invalid_size: i32 = bst_insert_demo(5, -1);
-    let _empty_tree: i32 = bst_insert_demo(5, 0);
-    let _single_insert: i32 = bst_insert_demo(5, 1);
-    let _multiple_inserts: i32 = bst_insert_demo(10, 7);
-    let _large_tree: i32 = bst_insert_demo(15, 15);
-    
-    // Test search operations
-    let _search_empty: bool = bst_search_demo(5, 0);
-    let _search_negative: bool = bst_search_demo(-1, 5);
-    let _search_found: bool = bst_search_demo(5, 10);
-    let _search_not_found: bool = bst_search_demo(100, 10);
-    let _search_large: bool = bst_search_demo(7, 15);
+    let _insert_boundary: bool = run_insertion_boundary_tests();
+    let _insert_scaling: bool = run_insertion_scaling_tests();
+    let _search_boundary: bool = run_search_boundary_tests();
+    let _search_normal: bool = run_search_normal_tests();
     
     println!("✅ Tree insertion tested");
     println!("✅ Tree search tested");
