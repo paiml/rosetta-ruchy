@@ -1,5 +1,26 @@
 // Topological Sort 100% Coverage - v1.27.10 Compatible
+// Implements topological sorting for directed acyclic graphs (DAGs)
+// Demonstrates Kahn's algorithm approach with in-degree tracking
 
+/// Checks if a node has incoming edges in the graph
+/// 
+/// # Algorithm Context
+/// Topological sorting requires processing nodes with zero in-degree first
+/// This function simulates in-degree checking for DAG node processing
+/// 
+/// # Arguments
+/// * `node` - The node ID to check for incoming edges
+/// * `num_nodes` - Total number of nodes in the graph
+/// 
+/// # Returns
+/// * true if node has incoming edges, false if no incoming edges or invalid node
+/// 
+/// # Simulation Logic
+/// * Node 0 (root): No incoming edges by definition
+/// * Odd nodes: Have incoming edges (dependency exists)
+/// * Even nodes (except 0): No incoming edges (can be processed)
+/// 
+/// # Time Complexity: O(1) for this simulation
 fun has_incoming_edges(node: i32, num_nodes: i32) -> bool {
     if node < 0 || node >= num_nodes {
         return false;
