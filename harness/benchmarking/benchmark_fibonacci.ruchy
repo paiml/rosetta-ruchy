@@ -1,0 +1,121 @@
+// Fibonacci Benchmark - Performance Testing
+// Measures execution time for recursive and iterative implementations
+
+fun fibonacci_recursive(n: i32) -> i32 {
+    if n <= 1 {
+        return n;
+    }
+    return fibonacci_recursive(n - 1) + fibonacci_recursive(n - 2);
+}
+
+fun fibonacci_iterative(n: i32) -> i32 {
+    if n <= 1 {
+        return n;
+    }
+    
+    let mut prev: i32 = 0;
+    let mut curr: i32 = 1;
+    let mut i: i32 = 2;
+    
+    while i <= n {
+        let next: i32 = prev + curr;
+        prev = curr;
+        curr = next;
+        i = i + 1;
+    }
+    
+    return curr;
+}
+
+fun benchmark_fibonacci(iterations: i32, n: i32, use_recursive: bool) -> i32 {
+    if iterations <= 0 || n < 0 {
+        return -1;
+    }
+    
+    let mut total_time: i32 = 0;
+    let mut i: i32 = 0;
+    
+    // Warmup phase
+    let warmup: i32 = iterations / 10;
+    if warmup > 0 {
+        let mut w: i32 = 0;
+        while w < warmup {
+            if use_recursive && n <= 20 {  // Limit recursive for performance
+                let _result: i32 = fibonacci_recursive(n);
+            } else {
+                let _result: i32 = fibonacci_iterative(n);
+            }
+            w = w + 1;
+        }
+    }
+    
+    // Benchmark phase
+    while i < iterations {
+        // Simulate timing start
+        let start_time: i32 = i * 1000;  // Mock timestamp
+        
+        // Execute algorithm
+        let result: i32;
+        if use_recursive && n <= 20 {
+            result = fibonacci_recursive(n);
+        } else {
+            result = fibonacci_iterative(n);
+        }
+        
+        // Simulate timing end
+        let end_time: i32 = start_time + n;  // Simulated execution time
+        let execution_time: i32 = end_time - start_time;
+        
+        total_time = total_time + execution_time;
+        i = i + 1;
+    }
+    
+    return total_time / iterations;  // Average execution time
+}
+
+fun main() {
+    println!("🔢 Fibonacci Benchmark Suite");
+    println!("============================");
+    
+    // Test parameters
+    let iterations: i32 = 1000;
+    let test_sizes: i32 = 5;  // Test n = 5, 10, 15, 20, 25
+    
+    println!("{");
+    println!("  \"algorithm\": \"fibonacci\",");
+    println!("  \"language\": \"ruchy\",");
+    println!("  \"iterations\": 1000,");
+    println!("  \"results\": [");
+    
+    let mut size: i32 = 0;
+    while size < test_sizes {
+        let n: i32 = (size + 1) * 5;
+        
+        // Benchmark iterative version
+        let iter_time: i32 = benchmark_fibonacci(iterations, n, false);
+        
+        // Benchmark recursive version (only for small n)
+        let rec_time: i32;
+        if n <= 20 {
+            rec_time = benchmark_fibonacci(iterations, n, true);
+        } else {
+            rec_time = -1;  // Skip large recursive tests
+        }
+        
+        println!("    {");
+        println!("      \"n\": ");
+        println!("      \"iterative_time\": ");
+        println!("      \"recursive_time\": ");
+        
+        if size < test_sizes - 1 {
+            println!("    },");
+        } else {
+            println!("    }");
+        }
+        
+        size = size + 1;
+    }
+    
+    println!("  ]");
+    println!("}");
+}

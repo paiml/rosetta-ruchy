@@ -1,0 +1,19 @@
+[package]
+name = "rust-benchmarks"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "fibonacci"
+path = "fibonacci.rs"
+
+[[bin]]
+name = "quicksort"
+path = "quicksort.rs"
+
+[[bin]]
+name = "hash_table"
+path = "hash_table.rs"
+
+[dependencies]
+rand = "0.8"
