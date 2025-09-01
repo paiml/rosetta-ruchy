@@ -1,0 +1,17 @@
+{
+  "file": null,
+  "language": "Unknown",
+  "confidence": 0.9062084555625916,
+  "score": {
+    "total": 85.59982299804688,
+    "grade": "A-",
+    "breakdown": {
+      "structural_complexity": 13.643750190734863,
+      "semantic_complexity": 19.89583396911621,
+      "duplication": 18.250999450683594,
+      "coupling": 15.0,
+      "documentation": 8.809233665466309,
+      "consistency": 10.0
+    }
+  }
+}
