@@ -1,5 +1,26 @@
 // Binary Search Tree 100% Coverage - v1.27.10 Compatible
+// Implements binary search tree operations with comprehensive test coverage
+// Demonstrates O(log n) average-case performance for balanced trees
 
+/// Simulates BST insertion operation with depth calculation
+/// 
+/// # Algorithm Description
+/// Binary Search Tree maintains the invariant: for any node,
+/// all left subtree values < node value < all right subtree values
+/// 
+/// # Arguments
+/// * `value` - The value to insert into the BST
+/// * `tree_size` - The current size of the tree
+/// 
+/// # Returns
+/// * The depth at which insertion would occur, or -1 for invalid size
+/// 
+/// # Time Complexity
+/// * Average Case: O(log n) for balanced tree
+/// * Worst Case: O(n) for degenerate tree (linked list)
+/// * Best Case: O(1) for empty tree
+/// 
+/// # Space Complexity: O(1) for insertion operation
 fun bst_insert_demo(value: i32, tree_size: i32) -> i32 {
     if tree_size < 0 {
         return -1;
@@ -21,24 +42,48 @@ fun bst_insert_demo(value: i32, tree_size: i32) -> i32 {
     return depth;
 }
 
+/// Simulates BST search operation with traversal logic
+/// 
+/// # Algorithm Description
+/// BST search follows the tree property to eliminate half the search space at each step
+/// Compare target with current node and traverse left (smaller) or right (larger)
+/// 
+/// # Arguments
+/// * `target` - The value to search for in the BST
+/// * `tree_size` - The size of the tree being searched
+/// 
+/// # Returns
+/// * true if target is found, false if not found or invalid inputs
+/// 
+/// # Search Strategy
+/// * Start from middle value (root approximation)
+/// * Compare target with current node value
+/// * Traverse left if target < current, right if target > current
+/// * Continue until found or exhausted search paths
+/// 
+/// # Time Complexity: O(log n) average, O(n) worst case
+/// # Space Complexity: O(1) iterative approach
 fun bst_search_demo(target: i32, tree_size: i32) -> bool {
+    // Boundary condition: empty tree or invalid size
     if tree_size <= 0 {
         return false;
     }
     
+    // Input validation: negative targets not supported in this demo
     if target < 0 {
         return false;
     }
     
     // Simulate BST search traversal
-    let mut current: i32 = tree_size / 2; // Start from middle
+    let mut current: i32 = tree_size / 2; // Start from approximate root
     let mut steps: i32 = 0;
     
+    // Binary search tree traversal simulation
     while steps < tree_size && current != target {
         if target < current {
-            current = current / 2; // Go left
+            current = current / 2;                    // Go left (smaller values)
         } else {
-            current = current + (current / 2); // Go right
+            current = current + (current / 2);       // Go right (larger values)  
         }
         steps = steps + 1;
     }
