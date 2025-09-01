@@ -1,0 +1,425 @@
+#!/usr/bin/env ruchy
+
+// Lint Verification Script - Comprehensive linting for all Ruchy files
+// Validates code quality and style across the entire codebase
+
+use std::process::Command;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::collections::HashMap;
+
+struct LintVerification {
+    project_root: PathBuf,
+    fix_mode: bool,
+    strict_mode: bool,
+    verbose: bool,
+    results: LintResults,
+}
+
+struct LintResults {
+    total_files: usize,
+    clean_files: usize,
+    files_with_issues: Vec<FileIssues>,
+    total_violations: usize,
+    violations_by_category: HashMap<String, usize>,
+}
+
+struct FileIssues {
+    file_path: String,
+    violations: Vec<Violation>,
+    fixable: bool,
+}
+
+struct Violation {
+    line: usize,
+    column: usize,
+    severity: String,
+    category: String,
+    message: String,
+}
+
+impl LintVerification {
+    fun new() -> Self {
+        Self {
+            project_root: std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
+            fix_mode: false,
+            strict_mode: true,
+            verbose: false,
+            results: LintResults::new(),
+        }
+    }
+    
+    fun run(&mut self) -> Result<(), String> {
+        println!("🔍 Ruchy Lint Verification");
+        println!("=" * 60);
+        
+        // Find all Ruchy files
+        let ruchy_files = self.find_ruchy_files()?;
+        self.results.total_files = ruchy_files.len();
+        
+        println!("📁 Found {} Ruchy files to lint", ruchy_files.len());
+        
+        // Lint each file
+        for file in &ruchy_files {
+            self.lint_file(file)?;
+        }
+        
+        // Generate report
+        self.generate_report();
+        
+        // Apply fixes if requested
+        if self.fix_mode && !self.results.files_with_issues.is_empty() {
+            self.apply_fixes()?;
+        }
+        
+        // Return error if violations found in strict mode
+        if self.strict_mode && self.results.total_violations > 0 {
+            Err(format!("Found {} lint violations", self.results.total_violations))
+        } else {
+            Ok(())
+        }
+    }
+    
+    fun find_ruchy_files(&self) -> Result<Vec<PathBuf>, String> {
+        let mut files = Vec::new();
+        self.find_files_recursive(&self.project_root, &mut files)?;
+        
+        // Sort files for consistent output
+        files.sort();
+        Ok(files)
+    }
+    
+    fun find_files_recursive(&self, dir: &Path, files: &mut Vec<PathBuf>) -> Result<(), String> {
+        let entries = fs::read_dir(dir)
+            .map_err(|e| format!("Failed to read directory: {}", e))?;
+        
+        for entry in entries {
+            let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
+            let path = entry.path();
+            
+            if path.is_dir() {
+                let name = path.file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("");
+                
+                // Skip non-source directories
+                if !name.starts_with('.') && 
+                   name != "target" && 
+                   name != "node_modules" &&
+                   name != ".git" {
+                    self.find_files_recursive(&path, files)?;
+                }
+            } else if path.extension().and_then(|e| e.to_str()) == Some("ruchy") {
+                files.push(path);
+            }
+        }
+        
+        Ok(())
+    }
+    
+    fun lint_file(&mut self, file_path: &Path) -> Result<(), String> {
+        if self.verbose {
+            println!("\n🔍 Linting: {}", file_path.display());
+        }
+        
+        let mut cmd = Command::new("ruchy");
+        cmd.arg("lint")
+           .arg(file_path);
+        
+        if self.strict_mode {
+            cmd.arg("--strict");
+        }
+        
+        if self.verbose {
+            cmd.arg("--verbose");
+        }
+        
+        cmd.arg("--format").arg("text");
+        
+        let output = cmd.output()
+            .map_err(|e| format!("Failed to lint {}: {}", file_path.display(), e))?;
+        
+        // Parse output for violations
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        
+        let violations = self.parse_violations(&stdout, &stderr);
+        
+        if violations.is_empty() {
+            self.results.clean_files += 1;
+            if self.verbose {
+                println!("  ✅ Clean - no violations");
+            }
+        } else {
+            let file_issues = FileIssues {
+                file_path: file_path.to_string_lossy().to_string(),
+                violations: violations.clone(),
+                fixable: self.check_if_fixable(&violations),
+            };
+            
+            self.results.files_with_issues.push(file_issues);
+            self.results.total_violations += violations.len();
+            
+            // Count by category
+            for violation in &violations {
+                *self.results.violations_by_category
+                    .entry(violation.category.clone())
+                    .or_insert(0) += 1;
+            }
+            
+            if self.verbose {
+                println!("  ⚠️  Found {} violations", violations.len());
+                for v in &violations[..violations.len().min(3)] {
+                    println!("    - Line {}: {}", v.line, v.message);
+                }
+            }
+        }
+        
+        Ok(())
+    }
+    
+    fun parse_violations(&self, stdout: &str, stderr: &str) -> Vec<Violation> {
+        let mut violations = Vec::new();
+        
+        // Parse both stdout and stderr for violations
+        for line in stdout.lines().chain(stderr.lines()) {
+            if line.contains("warning:") || line.contains("error:") {
+                let violation = self.parse_violation_line(line);
+                if let Some(v) = violation {
+                    violations.push(v);
+                }
+            }
+        }
+        
+        violations
+    }
+    
+    fun parse_violation_line(&self, line: &str) -> Option<Violation> {
+        // Parse lines like:
+        // "file.ruchy:10:5: warning: unused variable 'x' [unused]"
+        // "error: missing semicolon at line 25"
+        
+        let severity = if line.contains("error:") {
+            "error"
+        } else if line.contains("warning:") {
+            "warning"
+        } else {
+            "info"
+        };
+        
+        // Extract line number if present
+        let line_num = self.extract_line_number(line).unwrap_or(0);
+        let column = self.extract_column_number(line).unwrap_or(0);
+        
+        // Extract category
+        let category = if line.contains("[unused]") {
+            "unused"
+        } else if line.contains("[style]") {
+            "style"
+        } else if line.contains("[complexity]") {
+            "complexity"
+        } else if line.contains("[security]") {
+            "security"
+        } else if line.contains("[performance]") {
+            "performance"
+        } else {
+            "general"
+        };
+        
+        // Extract message
+        let message = line.split(':')
+            .last()
+            .unwrap_or(line)
+            .trim()
+            .to_string();
+        
+        Some(Violation {
+            line: line_num,
+            column,
+            severity: severity.to_string(),
+            category: category.to_string(),
+            message,
+        })
+    }
+    
+    fun extract_line_number(&self, text: &str) -> Option<usize> {
+        // Look for patterns like ":10:" or "line 10"
+        if let Some(idx) = text.find(':') {
+            let remainder = &text[idx + 1..];
+            if let Some(end) = remainder.find(':') {
+                if let Ok(num) = remainder[..end].parse() {
+                    return Some(num);
+                }
+            }
+        }
+        
+        if let Some(idx) = text.find("line ") {
+            let remainder = &text[idx + 5..];
+            let num_str: String = remainder
+                .chars()
+                .take_while(|c| c.is_numeric())
+                .collect();
+            if let Ok(num) = num_str.parse() {
+                return Some(num);
+            }
+        }
+        
+        None
+    }
+    
+    fun extract_column_number(&self, text: &str) -> Option<usize> {
+        // Look for pattern like ":10:5:" where 5 is column
+        let parts: Vec<&str> = text.split(':').collect();
+        if parts.len() >= 3 {
+            if let Ok(num) = parts[2].parse() {
+                return Some(num);
+            }
+        }
+        None
+    }
+    
+    fun check_if_fixable(&self, violations: &[Violation]) -> bool {
+        // Check if any violations are auto-fixable
+        violations.iter().any(|v| {
+            v.category == "style" || 
+            v.category == "unused" ||
+            v.message.contains("can be auto-fixed")
+        })
+    }
+    
+    fun generate_report(&self) {
+        println!("\n" + "=" * 60);
+        println!("📊 LINT VERIFICATION REPORT");
+        println!("=" * 60);
+        
+        // Summary
+        println!("\n📈 Summary:");
+        println!("  • Total Files: {}", self.results.total_files);
+        println!("  • Clean Files: {} ({:.1}%)", 
+            self.results.clean_files,
+            (self.results.clean_files as f64 / self.results.total_files as f64) * 100.0);
+        println!("  • Files with Issues: {}", self.results.files_with_issues.len());
+        println!("  • Total Violations: {}", self.results.total_violations);
+        
+        // Violations by category
+        if !self.results.violations_by_category.is_empty() {
+            println!("\n📋 Violations by Category:");
+            let mut categories: Vec<_> = self.results.violations_by_category.iter().collect();
+            categories.sort_by(|a, b| b.1.cmp(a.1));
+            
+            for (category, count) in categories {
+                println!("  • {}: {}", category, count);
+            }
+        }
+        
+        // Files with most violations
+        if !self.results.files_with_issues.is_empty() {
+            println!("\n⚠️  Files with Most Violations:");
+            let mut sorted_files = self.results.files_with_issues.clone();
+            sorted_files.sort_by(|a, b| b.violations.len().cmp(&a.violations.len()));
+            
+            for (i, file) in sorted_files.iter().take(5).enumerate() {
+                println!("  {}. {} ({} violations{})",
+                    i + 1,
+                    file.file_path.split('/').last().unwrap_or(&file.file_path),
+                    file.violations.len(),
+                    if file.fixable { ", auto-fixable" } else { "" });
+            }
+        }
+        
+        // Status
+        let status_emoji = if self.results.total_violations == 0 {
+            "✅"
+        } else if self.results.total_violations < 10 {
+            "⚠️"
+        } else {
+            "❌"
+        };
+        
+        println!("\n{} Status: {}", 
+            status_emoji,
+            if self.results.total_violations == 0 {
+                "All files pass lint checks!"
+            } else {
+                "Lint violations found - review and fix"
+            });
+        
+        println!("=" * 60);
+    }
+    
+    fun apply_fixes(&mut self) -> Result<(), String> {
+        println!("\n🔧 Applying auto-fixes...");
+        
+        let fixable_files: Vec<_> = self.results.files_with_issues
+            .iter()
+            .filter(|f| f.fixable)
+            .collect();
+        
+        println!("Found {} files with auto-fixable issues", fixable_files.len());
+        
+        for file in fixable_files {
+            println!("  Fixing: {}", file.file_path);
+            
+            let output = Command::new("ruchy")
+                .arg("lint")
+                .arg(&file.file_path)
+                .arg("--fix")
+                .output()
+                .map_err(|e| format!("Failed to auto-fix {}: {}", file.file_path, e))?;
+            
+            if output.status.success() {
+                println!("    ✅ Fixed");
+            } else {
+                println!("    ⚠️  Some issues could not be auto-fixed");
+            }
+        }
+        
+        println!("\n✅ Auto-fix complete. Re-run lint to verify remaining issues.");
+        
+        Ok(())
+    }
+}
+
+impl LintResults {
+    fun new() -> Self {
+        Self {
+            total_files: 0,
+            clean_files: 0,
+            files_with_issues: Vec::new(),
+            total_violations: 0,
+            violations_by_category: HashMap::new(),
+        }
+    }
+}
+
+fun main() {
+    let args: Vec<String> = std::env::args().collect();
+    let mut verifier = LintVerification::new();
+    
+    // Parse command line arguments
+    for arg in &args[1..] {
+        match arg.as_str() {
+            "--fix" => verifier.fix_mode = true,
+            "--no-strict" => verifier.strict_mode = false,
+            "--verbose" | "-v" => verifier.verbose = true,
+            _ => {}
+        }
+    }
+    
+    // Run verification
+    match verifier.run() {
+        Ok(_) => {
+            if verifier.results.total_violations == 0 {
+                println!("\n🎉 All files pass lint verification!");
+            } else if !verifier.strict_mode {
+                println!("\n⚠️  Lint complete with {} violations (non-strict mode)", 
+                    verifier.results.total_violations);
+            }
+            std::process::exit(0);
+        }
+        Err(e) => {
+            eprintln!("\n❌ Lint verification failed: {}", e);
+            std::process::exit(1);
+        }
+    }
+}

@@ -1,0 +1,488 @@
+#!/usr/bin/env ruchy
+
+// Coverage Tracker - Real-time test coverage monitoring and analysis
+// Provides detailed coverage metrics and gap identification
+
+use std::fs::{self, File};
+use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::collections::{HashMap, HashSet};
+use std::io::{self, Write, BufReader, BufRead};
+
+struct CoverageTracker {
+    project_root: PathBuf,
+    target_coverage: f64,
+    coverage_data: HashMap<String, FileCoverage>,
+    uncovered_functions: HashSet<String>,
+    branch_coverage: HashMap<String, BranchCoverage>,
+}
+
+struct FileCoverage {
+    file_path: String,
+    total_lines: usize,
+    covered_lines: usize,
+    uncovered_lines: Vec<usize>,
+    functions: Vec<FunctionCoverage>,
+    coverage_percentage: f64,
+}
+
+struct FunctionCoverage {
+    name: String,
+    start_line: usize,
+    end_line: usize,
+    covered: bool,
+    complexity: usize,
+}
+
+struct BranchCoverage {
+    total_branches: usize,
+    covered_branches: usize,
+    uncovered_branches: Vec<String>,
+}
+
+impl CoverageTracker {
+    fun new(project_root: PathBuf) -> Self {
+        Self {
+            project_root,
+            target_coverage: 100.0,
+            coverage_data: HashMap::new(),
+            uncovered_functions: HashSet::new(),
+            branch_coverage: HashMap::new(),
+        }
+    }
+    
+    fun analyze_project(&mut self) -> Result<CoverageReport, String> {
+        println!("📊 Analyzing project coverage...");
+        
+        // Find all Ruchy source files
+        let source_files = self.find_source_files()?;
+        println!("📁 Found {} source files", source_files.len());
+        
+        // Analyze each file
+        for file in &source_files {
+            self.analyze_file(file)?;
+        }
+        
+        // Generate comprehensive report
+        let report = self.generate_report();
+        
+        // Print summary
+        self.print_summary(&report);
+        
+        // Generate suggestions
+        self.generate_suggestions(&report);
+        
+        Ok(report)
+    }
+    
+    fun find_source_files(&self) -> Result<Vec<PathBuf>, String> {
+        let mut files = Vec::new();
+        self.find_files_recursive(&self.project_root, &mut files)?;
+        Ok(files)
+    }
+    
+    fun find_files_recursive(&self, dir: &Path, files: &mut Vec<PathBuf>) -> Result<(), String> {
+        let entries = fs::read_dir(dir)
+            .map_err(|e| format!("Failed to read directory: {}", e))?;
+        
+        for entry in entries {
+            let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
+            let path = entry.path();
+            
+            if path.is_dir() {
+                let name = path.file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("");
+                
+                // Skip common non-source directories
+                if !name.starts_with('.') && name != "target" && name != "node_modules" {
+                    self.find_files_recursive(&path, files)?;
+                }
+            } else if path.extension().and_then(|e| e.to_str()) == Some("ruchy") {
+                // Skip test files when analyzing source coverage
+                let name = path.file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("");
+                
+                if !name.starts_with("test_") {
+                    files.push(path);
+                }
+            }
+        }
+        
+        Ok(())
+    }
+    
+    fun analyze_file(&mut self, file_path: &Path) -> Result<(), String> {
+        // Run coverage analysis on single file
+        let output = Command::new("ruchy")
+            .arg("test")
+            .arg(file_path.parent().unwrap_or(Path::new(".")))
+            .arg("--coverage")
+            .arg("--coverage-format")
+            .arg("json")
+            .output()
+            .map_err(|e| format!("Failed to analyze {}: {}", file_path.display(), e))?;
+        
+        // Parse coverage data
+        let coverage = self.parse_coverage_output(&output.stdout, file_path)?;
+        
+        // Store coverage data
+        let path_str = file_path.to_string_lossy().to_string();
+        self.coverage_data.insert(path_str, coverage);
+        
+        Ok(())
+    }
+    
+    fun parse_coverage_output(&self, output: &[u8], file_path: &Path) -> Result<FileCoverage, String> {
+        let content = String::from_utf8_lossy(output);
+        
+        // Parse JSON coverage data (simplified)
+        let mut total_lines = 0;
+        let mut covered_lines = 0;
+        let mut uncovered_lines = Vec::new();
+        let mut functions = Vec::new();
+        
+        // Count lines in file
+        if let Ok(file) = File::open(file_path) {
+            let reader = BufReader::new(file);
+            total_lines = reader.lines().count();
+        }
+        
+        // Parse coverage information from output
+        for line in content.lines() {
+            if line.contains("Uncovered line:") {
+                if let Some(num) = line.split(':').nth(2) {
+                    if let Ok(line_num) = num.trim().parse::<usize>() {
+                        uncovered_lines.push(line_num);
+                    }
+                }
+            }
+            
+            if line.contains("Function coverage:") {
+                // Parse function coverage data
+                let parts: Vec<&str> = line.split(',').collect();
+                if parts.len() >= 3 {
+                    functions.push(FunctionCoverage {
+                        name: parts[0].to_string(),
+                        start_line: parts[1].parse().unwrap_or(0),
+                        end_line: parts[2].parse().unwrap_or(0),
+                        covered: parts.get(3).map(|s| s.contains("true")).unwrap_or(false),
+                        complexity: parts.get(4).and_then(|s| s.parse().ok()).unwrap_or(1),
+                    });
+                }
+            }
+        }
+        
+        covered_lines = total_lines - uncovered_lines.len();
+        let coverage_percentage = if total_lines > 0 {
+            (covered_lines as f64 / total_lines as f64) * 100.0
+        } else {
+            0.0
+        };
+        
+        Ok(FileCoverage {
+            file_path: file_path.to_string_lossy().to_string(),
+            total_lines,
+            covered_lines,
+            uncovered_lines,
+            functions,
+            coverage_percentage,
+        })
+    }
+    
+    fun generate_report(&self) -> CoverageReport {
+        let mut total_lines = 0;
+        let mut covered_lines = 0;
+        let mut total_functions = 0;
+        let mut covered_functions = 0;
+        let mut files_below_target = Vec::new();
+        
+        for (path, coverage) in &self.coverage_data {
+            total_lines += coverage.total_lines;
+            covered_lines += coverage.covered_lines;
+            
+            for func in &coverage.functions {
+                total_functions += 1;
+                if func.covered {
+                    covered_functions += 1;
+                } else {
+                    self.uncovered_functions.insert(format!("{}::{}", path, func.name));
+                }
+            }
+            
+            if coverage.coverage_percentage < self.target_coverage {
+                files_below_target.push(FileGap {
+                    path: path.clone(),
+                    current_coverage: coverage.coverage_percentage,
+                    gap: self.target_coverage - coverage.coverage_percentage,
+                    uncovered_lines: coverage.uncovered_lines.len(),
+                });
+            }
+        }
+        
+        let overall_coverage = if total_lines > 0 {
+            (covered_lines as f64 / total_lines as f64) * 100.0
+        } else {
+            0.0
+        };
+        
+        let function_coverage = if total_functions > 0 {
+            (covered_functions as f64 / total_functions as f64) * 100.0
+        } else {
+            0.0
+        };
+        
+        CoverageReport {
+            overall_coverage,
+            line_coverage: overall_coverage,
+            function_coverage,
+            branch_coverage: self.calculate_branch_coverage(),
+            total_lines,
+            covered_lines,
+            total_functions,
+            covered_functions,
+            files_below_target,
+            target_met: overall_coverage >= self.target_coverage,
+        }
+    }
+    
+    fun calculate_branch_coverage(&self) -> f64 {
+        let mut total_branches = 0;
+        let mut covered_branches = 0;
+        
+        for (_, branch_data) in &self.branch_coverage {
+            total_branches += branch_data.total_branches;
+            covered_branches += branch_data.covered_branches;
+        }
+        
+        if total_branches > 0 {
+            (covered_branches as f64 / total_branches as f64) * 100.0
+        } else {
+            100.0
+        }
+    }
+    
+    fun print_summary(&self, report: &CoverageReport) {
+        println!("\n" + "=".repeat(70));
+        println!("📊 COVERAGE SUMMARY");
+        println!("=".repeat(70));
+        
+        // Overall metrics
+        let emoji = if report.target_met { "✅" } else { "❌" };
+        println!("{} Overall Coverage: {:.1}% (Target: {:.1}%)",
+            emoji, report.overall_coverage, self.target_coverage);
+        
+        // Detailed metrics
+        println!("\n📈 Detailed Metrics:");
+        println!("  • Line Coverage:     {:.1}% ({}/{})",
+            report.line_coverage, report.covered_lines, report.total_lines);
+        println!("  • Function Coverage: {:.1}% ({}/{})",
+            report.function_coverage, report.covered_functions, report.total_functions);
+        println!("  • Branch Coverage:   {:.1}%", report.branch_coverage);
+        
+        // Files needing work
+        if !report.files_below_target.is_empty() {
+            println!("\n⚠️  Files Below Target:");
+            for (i, gap) in report.files_below_target.iter().take(5).enumerate() {
+                println!("  {}. {} ({:.1}% - needs {:.1}% more)",
+                    i + 1,
+                    gap.path.split('/').last().unwrap_or(&gap.path),
+                    gap.current_coverage,
+                    gap.gap);
+            }
+            
+            if report.files_below_target.len() > 5 {
+                println!("  ... and {} more files", report.files_below_target.len() - 5);
+            }
+        }
+        
+        println!("=".repeat(70));
+    }
+    
+    fun generate_suggestions(&self, report: &CoverageReport) {
+        if report.target_met {
+            println!("\n🎉 Congratulations! Coverage target achieved!");
+            return;
+        }
+        
+        println!("\n💡 COVERAGE IMPROVEMENT SUGGESTIONS");
+        println!("-".repeat(50));
+        
+        // Priority files to improve
+        let mut priority_files = report.files_below_target.clone();
+        priority_files.sort_by(|a, b| b.uncovered_lines.cmp(&a.uncovered_lines));
+        
+        println!("\n🎯 Priority Files (most impact):");
+        for (i, file) in priority_files.iter().take(3).enumerate() {
+            println!("  {}. {} ({} uncovered lines)",
+                i + 1,
+                file.path.split('/').last().unwrap_or(&file.path),
+                file.uncovered_lines);
+            
+            // Show specific uncovered areas
+            if let Some(coverage) = self.coverage_data.get(&file.path) {
+                if !coverage.uncovered_lines.is_empty() {
+                    println!("     Lines to cover: {:?}",
+                        &coverage.uncovered_lines[..coverage.uncovered_lines.len().min(5)]);
+                }
+            }
+        }
+        
+        // Uncovered functions
+        if !self.uncovered_functions.is_empty() {
+            println!("\n🔍 Uncovered Functions:");
+            for (i, func) in self.uncovered_functions.iter().take(5).enumerate() {
+                println!("  {}. {}", i + 1, func);
+            }
+        }
+        
+        // Action items
+        println!("\n✅ Recommended Actions:");
+        println!("  1. Write tests for uncovered functions");
+        println!("  2. Add edge case tests for partially covered code");
+        println!("  3. Implement property-based tests for complex logic");
+        println!("  4. Add integration tests for untested code paths");
+        
+        // Command suggestions
+        println!("\n🛠️  Helpful Commands:");
+        println!("  • Generate test stubs: ./tdd/generators/test_generator.ruchy --file <path>");
+        println!("  • View detailed coverage: ruchy test --coverage --show-uncovered");
+        println!("  • Run mutation testing: ./tdd/analyzers/mutation_analyzer.ruchy");
+    }
+    
+    fun export_html_report(&self, report: &CoverageReport) -> Result<(), String> {
+        let html_path = self.project_root.join("coverage_report.html");
+        let mut file = File::create(&html_path)
+            .map_err(|e| format!("Failed to create HTML report: {}", e))?;
+        
+        let html = self.generate_html_content(report);
+        file.write_all(html.as_bytes())
+            .map_err(|e| format!("Failed to write HTML report: {}", e))?;
+        
+        println!("📄 HTML report generated: {}", html_path.display());
+        Ok(())
+    }
+    
+    fun generate_html_content(&self, report: &CoverageReport) -> String {
+        format!(r#"<!DOCTYPE html>
+<html>
+<head>
+    <title>Coverage Report</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 20px; }}
+        .summary {{ background: #f0f0f0; padding: 20px; border-radius: 5px; }}
+        .metric {{ margin: 10px 0; }}
+        .progress {{ width: 100%; height: 30px; background: #ddd; border-radius: 15px; }}
+        .progress-bar {{ height: 100%; background: {}; border-radius: 15px; text-align: center; line-height: 30px; color: white; }}
+        table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
+        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+        th {{ background: #f2f2f2; }}
+    </style>
+</head>
+<body>
+    <h1>Test Coverage Report</h1>
+    <div class="summary">
+        <h2>Overall Coverage: {:.1}%</h2>
+        <div class="progress">
+            <div class="progress-bar" style="width: {:.1}%">{:.1}%</div>
+        </div>
+        <div class="metric">Lines: {}/{}</div>
+        <div class="metric">Functions: {}/{}</div>
+        <div class="metric">Branches: {:.1}%</div>
+    </div>
+    <h2>File Coverage</h2>
+    <table>
+        <tr><th>File</th><th>Coverage</th><th>Lines</th><th>Uncovered</th></tr>
+        {}
+    </table>
+</body>
+</html>"#,
+            if report.overall_coverage >= 80.0 { "#4CAF50" } else { "#f44336" },
+            report.overall_coverage,
+            report.overall_coverage,
+            report.overall_coverage,
+            report.covered_lines, report.total_lines,
+            report.covered_functions, report.total_functions,
+            report.branch_coverage,
+            self.generate_file_rows()
+        )
+    }
+    
+    fun generate_file_rows(&self) -> String {
+        let mut rows = String::new();
+        for (path, coverage) in &self.coverage_data {
+            rows.push_str(&format!(
+                "<tr><td>{}</td><td>{:.1}%</td><td>{}/{}</td><td>{}</td></tr>\n",
+                path,
+                coverage.coverage_percentage,
+                coverage.covered_lines,
+                coverage.total_lines,
+                coverage.uncovered_lines.len()
+            ));
+        }
+        rows
+    }
+}
+
+struct CoverageReport {
+    overall_coverage: f64,
+    line_coverage: f64,
+    function_coverage: f64,
+    branch_coverage: f64,
+    total_lines: usize,
+    covered_lines: usize,
+    total_functions: usize,
+    covered_functions: usize,
+    files_below_target: Vec<FileGap>,
+    target_met: bool,
+}
+
+struct FileGap {
+    path: String,
+    current_coverage: f64,
+    gap: f64,
+    uncovered_lines: usize,
+}
+
+fun main() {
+    let args: Vec<String> = std::env::args().collect();
+    
+    let project_root = if args.len() > 1 {
+        PathBuf::from(&args[1])
+    } else {
+        std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
+    };
+    
+    let mut tracker = CoverageTracker::new(project_root);
+    
+    // Parse target coverage if provided
+    if let Some(idx) = args.iter().position(|a| a == "--target") {
+        if let Some(target) = args.get(idx + 1) {
+            if let Ok(t) = target.parse::<f64>() {
+                tracker.target_coverage = t;
+            }
+        }
+    }
+    
+    // Run analysis
+    match tracker.analyze_project() {
+        Ok(report) => {
+            // Export HTML report if requested
+            if args.contains(&"--html".to_string()) {
+                if let Err(e) = tracker.export_html_report(&report) {
+                    eprintln!("Warning: {}", e);
+                }
+            }
+            
+            // Exit with error if target not met
+            if !report.target_met {
+                std::process::exit(1);
+            }
+        }
+        Err(e) => {
+            eprintln!("❌ Coverage analysis failed: {}", e);
+            std::process::exit(1);
+        }
+    }
+}

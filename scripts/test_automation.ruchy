@@ -1,0 +1,403 @@
+#!/usr/bin/env ruchy
+
+// Test Automation Script - Comprehensive test execution with all Ruchy commands
+// Implements full testing pipeline with coverage, lint, and quality scoring
+
+use std::process::{Command, Output};
+use std::path::{Path, PathBuf};
+use std::fs;
+use std::time::Instant;
+use std::collections::HashMap;
+
+struct TestAutomation {
+    project_root: PathBuf,
+    parallel: bool,
+    coverage_threshold: f64,
+    lint_strict: bool,
+    score_minimum: String,
+    verbose: bool,
+    results: TestResults,
+}
+
+struct TestResults {
+    test_passed: bool,
+    coverage_percentage: f64,
+    lint_violations: Vec<String>,
+    quality_score: f64,
+    quality_grade: String,
+    duration_ms: u64,
+}
+
+impl TestAutomation {
+    fun new() -> Self {
+        Self {
+            project_root: std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
+            parallel: true,
+            coverage_threshold: 100.0,
+            lint_strict: true,
+            score_minimum: "A+".to_string(),
+            verbose: false,
+            results: TestResults::default(),
+        }
+    }
+    
+    fun run_full_suite(&mut self) -> Result<(), String> {
+        let start = Instant::now();
+        
+        println!("🚀 Running Comprehensive Test Suite");
+        println!("=" * 60);
+        
+        // Step 1: Run tests with coverage
+        self.run_tests_with_coverage()?;
+        
+        // Step 2: Run linting
+        self.run_lint_checks()?;
+        
+        // Step 3: Calculate quality score
+        self.run_quality_scoring()?;
+        
+        // Step 4: Run additional verifications
+        self.run_provability_checks()?;
+        self.run_complexity_analysis()?;
+        
+        // Record duration
+        self.results.duration_ms = start.elapsed().as_millis() as u64;
+        
+        // Generate report
+        self.generate_report();
+        
+        // Check if all quality gates passed
+        self.check_quality_gates()
+    }
+    
+    fun run_tests_with_coverage(&mut self) -> Result<(), String> {
+        println!("\n📊 Running Tests with Coverage Analysis...");
+        println!("-" * 40);
+        
+        let mut cmd = Command::new("ruchy");
+        cmd.arg("test")
+           .arg(".")
+           .arg("--coverage")
+           .arg("--coverage-format").arg("text")
+           .arg("--threshold").arg(self.coverage_threshold.to_string());
+        
+        if self.parallel {
+            cmd.arg("--parallel");
+        }
+        
+        if self.verbose {
+            cmd.arg("--verbose");
+        }
+        
+        let output = cmd.output()
+            .map_err(|e| format!("Failed to run tests: {}", e))?;
+        
+        // Parse results
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        self.results.test_passed = output.status.success();
+        
+        // Extract coverage percentage
+        for line in stdout.lines() {
+            if line.contains("Overall Coverage:") {
+                if let Some(pct) = self.extract_percentage(line) {
+                    self.results.coverage_percentage = pct;
+                }
+            }
+        }
+        
+        // Print results
+        if self.results.test_passed {
+            println!("✅ All tests passed");
+        } else {
+            println!("❌ Some tests failed");
+            if self.verbose {
+                println!("Failed tests output:\n{}", stdout);
+            }
+        }
+        
+        println!("📈 Coverage: {:.1}% (Target: {:.1}%)",
+            self.results.coverage_percentage, self.coverage_threshold);
+        
+        Ok(())
+    }
+    
+    fun run_lint_checks(&mut self) -> Result<(), String> {
+        println!("\n🔍 Running Lint Checks...");
+        println!("-" * 40);
+        
+        let mut cmd = Command::new("ruchy");
+        cmd.arg("lint")
+           .arg("--all");
+        
+        if self.lint_strict {
+            cmd.arg("--strict");
+        }
+        
+        if self.verbose {
+            cmd.arg("--verbose");
+        }
+        
+        cmd.arg("--format").arg("text");
+        
+        let output = cmd.output()
+            .map_err(|e| format!("Failed to run lint: {}", e))?;
+        
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        
+        // Parse lint violations
+        for line in stdout.lines() {
+            if line.contains("warning:") || line.contains("error:") {
+                self.results.lint_violations.push(line.to_string());
+            }
+        }
+        
+        if self.results.lint_violations.is_empty() {
+            println!("✅ No lint violations found");
+        } else {
+            println!("⚠️  Found {} lint violations", self.results.lint_violations.len());
+            if self.verbose {
+                for violation in &self.results.lint_violations[..5.min(self.results.lint_violations.len())] {
+                    println!("  • {}", violation);
+                }
+                if self.results.lint_violations.len() > 5 {
+                    println!("  ... and {} more", self.results.lint_violations.len() - 5);
+                }
+            }
+        }
+        
+        Ok(())
+    }
+    
+    fun run_quality_scoring(&mut self) -> Result<(), String> {
+        println!("\n⭐ Running Quality Scoring...");
+        println!("-" * 40);
+        
+        let output = Command::new("ruchy")
+            .arg("score")
+            .arg(".")
+            .arg("--comprehensive")
+            .output()
+            .map_err(|e| format!("Failed to run quality scoring: {}", e))?;
+        
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        
+        // Parse quality score
+        for line in stdout.lines() {
+            if line.contains("Overall Score:") {
+                // Extract score and grade
+                if let Some(score_part) = line.split(':').nth(1) {
+                    // Parse "0.975 (A+)" format
+                    let parts: Vec<&str> = score_part.trim().split_whitespace().collect();
+                    if let Some(score_str) = parts.get(0) {
+                        if let Ok(score) = score_str.parse::<f64>() {
+                            self.results.quality_score = score;
+                        }
+                    }
+                    if let Some(grade_part) = parts.get(1) {
+                        self.results.quality_grade = grade_part.trim_matches(|c| c == '(' || c == ')').to_string();
+                    }
+                }
+            }
+        }
+        
+        println!("📊 Quality Score: {} ({})", 
+            self.results.quality_score, self.results.quality_grade);
+        println!("🎯 Target: {}", self.score_minimum);
+        
+        Ok(())
+    }
+    
+    fun run_provability_checks(&mut self) -> Result<(), String> {
+        println!("\n🔬 Running Provability Analysis...");
+        println!("-" * 40);
+        
+        let output = Command::new("ruchy")
+            .arg("provability")
+            .arg(".")
+            .arg("--comprehensive-analysis")
+            .output()
+            .map_err(|e| format!("Failed to run provability: {}", e))?;
+        
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        
+        // Look for provability score
+        for line in stdout.lines() {
+            if line.contains("Provability Score:") {
+                println!("  {}", line);
+            }
+        }
+        
+        Ok(())
+    }
+    
+    fun run_complexity_analysis(&mut self) -> Result<(), String> {
+        println!("\n📐 Running Complexity Analysis...");
+        println!("-" * 40);
+        
+        let output = Command::new("ruchy")
+            .arg("runtime")
+            .arg(".")
+            .arg("--complexity-analysis")
+            .output()
+            .map_err(|e| format!("Failed to run complexity analysis: {}", e))?;
+        
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        
+        // Look for complexity metrics
+        for line in stdout.lines() {
+            if line.contains("Estimated Runtime:") || line.contains("Optimization Score:") {
+                println!("  {}", line);
+            }
+        }
+        
+        Ok(())
+    }
+    
+    fun generate_report(&self) {
+        println!("\n" + "=" * 60);
+        println!("📋 TEST AUTOMATION REPORT");
+        println!("=" * 60);
+        
+        // Test Results
+        let test_emoji = if self.results.test_passed { "✅" } else { "❌" };
+        println!("{} Tests: {}", test_emoji, 
+            if self.results.test_passed { "PASSED" } else { "FAILED" });
+        
+        // Coverage
+        let coverage_emoji = if self.results.coverage_percentage >= self.coverage_threshold {
+            "✅"
+        } else {
+            "❌"
+        };
+        println!("{} Coverage: {:.1}% (Target: {:.1}%)",
+            coverage_emoji, self.results.coverage_percentage, self.coverage_threshold);
+        
+        // Lint
+        let lint_emoji = if self.results.lint_violations.is_empty() { "✅" } else { "⚠️" };
+        println!("{} Lint: {} violations", lint_emoji, self.results.lint_violations.len());
+        
+        // Quality Score
+        let score_emoji = if self.results.quality_grade == self.score_minimum {
+            "✅"
+        } else if self.results.quality_score >= 0.9 {
+            "📈"
+        } else {
+            "📉"
+        };
+        println!("{} Quality: {} ({}) - Target: {}",
+            score_emoji, self.results.quality_score, self.results.quality_grade, self.score_minimum);
+        
+        // Duration
+        println!("⏱️  Duration: {}ms", self.results.duration_ms);
+        
+        println!("=" * 60);
+    }
+    
+    fun check_quality_gates(&self) -> Result<(), String> {
+        let mut gates_passed = true;
+        let mut failures = Vec::new();
+        
+        // Check test status
+        if !self.results.test_passed {
+            gates_passed = false;
+            failures.push("Tests failed");
+        }
+        
+        // Check coverage
+        if self.results.coverage_percentage < self.coverage_threshold {
+            gates_passed = false;
+            failures.push(format!("Coverage below threshold ({:.1}% < {:.1}%)",
+                self.results.coverage_percentage, self.coverage_threshold));
+        }
+        
+        // Check lint (strict mode)
+        if self.lint_strict && !self.results.lint_violations.is_empty() {
+            gates_passed = false;
+            failures.push(format!("{} lint violations found", self.results.lint_violations.len()));
+        }
+        
+        // Check quality score
+        if self.results.quality_grade != self.score_minimum {
+            gates_passed = false;
+            failures.push(format!("Quality score {} does not meet minimum {}",
+                self.results.quality_grade, self.score_minimum));
+        }
+        
+        if gates_passed {
+            println!("\n✅ ALL QUALITY GATES PASSED!");
+            println!("Ready for commit/deployment");
+            Ok(())
+        } else {
+            println!("\n❌ QUALITY GATES FAILED!");
+            println!("Issues to fix:");
+            for (i, failure) in failures.iter().enumerate() {
+                println!("  {}. {}", i + 1, failure);
+            }
+            Err("Quality gates not met".to_string())
+        }
+    }
+    
+    fun extract_percentage(&self, line: &str) -> Option<f64> {
+        // Extract percentage from lines like "Overall Coverage: 85.5%"
+        if let Some(idx) = line.rfind(':') {
+            let remainder = &line[idx + 1..];
+            if let Some(pct_idx) = remainder.find('%') {
+                let num_str = &remainder[..pct_idx].trim();
+                return num_str.parse().ok();
+            }
+        }
+        None
+    }
+}
+
+impl Default for TestResults {
+    fun default() -> Self {
+        Self {
+            test_passed: false,
+            coverage_percentage: 0.0,
+            lint_violations: Vec::new(),
+            quality_score: 0.0,
+            quality_grade: "F".to_string(),
+            duration_ms: 0,
+        }
+    }
+}
+
+fun main() {
+    let args: Vec<String> = std::env::args().collect();
+    let mut automation = TestAutomation::new();
+    
+    // Parse command line arguments
+    for i in 1..args.len() {
+        match args[i].as_str() {
+            "--no-parallel" => automation.parallel = false,
+            "--coverage-threshold" => {
+                if let Some(val) = args.get(i + 1) {
+                    if let Ok(threshold) = val.parse() {
+                        automation.coverage_threshold = threshold;
+                    }
+                }
+            }
+            "--no-strict-lint" => automation.lint_strict = false,
+            "--score-minimum" => {
+                if let Some(val) = args.get(i + 1) {
+                    automation.score_minimum = val.clone();
+                }
+            }
+            "--verbose" | "-v" => automation.verbose = true,
+            _ => {}
+        }
+    }
+    
+    // Run the test suite
+    match automation.run_full_suite() {
+        Ok(_) => {
+            println!("\n🎉 Test automation completed successfully!");
+            std::process::exit(0);
+        }
+        Err(e) => {
+            eprintln!("\n❌ Test automation failed: {}", e);
+            std::process::exit(1);
+        }
+    }
+}

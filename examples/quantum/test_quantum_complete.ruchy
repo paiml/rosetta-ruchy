@@ -1,0 +1,560 @@
+#!/usr/bin/env ruchy
+
+// Complete Quantum Computing Test Suite - 100% Coverage Target
+// Comprehensive testing for quantum simulation with edge cases
+
+use std::f64::consts::PI;
+use std::collections::HashMap;
+
+// Test module with 100% coverage target
+#[test_coverage(target = 100)]
+module quantum_simulator_tests {
+    use super::*;
+    
+    // ============================================================
+    // Quantum Gate Unitarity Properties
+    // ============================================================
+    
+    #[property_test]
+    fun prop_gate_unitarity(gate: QuantumGate) {
+        // Property: U * U† = I (gate times conjugate transpose equals identity)
+        let matrix = gate.to_matrix();
+        let conjugate_transpose = matrix.conjugate_transpose();
+        let product = matrix.multiply(&conjugate_transpose);
+        
+        // Check if product is identity matrix
+        for i in 0..product.rows() {
+            for j in 0..product.cols() {
+                let expected = if i == j { Complex::new(1.0, 0.0) } else { Complex::zero() };
+                let actual = product.get(i, j);
+                let diff = (actual - expected).magnitude();
+                
+                assert!(diff < 1e-10, 
+                    "Gate {} not unitary at ({},{}): expected {:?}, got {:?}",
+                    gate.name(), i, j, expected, actual);
+            }
+        }
+    }
+    
+    #[test]
+    fun test_pauli_gates_unitarity() {
+        // Test all Pauli gates are unitary
+        let gates = vec![
+            QuantumGate::PauliX,
+            QuantumGate::PauliY,
+            QuantumGate::PauliZ,
+        ];
+        
+        for gate in gates {
+            prop_gate_unitarity(gate);
+            
+            // Additional check: Pauli gates are self-inverse
+            let matrix = gate.to_matrix();
+            let squared = matrix.multiply(&matrix);
+            
+            // Should equal identity
+            assert!(squared.is_identity(1e-10),
+                "Pauli gate {} squared should equal identity", gate.name());
+        }
+    }
+    
+    #[test]
+    fun test_hadamard_properties() {
+        // Test Hadamard gate specific properties
+        let h = QuantumGate::Hadamard;
+        
+        // H is self-inverse: H * H = I
+        let matrix = h.to_matrix();
+        let squared = matrix.multiply(&matrix);
+        assert!(squared.is_identity(1e-10),
+            "Hadamard squared should equal identity");
+        
+        // H transforms |0⟩ to |+⟩ = (|0⟩ + |1⟩)/√2
+        let zero_state = QuantumState::zero();
+        let plus_state = h.apply(&zero_state);
+        
+        let expected_amp = 1.0 / (2.0_f64).sqrt();
+        assert!((plus_state.amplitude(0).magnitude() - expected_amp).abs() < 1e-10);
+        assert!((plus_state.amplitude(1).magnitude() - expected_amp).abs() < 1e-10);
+    }
+    
+    #[test]
+    fun test_rotation_gates() {
+        // Test rotation gates for various angles
+        let angles = vec![0.0, PI/4.0, PI/2.0, PI, 2.0*PI];
+        
+        for angle in angles {
+            // Rotation around X axis
+            let rx = QuantumGate::RotationX(angle);
+            prop_gate_unitarity(rx);
+            
+            // Rotation around Y axis
+            let ry = QuantumGate::RotationY(angle);
+            prop_gate_unitarity(ry);
+            
+            // Rotation around Z axis
+            let rz = QuantumGate::RotationZ(angle);
+            prop_gate_unitarity(rz);
+            
+            // Check rotation by 2π returns to original
+            if (angle - 2.0*PI).abs() < 1e-10 {
+                let state = QuantumState::random();
+                let rotated = rx.apply(&state);
+                assert!(state.approximately_equal(&rotated, 1e-10),
+                    "Rotation by 2π should return to original state");
+            }
+        }
+    }
+    
+    #[test]
+    fun test_controlled_gates() {
+        // Test controlled gates maintain unitarity
+        let gates = vec![
+            QuantumGate::CNOT,
+            QuantumGate::ControlledZ,
+            QuantumGate::Toffoli,
+        ];
+        
+        for gate in gates {
+            prop_gate_unitarity(gate);
+            
+            // Test control qubit behavior
+            let state = QuantumState::from_bits(vec![0, 0]); // |00⟩
+            let result = gate.apply(&state);
+            
+            // Control qubit is 0, target should not change
+            assert!(state.approximately_equal(&result, 1e-10),
+                "Controlled gate should not affect target when control is |0⟩");
+        }
+    }
+    
+    // ============================================================
+    // Measurement Probability Conservation
+    // ============================================================
+    
+    #[test]
+    fun test_measurement_probabilities() {
+        // Test that measurement probabilities sum to 1
+        let states = vec![
+            QuantumState::zero(),
+            QuantumState::one(),
+            QuantumState::plus(),
+            QuantumState::minus(),
+            QuantumState::random(),
+            QuantumState::bell_state(),
+        ];
+        
+        for state in states {
+            let probabilities = state.get_probabilities();
+            let sum: f64 = probabilities.iter().sum();
+            
+            assert!((sum - 1.0).abs() < 1e-10,
+                "Probabilities must sum to 1, got {}", sum);
+            
+            // All probabilities should be non-negative
+            for prob in probabilities {
+                assert!(prob >= 0.0, "Probability cannot be negative: {}", prob);
+                assert!(prob <= 1.0, "Probability cannot exceed 1: {}", prob);
+            }
+        }
+    }
+    
+    #[test]
+    fun test_measurement_collapse() {
+        // Test wavefunction collapse after measurement
+        let superposition = QuantumState::plus(); // (|0⟩ + |1⟩)/√2
+        
+        // Perform measurement
+        let (outcome, collapsed_state) = superposition.measure();
+        
+        // After measurement, state should be in definite state
+        let probabilities = collapsed_state.get_probabilities();
+        
+        if outcome == 0 {
+            assert!((probabilities[0] - 1.0).abs() < 1e-10,
+                "After measuring 0, probability of |0⟩ should be 1");
+            assert!(probabilities[1] < 1e-10,
+                "After measuring 0, probability of |1⟩ should be 0");
+        } else {
+            assert!(probabilities[0] < 1e-10,
+                "After measuring 1, probability of |0⟩ should be 0");
+            assert!((probabilities[1] - 1.0).abs() < 1e-10,
+                "After measuring 1, probability of |1⟩ should be 1");
+        }
+    }
+    
+    #[test]
+    fun test_partial_measurement() {
+        // Test measuring only some qubits in multi-qubit system
+        let bell_state = QuantumState::bell_state(); // (|00⟩ + |11⟩)/√2
+        
+        // Measure first qubit only
+        let (outcome, partial_state) = bell_state.measure_qubit(0);
+        
+        // If first qubit is 0, second must be 0
+        // If first qubit is 1, second must be 1
+        let probabilities = partial_state.get_probabilities();
+        
+        if outcome == 0 {
+            assert!(probabilities[0b00] > 0.99, "Should be in |00⟩ state");
+            assert!(probabilities[0b11] < 0.01, "Should not be in |11⟩ state");
+        } else {
+            assert!(probabilities[0b00] < 0.01, "Should not be in |00⟩ state");
+            assert!(probabilities[0b11] > 0.99, "Should be in |11⟩ state");
+        }
+    }
+    
+    // ============================================================
+    // Entanglement Verification
+    // ============================================================
+    
+    #[test]
+    fun test_bell_state_entanglement() {
+        // Test Bell states are maximally entangled
+        let bell_states = vec![
+            QuantumState::bell_state_00(), // (|00⟩ + |11⟩)/√2
+            QuantumState::bell_state_01(), // (|01⟩ + |10⟩)/√2
+            QuantumState::bell_state_10(), // (|00⟩ - |11⟩)/√2
+            QuantumState::bell_state_11(), // (|01⟩ - |10⟩)/√2
+        ];
+        
+        for state in bell_states {
+            // Check entanglement using reduced density matrix
+            let reduced_density = state.trace_out_qubit(1);
+            let entropy = reduced_density.von_neumann_entropy();
+            
+            // Maximally entangled state has entropy = ln(2)
+            assert!((entropy - 2.0_f64.ln()).abs() < 1e-10,
+                "Bell state should be maximally entangled, entropy = {}", entropy);
+            
+            // Check non-separability
+            assert!(!state.is_separable(),
+                "Bell state should not be separable");
+        }
+    }
+    
+    #[test]
+    fun test_ghz_state_entanglement() {
+        // Test GHZ state (|000⟩ + |111⟩)/√2
+        let ghz = QuantumState::ghz_state(3);
+        
+        // Check amplitudes
+        let amp_000 = ghz.amplitude(0b000).magnitude();
+        let amp_111 = ghz.amplitude(0b111).magnitude();
+        let expected = 1.0 / (2.0_f64).sqrt();
+        
+        assert!((amp_000 - expected).abs() < 1e-10,
+            "GHZ state |000⟩ amplitude incorrect: {}", amp_000);
+        assert!((amp_111 - expected).abs() < 1e-10,
+            "GHZ state |111⟩ amplitude incorrect: {}", amp_111);
+        
+        // All other amplitudes should be zero
+        for i in 1..7 {
+            if i != 0b111 {
+                assert!(ghz.amplitude(i).magnitude() < 1e-10,
+                    "GHZ state amplitude for |{:03b}⟩ should be zero", i);
+            }
+        }
+        
+        // Check three-way entanglement
+        assert!(!ghz.is_separable(),
+            "GHZ state should be entangled");
+    }
+    
+    #[test]
+    fun test_entanglement_swapping() {
+        // Test entanglement swapping protocol
+        // Start with two Bell pairs: (|00⟩ + |11⟩)_AB ⊗ (|00⟩ + |11⟩)_CD
+        let bell1 = QuantumState::bell_state();
+        let bell2 = QuantumState::bell_state();
+        let combined = bell1.tensor_product(&bell2);
+        
+        // Apply Bell measurement on qubits B and C
+        let bell_measurement = QuantumGate::bell_measurement();
+        let after_measurement = bell_measurement.apply(&combined);
+        
+        // Qubits A and D should now be entangled
+        let reduced_ad = after_measurement.trace_out_qubits(vec![1, 2]);
+        assert!(!reduced_ad.is_separable(),
+            "Qubits A and D should be entangled after swapping");
+    }
+    
+    // ============================================================
+    // Complex Number Arithmetic Edge Cases
+    // ============================================================
+    
+    #[test]
+    fun test_complex_number_edge_cases() {
+        // Test complex number operations at boundaries
+        let cases = vec![
+            Complex::new(0.0, 0.0),           // Zero
+            Complex::new(1.0, 0.0),           // Real unit
+            Complex::new(0.0, 1.0),           // Imaginary unit
+            Complex::new(f64::MAX, 0.0),      // Large real
+            Complex::new(0.0, f64::MAX),      // Large imaginary
+            Complex::new(f64::MIN_POSITIVE, 0.0), // Small positive
+            Complex::new(-1.0, -1.0),         // Negative quadrant
+        ];
+        
+        for c in cases {
+            // Test magnitude
+            let mag = c.magnitude();
+            assert!(mag >= 0.0, "Magnitude must be non-negative");
+            assert!(mag.is_finite(), "Magnitude must be finite");
+            
+            // Test phase
+            let phase = c.phase();
+            assert!(phase >= -PI && phase <= PI,
+                "Phase must be in [-π, π]: {}", phase);
+            
+            // Test conjugate
+            let conj = c.conjugate();
+            assert_eq!(conj.real(), c.real());
+            assert_eq!(conj.imag(), -c.imag());
+            
+            // Test multiplication with conjugate gives real
+            let product = c * conj;
+            assert!(product.imag().abs() < 1e-10,
+                "c * c* should be real, got imaginary part: {}", product.imag());
+        }
+    }
+    
+    #[test]
+    fun test_complex_normalization() {
+        // Test normalization of complex amplitudes
+        let amplitudes = vec![
+            vec![Complex::new(1.0, 0.0), Complex::new(0.0, 0.0)],
+            vec![Complex::new(3.0, 4.0), Complex::new(0.0, 0.0)],
+            vec![Complex::new(1.0, 1.0), Complex::new(1.0, -1.0)],
+        ];
+        
+        for amps in amplitudes {
+            let state = QuantumState::from_amplitudes(amps);
+            
+            // Check normalization
+            let norm_squared: f64 = (0..state.dimension())
+                .map(|i| state.amplitude(i).magnitude().powi(2))
+                .sum();
+            
+            assert!((norm_squared - 1.0).abs() < 1e-10,
+                "State not normalized: ||ψ||² = {}", norm_squared);
+        }
+    }
+    
+    #[test]
+    fun test_phase_factors() {
+        // Test global phase factors don't affect measurements
+        let state1 = QuantumState::from_amplitudes(vec![
+            Complex::new(1.0, 0.0),
+            Complex::new(0.0, 0.0),
+        ]);
+        
+        // Apply global phase e^(iπ/4)
+        let phase = Complex::from_polar(1.0, PI/4.0);
+        let state2 = state1.multiply_by_scalar(phase);
+        
+        // Measurement probabilities should be identical
+        let probs1 = state1.get_probabilities();
+        let probs2 = state2.get_probabilities();
+        
+        for i in 0..probs1.len() {
+            assert!((probs1[i] - probs2[i]).abs() < 1e-10,
+                "Global phase should not affect probabilities");
+        }
+    }
+    
+    // ============================================================
+    // Decoherence Simulation
+    // ============================================================
+    
+    #[test]
+    fun test_decoherence_simulation() {
+        // Test decoherence effects
+        let initial_state = QuantumState::plus();
+        
+        // Apply depolarizing channel
+        let p_error = 0.1;
+        let depolarizing = NoiseChannel::depolarizing(p_error);
+        let noisy_state = depolarizing.apply(&initial_state);
+        
+        // Check purity decreases
+        let initial_purity = initial_state.purity();
+        let final_purity = noisy_state.purity();
+        
+        assert!(final_purity < initial_purity,
+            "Decoherence should reduce purity: {} -> {}", 
+            initial_purity, final_purity);
+        
+        // Apply amplitude damping (T1 decay)
+        let gamma = 0.2;
+        let damping = NoiseChannel::amplitude_damping(gamma);
+        let damped_state = damping.apply(&initial_state);
+        
+        // Population should decay toward |0⟩
+        let prob_zero = damped_state.get_probabilities()[0];
+        assert!(prob_zero > 0.5,
+            "Amplitude damping should increase |0⟩ probability");
+    }
+    
+    #[test]
+    fun test_phase_damping() {
+        // Test phase damping (T2 decay)
+        let superposition = QuantumState::plus();
+        
+        let lambda = 0.3;
+        let phase_damping = NoiseChannel::phase_damping(lambda);
+        let decohered = phase_damping.apply(&superposition);
+        
+        // Off-diagonal elements should decrease
+        let density_matrix = decohered.to_density_matrix();
+        let coherence = density_matrix.get(0, 1).magnitude();
+        
+        assert!(coherence < 0.5,
+            "Phase damping should reduce coherence: {}", coherence);
+    }
+    
+    #[test]
+    fun test_bit_flip_errors() {
+        // Test bit flip error channel
+        let zero_state = QuantumState::zero();
+        
+        let p_flip = 0.3;
+        let bit_flip = NoiseChannel::bit_flip(p_flip);
+        
+        // Run multiple times to test statistics
+        let mut flip_count = 0;
+        for _ in 0..1000 {
+            let result = bit_flip.apply(&zero_state);
+            let (outcome, _) = result.measure();
+            if outcome == 1 {
+                flip_count += 1;
+            }
+        }
+        
+        let observed_rate = flip_count as f64 / 1000.0;
+        assert!((observed_rate - p_flip).abs() < 0.05,
+            "Bit flip rate should be close to {}: got {}", 
+            p_flip, observed_rate);
+    }
+    
+    // ============================================================
+    // Algorithm Correctness
+    // ============================================================
+    
+    #[test]
+    fun test_quantum_fourier_transform() {
+        // Test QFT implementation
+        let n_qubits = 3;
+        let qft = QuantumAlgorithm::qft(n_qubits);
+        
+        // QFT of computational basis states
+        for k in 0..(1 << n_qubits) {
+            let input = QuantumState::from_integer(k, n_qubits);
+            let output = qft.apply(&input);
+            
+            // Verify QFT formula
+            for j in 0..(1 << n_qubits) {
+                let expected = Complex::from_polar(
+                    1.0 / (1 << n_qubits) as f64,
+                    2.0 * PI * (k * j) as f64 / (1 << n_qubits) as f64
+                );
+                let actual = output.amplitude(j);
+                
+                assert!((actual - expected).magnitude() < 1e-10,
+                    "QFT incorrect for |{}⟩ -> |{}⟩", k, j);
+            }
+        }
+    }
+    
+    #[test]
+    fun test_grover_search() {
+        // Test Grover's algorithm
+        let n_qubits = 3;
+        let target = 5; // Search for |101⟩
+        
+        let grover = QuantumAlgorithm::grover(n_qubits, target);
+        let initial = QuantumState::uniform_superposition(n_qubits);
+        
+        // Optimal number of iterations
+        let iterations = ((PI / 4.0) * ((1 << n_qubits) as f64).sqrt()) as usize;
+        
+        let mut state = initial;
+        for _ in 0..iterations {
+            state = grover.apply(&state);
+        }
+        
+        // Target state should have high probability
+        let target_prob = state.get_probabilities()[target];
+        assert!(target_prob > 0.9,
+            "Grover should find target with high probability: {}", target_prob);
+    }
+}
+
+// ============================================================
+// Helper Structures and Functions
+// ============================================================
+
+struct Complex {
+    real: f64,
+    imag: f64,
+}
+
+impl Complex {
+    fun new(real: f64, imag: f64) -> Self {
+        Self { real, imag }
+    }
+    
+    fun zero() -> Self {
+        Self::new(0.0, 0.0)
+    }
+    
+    fun from_polar(magnitude: f64, phase: f64) -> Self {
+        Self {
+            real: magnitude * phase.cos(),
+            imag: magnitude * phase.sin(),
+        }
+    }
+    
+    fun magnitude(&self) -> f64 {
+        (self.real * self.real + self.imag * self.imag).sqrt()
+    }
+    
+    fun phase(&self) -> f64 {
+        self.imag.atan2(self.real)
+    }
+    
+    fun conjugate(&self) -> Self {
+        Self::new(self.real, -self.imag)
+    }
+    
+    fun real(&self) -> f64 { self.real }
+    fun imag(&self) -> f64 { self.imag }
+}
+
+impl std::ops::Sub for Complex {
+    type Output = Self;
+    
+    fun sub(self, other: Self) -> Self {
+        Self::new(self.real - other.real, self.imag - other.imag)
+    }
+}
+
+impl std::ops::Mul for Complex {
+    type Output = Self;
+    
+    fun mul(self, other: Self) -> Self {
+        Self::new(
+            self.real * other.real - self.imag * other.imag,
+            self.real * other.imag + self.imag * other.real
+        )
+    }
+}
+
+// Placeholder structures for testing
+struct QuantumGate;
+struct QuantumState;
+struct QuantumAlgorithm;
+struct NoiseChannel;
+struct Matrix;
+
+// Placeholder implementations would go here...

@@ -1,0 +1,557 @@
+#!/usr/bin/env ruchy
+
+// Complete Neural Network Test Suite - 100% Coverage Target
+// Implements comprehensive testing for deep learning components with TDD
+
+use std::collections::HashMap;
+use std::f32;
+
+// Test module with 100% coverage target
+#[test_coverage(target = 100)]
+module neural_network_tests {
+    use super::*;
+    
+    // ============================================================
+    // Gradient Computation Edge Cases
+    // ============================================================
+    
+    #[test]
+    fun test_gradient_vanishing() {
+        // Test for vanishing gradient problem in deep networks
+        let mut network = create_deep_network(10); // 10 layers
+        let input = create_input_tensor(784);
+        let target = create_target_tensor(10);
+        
+        // Forward pass
+        let output = network.forward(input);
+        let loss = compute_loss(output, target);
+        
+        // Backward pass
+        let gradients = network.backward(loss);
+        
+        // Check for vanishing gradients
+        for (layer_idx, grad) in gradients.iter().enumerate() {
+            let grad_magnitude = compute_magnitude(grad);
+            
+            // Gradients should not vanish (magnitude > 1e-10)
+            assert!(grad_magnitude > 1e-10, 
+                "Gradient vanished at layer {}: magnitude = {}", 
+                layer_idx, grad_magnitude);
+            
+            // But also not explode (magnitude < 1e10)
+            assert!(grad_magnitude < 1e10,
+                "Gradient exploded at layer {}: magnitude = {}",
+                layer_idx, grad_magnitude);
+        }
+    }
+    
+    #[test]
+    fun test_gradient_explosion() {
+        // Test gradient explosion with large learning rates
+        let mut network = create_network();
+        network.set_learning_rate(100.0); // Very large learning rate
+        
+        let input = create_random_input(784);
+        let target = create_random_target(10);
+        
+        // Multiple training iterations
+        for i in 0..10 {
+            let output = network.forward(input.clone());
+            let loss = compute_loss(output, target.clone());
+            let gradients = network.backward(loss);
+            
+            // Check gradients remain bounded
+            for grad in gradients {
+                assert!(!grad.has_nan(), "NaN detected in gradients at iteration {}", i);
+                assert!(!grad.has_inf(), "Inf detected in gradients at iteration {}", i);
+            }
+            
+            network.update_weights(gradients);
+        }
+    }
+    
+    #[test]
+    fun test_gradient_clipping() {
+        // Test gradient clipping mechanism
+        let mut network = create_network();
+        network.enable_gradient_clipping(1.0); // Clip at magnitude 1.0
+        
+        let input = create_large_input(784);
+        let target = create_target_tensor(10);
+        
+        let output = network.forward(input);
+        let loss = compute_loss(output, target);
+        let gradients = network.backward(loss);
+        
+        // All gradients should be clipped to magnitude <= 1.0
+        for grad in gradients {
+            let magnitude = compute_magnitude(&grad);
+            assert!(magnitude <= 1.001, // Small tolerance for floating point
+                "Gradient not properly clipped: magnitude = {}", magnitude);
+        }
+    }
+    
+    // ============================================================
+    // Activation Function Boundaries
+    // ============================================================
+    
+    #[test]
+    fun test_relu_negative_saturation() {
+        // Test ReLU behavior with negative inputs
+        let relu = ReLU::new();
+        
+        // Test exact zero
+        assert_eq!(relu.forward(0.0), 0.0);
+        assert_eq!(relu.backward(0.0), 0.0);
+        
+        // Test negative values
+        for val in [-1000.0, -1.0, -0.1, -1e-10] {
+            assert_eq!(relu.forward(val), 0.0, 
+                "ReLU should output 0 for negative input {}", val);
+            assert_eq!(relu.backward(val), 0.0,
+                "ReLU gradient should be 0 for negative input {}", val);
+        }
+        
+        // Test positive values
+        for val in [1e-10, 0.1, 1.0, 1000.0] {
+            assert_eq!(relu.forward(val), val,
+                "ReLU should pass through positive input {}", val);
+            assert_eq!(relu.backward(val), 1.0,
+                "ReLU gradient should be 1 for positive input {}", val);
+        }
+    }
+    
+    #[test]
+    fun test_sigmoid_saturation() {
+        // Test sigmoid behavior at extremes
+        let sigmoid = Sigmoid::new();
+        
+        // Test saturation at negative extreme
+        assert!((sigmoid.forward(-100.0) - 0.0).abs() < 1e-10,
+            "Sigmoid should saturate to 0 for large negative input");
+        
+        // Test saturation at positive extreme  
+        assert!((sigmoid.forward(100.0) - 1.0).abs() < 1e-10,
+            "Sigmoid should saturate to 1 for large positive input");
+        
+        // Test gradient near saturation
+        assert!(sigmoid.backward(-10.0) < 1e-4,
+            "Sigmoid gradient should be near 0 at negative saturation");
+        assert!(sigmoid.backward(10.0) < 1e-4,
+            "Sigmoid gradient should be near 0 at positive saturation");
+        
+        // Test midpoint
+        assert!((sigmoid.forward(0.0) - 0.5).abs() < 1e-10,
+            "Sigmoid(0) should be 0.5");
+        assert!((sigmoid.backward(0.0) - 0.25).abs() < 1e-10,
+            "Sigmoid gradient at 0 should be 0.25");
+    }
+    
+    #[test]
+    fun test_tanh_boundaries() {
+        // Test tanh activation boundaries
+        let tanh = Tanh::new();
+        
+        // Test saturation
+        assert!((tanh.forward(-100.0) - (-1.0)).abs() < 1e-10,
+            "Tanh should saturate to -1 for large negative input");
+        assert!((tanh.forward(100.0) - 1.0).abs() < 1e-10,
+            "Tanh should saturate to 1 for large positive input");
+        
+        // Test zero point
+        assert_eq!(tanh.forward(0.0), 0.0, "Tanh(0) should be 0");
+        
+        // Test gradient
+        assert!((tanh.backward(0.0) - 1.0).abs() < 1e-10,
+            "Tanh gradient at 0 should be 1");
+    }
+    
+    #[test]
+    fun test_leaky_relu() {
+        // Test Leaky ReLU with negative slope
+        let leaky_relu = LeakyReLU::new(0.01);
+        
+        // Test negative values
+        assert_eq!(leaky_relu.forward(-100.0), -1.0,
+            "Leaky ReLU should have slope 0.01 for negative inputs");
+        assert_eq!(leaky_relu.backward(-100.0), 0.01,
+            "Leaky ReLU gradient should be 0.01 for negative inputs");
+        
+        // Test positive values
+        assert_eq!(leaky_relu.forward(100.0), 100.0,
+            "Leaky ReLU should pass through positive inputs");
+        assert_eq!(leaky_relu.backward(100.0), 1.0,
+            "Leaky ReLU gradient should be 1 for positive inputs");
+    }
+    
+    // ============================================================
+    // Backpropagation Numerical Stability
+    // ============================================================
+    
+    #[property_test]
+    fun prop_backprop_stability(network: Network, input: Tensor) {
+        // Property: backpropagation should maintain numerical stability
+        let target = create_random_target(network.output_size());
+        
+        // Forward pass
+        let output = network.forward(input.clone());
+        
+        // Check output is bounded
+        assert!(output.all_finite(), "Network output contains NaN or Inf");
+        assert!(output.max() < 1e10, "Network output too large");
+        
+        // Compute loss
+        let loss = compute_cross_entropy_loss(output.clone(), target.clone());
+        assert!(loss.is_finite(), "Loss is not finite");
+        
+        // Backward pass
+        let gradients = network.backward(loss);
+        
+        // Check all gradients are finite
+        for grad in gradients {
+            assert!(grad.all_finite(), "Gradient contains NaN or Inf");
+            assert!(grad.max() < 1e10, "Gradient magnitude too large");
+        }
+        
+        // Numerical gradient check
+        let numerical_grad = compute_numerical_gradient(&network, &input, &target);
+        let analytical_grad = network.get_input_gradient();
+        
+        let diff = (numerical_grad - analytical_grad).abs().max();
+        assert!(diff < 1e-5, 
+            "Gradient check failed: max difference = {}", diff);
+    }
+    
+    #[test]
+    fun test_loss_function_gradients() {
+        // Test gradient computation for different loss functions
+        let output = Tensor::from_vec(vec![0.1, 0.2, 0.7]);
+        let target = Tensor::from_vec(vec![0.0, 0.0, 1.0]);
+        
+        // Test MSE loss gradient
+        let mse_loss = compute_mse_loss(&output, &target);
+        let mse_grad = compute_mse_gradient(&output, &target);
+        assert_eq!(mse_grad.shape(), output.shape());
+        
+        // Test cross-entropy loss gradient
+        let ce_loss = compute_cross_entropy_loss(&output, &target);
+        let ce_grad = compute_cross_entropy_gradient(&output, &target);
+        assert_eq!(ce_grad.shape(), output.shape());
+        
+        // Gradients should be finite
+        assert!(mse_grad.all_finite());
+        assert!(ce_grad.all_finite());
+    }
+    
+    // ============================================================
+    // Fixed-Point Arithmetic Precision
+    // ============================================================
+    
+    #[test]
+    fun test_fixed_point_precision() {
+        // Test neural network with fixed-point arithmetic
+        let mut network = create_fixed_point_network(16); // 16-bit fixed point
+        
+        let input = create_input_tensor(784);
+        let target = create_target_tensor(10);
+        
+        // Train for multiple iterations
+        let mut losses = Vec::new();
+        for _ in 0..100 {
+            let output = network.forward(input.clone());
+            let loss = compute_loss(output, target.clone());
+            losses.push(loss.value());
+            
+            let gradients = network.backward(loss);
+            network.update_weights(gradients);
+        }
+        
+        // Check loss decreases
+        assert!(losses[99] < losses[0], 
+            "Loss should decrease: initial={}, final={}", 
+            losses[0], losses[99]);
+        
+        // Check precision maintained
+        let weights = network.get_weights();
+        for w in weights {
+            assert!(w.is_fixed_point_valid(16),
+                "Weight precision lost in fixed-point arithmetic");
+        }
+    }
+    
+    #[test]
+    fun test_quantization_aware_training() {
+        // Test training with quantization
+        let mut network = create_network();
+        network.enable_quantization_aware_training(8); // 8-bit quantization
+        
+        let input = create_input_tensor(784);
+        let target = create_target_tensor(10);
+        
+        // Train with quantization
+        for _ in 0..50 {
+            let output = network.forward_quantized(input.clone());
+            let loss = compute_loss(output, target.clone());
+            let gradients = network.backward(loss);
+            network.update_weights(gradients);
+        }
+        
+        // Verify quantized inference
+        let full_precision_output = network.forward(input.clone());
+        let quantized_output = network.forward_quantized(input.clone());
+        
+        // Quantized output should be close to full precision
+        let diff = (full_precision_output - quantized_output).abs().max();
+        assert!(diff < 0.1, 
+            "Quantization error too large: {}", diff);
+    }
+    
+    // ============================================================
+    // Performance Regression Tests
+    // ============================================================
+    
+    #[test]
+    fun test_inference_performance() {
+        // Test inference speed doesn't regress
+        let network = create_network();
+        let input = create_input_tensor(784);
+        
+        let start = std::time::Instant::now();
+        for _ in 0..1000 {
+            let _ = network.forward(input.clone());
+        }
+        let duration = start.elapsed();
+        
+        // Should complete 1000 inferences in under 1 second
+        assert!(duration.as_secs() < 1,
+            "Inference too slow: {} seconds for 1000 iterations",
+            duration.as_secs_f64());
+    }
+    
+    #[test]
+    fun test_training_performance() {
+        // Test training speed doesn't regress
+        let mut network = create_network();
+        let input = create_input_tensor(784);
+        let target = create_target_tensor(10);
+        
+        let start = std::time::Instant::now();
+        for _ in 0..100 {
+            let output = network.forward(input.clone());
+            let loss = compute_loss(output, target.clone());
+            let gradients = network.backward(loss);
+            network.update_weights(gradients);
+        }
+        let duration = start.elapsed();
+        
+        // Should complete 100 training iterations in under 1 second
+        assert!(duration.as_secs() < 1,
+            "Training too slow: {} seconds for 100 iterations",
+            duration.as_secs_f64());
+    }
+    
+    #[test]
+    fun test_memory_usage() {
+        // Test memory usage remains bounded
+        let mut networks = Vec::new();
+        
+        // Create multiple networks
+        for _ in 0..10 {
+            networks.push(create_network());
+        }
+        
+        // Memory should be freed when networks go out of scope
+        drop(networks);
+        
+        // Create large network
+        let large_network = create_deep_network(50);
+        let memory_used = estimate_memory_usage(&large_network);
+        
+        // Memory usage should be reasonable (< 100MB for 50-layer network)
+        assert!(memory_used < 100_000_000,
+            "Memory usage too high: {} bytes", memory_used);
+    }
+    
+    // ============================================================
+    // Edge Cases and Error Handling
+    // ============================================================
+    
+    #[test]
+    fun test_empty_input() {
+        // Test handling of empty input
+        let network = create_network();
+        let empty_input = Tensor::empty();
+        
+        let result = network.forward(empty_input);
+        assert!(result.is_err(), "Should error on empty input");
+    }
+    
+    #[test]
+    fun test_mismatched_dimensions() {
+        // Test dimension mismatch handling
+        let network = create_network(); // Expects 784 input
+        let wrong_input = create_input_tensor(100); // Wrong size
+        
+        let result = network.forward(wrong_input);
+        assert!(result.is_err(), "Should error on dimension mismatch");
+    }
+    
+    #[test]
+    fun test_nan_handling() {
+        // Test NaN propagation prevention
+        let mut network = create_network();
+        network.enable_nan_detection();
+        
+        let input = create_input_with_nan(784);
+        
+        let result = network.forward(input);
+        assert!(result.is_err(), "Should detect and error on NaN input");
+    }
+    
+    #[test]
+    fun test_dropout_consistency() {
+        // Test dropout behavior in train vs eval mode
+        let mut network = create_network();
+        network.add_dropout(0.5);
+        
+        let input = create_input_tensor(784);
+        
+        // Training mode - outputs should vary
+        network.set_training(true);
+        let output1 = network.forward(input.clone());
+        let output2 = network.forward(input.clone());
+        assert_ne!(output1, output2, "Dropout should cause variation in training");
+        
+        // Eval mode - outputs should be consistent
+        network.set_training(false);
+        let output3 = network.forward(input.clone());
+        let output4 = network.forward(input.clone());
+        assert_eq!(output3, output4, "Outputs should be consistent in eval mode");
+    }
+    
+    #[test]
+    fun test_batch_normalization() {
+        // Test batch normalization behavior
+        let mut network = create_network();
+        network.add_batch_norm();
+        
+        let batch = create_batch_input(32, 784);
+        
+        // Forward pass should normalize activations
+        let output = network.forward(batch);
+        
+        // Check mean and variance of normalized layer
+        let stats = network.get_batch_norm_stats();
+        assert!((stats.mean - 0.0).abs() < 0.01,
+            "Batch norm mean should be near 0: {}", stats.mean);
+        assert!((stats.variance - 1.0).abs() < 0.01,
+            "Batch norm variance should be near 1: {}", stats.variance);
+    }
+}
+
+// ============================================================
+// Helper Functions
+// ============================================================
+
+fun create_network() -> Network {
+    Network::new(vec![784, 128, 64, 10])
+}
+
+fun create_deep_network(layers: usize) -> Network {
+    let mut layer_sizes = vec![784];
+    for _ in 0..layers {
+        layer_sizes.push(128);
+    }
+    layer_sizes.push(10);
+    Network::new(layer_sizes)
+}
+
+fun create_fixed_point_network(bits: u32) -> FixedPointNetwork {
+    FixedPointNetwork::new(vec![784, 128, 64, 10], bits)
+}
+
+fun create_input_tensor(size: usize) -> Tensor {
+    Tensor::random(size)
+}
+
+fun create_target_tensor(size: usize) -> Tensor {
+    let mut data = vec![0.0; size];
+    data[0] = 1.0; // One-hot encoding
+    Tensor::from_vec(data)
+}
+
+fun create_random_input(size: usize) -> Tensor {
+    Tensor::random_normal(size, 0.0, 1.0)
+}
+
+fun create_random_target(size: usize) -> Tensor {
+    let mut data = vec![0.0; size];
+    let idx = (rand::random::<f32>() * size as f32) as usize;
+    data[idx] = 1.0;
+    Tensor::from_vec(data)
+}
+
+fun create_large_input(size: usize) -> Tensor {
+    Tensor::constant(size, 100.0)
+}
+
+fun create_input_with_nan(size: usize) -> Tensor {
+    let mut data = vec![1.0; size];
+    data[size / 2] = f32::NAN;
+    Tensor::from_vec(data)
+}
+
+fun create_batch_input(batch_size: usize, input_size: usize) -> Tensor {
+    Tensor::random_batch(batch_size, input_size)
+}
+
+fun compute_magnitude(tensor: &Tensor) -> f32 {
+    tensor.norm()
+}
+
+fun compute_loss(output: Tensor, target: Tensor) -> Loss {
+    Loss::cross_entropy(output, target)
+}
+
+fun compute_mse_loss(output: &Tensor, target: &Tensor) -> Loss {
+    Loss::mse(output.clone(), target.clone())
+}
+
+fun compute_cross_entropy_loss(output: Tensor, target: Tensor) -> Loss {
+    Loss::cross_entropy(output, target)
+}
+
+fun compute_mse_gradient(output: &Tensor, target: &Tensor) -> Tensor {
+    (output - target) * 2.0 / output.len() as f32
+}
+
+fun compute_cross_entropy_gradient(output: &Tensor, target: &Tensor) -> Tensor {
+    output - target
+}
+
+fun compute_numerical_gradient(network: &Network, input: &Tensor, target: &Tensor) -> Tensor {
+    let epsilon = 1e-7;
+    let mut gradient = Tensor::zeros_like(input);
+    
+    for i in 0..input.len() {
+        let mut input_plus = input.clone();
+        let mut input_minus = input.clone();
+        
+        input_plus[i] += epsilon;
+        input_minus[i] -= epsilon;
+        
+        let output_plus = network.forward(input_plus);
+        let output_minus = network.forward(input_minus);
+        
+        let loss_plus = compute_loss(output_plus, target.clone()).value();
+        let loss_minus = compute_loss(output_minus, target.clone()).value();
+        
+        gradient[i] = (loss_plus - loss_minus) / (2.0 * epsilon);
+    }
+    
+    gradient
+}
+
+fun estimate_memory_usage(network: &Network) -> usize {
+    network.num_parameters() * std::mem::size_of::<f32>()
+}
