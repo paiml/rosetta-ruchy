@@ -65,21 +65,42 @@ fun topological_sort_demo(num_nodes: i32) -> i32 {
     return processed;
 }
 
+fun run_topological_boundary_tests() -> bool {
+    // Test topological sort with boundary conditions
+    let _empty: i32 = topological_sort_demo(0);
+    let _single: i32 = topological_sort_demo(1);
+    return true;
+}
+
+fun run_topological_scaling_tests() -> bool {
+    // Test topological sort with various graph sizes
+    let _small: i32 = topological_sort_demo(3);
+    let _medium: i32 = topological_sort_demo(5);
+    return true;
+}
+
+fun run_edge_detection_tests() -> bool {
+    // Test incoming edge detection with valid cases
+    let _no_edges: bool = has_incoming_edges(0, 5);
+    let _has_edges: bool = has_incoming_edges(1, 5);
+    return true;
+}
+
+fun run_edge_invalid_tests() -> bool {
+    // Test incoming edge detection with invalid inputs
+    let _invalid: bool = has_incoming_edges(-1, 5);
+    let _out_of_bounds: bool = has_incoming_edges(10, 5);
+    return true;
+}
+
 fun main() {
     println!("🎯 Topological Sort 100% Coverage");
     println!("==================================");
     
-    // Test all branches
-    let _empty: i32 = topological_sort_demo(0);
-    let _single: i32 = topological_sort_demo(1);
-    let _small: i32 = topological_sort_demo(3);
-    let _medium: i32 = topological_sort_demo(5);
-    
-    // Test edge detection
-    let _no_edges: bool = has_incoming_edges(0, 5);
-    let _has_edges: bool = has_incoming_edges(1, 5);
-    let _invalid: bool = has_incoming_edges(-1, 5);
-    let _out_of_bounds: bool = has_incoming_edges(10, 5);
+    let _topo_boundary: bool = run_topological_boundary_tests();
+    let _topo_scaling: bool = run_topological_scaling_tests();
+    let _edge_valid: bool = run_edge_detection_tests();
+    let _edge_invalid: bool = run_edge_invalid_tests();
     
     println!("✅ Empty graph tested");
     println!("✅ Node selection tested");
