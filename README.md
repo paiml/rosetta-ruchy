@@ -392,6 +392,18 @@ See [mcp-server/README.md](mcp-server/README.md) for complete API documentation.
 
 See [docs/execution/roadmap.md](docs/execution/roadmap.md) for detailed progress tracking.
 
+## 🔗 PMAT Integration
+
+**Advanced Quality Analysis**: Rosetta-Ruchy integrates with [PMAT (PAIML MCP Agent Toolkit)](https://github.com/paiml/paiml-mcp-agent-toolkit) for comprehensive code quality analysis:
+
+- **🎯 Technical Debt Grading**: Complete TDG analysis for all implementations
+- **🚀 WASM Analysis**: WebAssembly analysis for compiled Ruchy targets
+- **🤖 MCP Tools**: Real-time quality analysis through Model Context Protocol
+- **📊 Quality Correlation**: Performance vs. quality correlation analytics
+- **🏭 Toyota Way Alignment**: Shared continuous improvement methodology
+
+**📖 [Complete Integration Guide →](docs/integration/PMAT_INTEGRATION_GUIDE.md)**
+
 ## 🤝 Contributing
 
 This project follows the **Toyota Way** methodology:
