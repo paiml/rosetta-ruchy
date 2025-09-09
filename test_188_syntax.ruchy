@@ -1,0 +1,8 @@
+fn main() {
+    println("Testing Ruchy 1.88.0")
+    
+    let arr = [1, 2, 3, 4, 5]
+    for i in arr {
+        println(i)
+    }
+}

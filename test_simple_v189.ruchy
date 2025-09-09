@@ -1,0 +1,6 @@
+fun main() {
+    let mut arr = [5, 2, 8, 1, 9]
+    let len = arr.len()
+    println("Array length: {}", len)
+    println("✅ Basic Ruchy v1.89.0 test")
+}

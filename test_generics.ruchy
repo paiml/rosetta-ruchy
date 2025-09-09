@@ -1,0 +1,30 @@
+fn quicksort<T: Ord>(arr: &mut [T]) {
+    if arr.len() <= 1 {
+        return
+    }
+    let pivot_index = partition(arr)
+    let (left, right) = arr.split_at_mut(pivot_index)
+    quicksort(left)
+    quicksort(&mut right[1..])
+}
+
+fn partition<T: Ord>(arr: &mut [T]) -> usize {
+    let len = arr.len()
+    let pivot_index = len - 1
+    let mut i = 0
+    
+    for j in 0..pivot_index {
+        if arr[j] <= arr[pivot_index] {
+            arr.swap(i, j)
+            i += 1
+        }
+    }
+    arr.swap(i, pivot_index)
+    i
+}
+
+fn main() {
+    let mut arr = [5, 2, 8, 1, 9]
+    quicksort(&mut arr)
+    println(arr)
+}

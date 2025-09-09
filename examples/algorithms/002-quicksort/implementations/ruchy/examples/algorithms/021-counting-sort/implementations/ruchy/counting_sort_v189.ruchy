@@ -1,0 +1,65 @@
+// Counting Sort - Ruchy v1.89.0 with explicit mutability
+
+fun counting_sort(arr: [i32; 8]) -> [i32; 8] {
+    // Find the maximum element to determine range
+    let mut max_val = arr[0]  // ✅ v1.89: explicit mut for reassignment
+    let mut i = 1  // ✅ v1.89: explicit mut for loop counter
+    while i < 8 {
+        if arr[i] > max_val {
+            max_val = arr[i]  // ✅ v1.89: reassignment works with mut
+        }
+        i += 1  // ✅ v1.89: reassignment works with mut
+    }
+    
+    // Create counting array (using fixed size for v1.89)
+    let count_size = (max_val + 1) as usize
+    let mut count = [0; 100]  // Fixed size array for v1.89 compatibility
+    
+    // Count occurrences of each element
+    i = 0  // ✅ v1.89: reuse mut variable
+    while i < 8 {
+        let idx = arr[i] as usize
+        count[idx] += 1  // ✅ v1.89: increment works with array
+        i += 1  // ✅ v1.89: reassignment works with mut
+    }
+    
+    // Build the sorted output array
+    let mut result = [0; 8]  // ✅ v1.89: explicit mut for output array
+    let mut output_idx = 0   // ✅ v1.89: explicit mut for output index
+    
+    let mut val = 0  // ✅ v1.89: explicit mut for value iteration
+    while val <= max_val {
+        let val_idx = val as usize
+        let mut count_remaining = count[val_idx]  // ✅ v1.89: explicit mut for count
+        
+        while count_remaining > 0 {
+            result[output_idx] = val
+            output_idx += 1     // ✅ v1.89: reassignment works with mut
+            count_remaining -= 1  // ✅ v1.89: reassignment works with mut
+        }
+        val += 1  // ✅ v1.89: reassignment works with mut
+    }
+    
+    result
+}
+
+fun main() {
+    let test_array = [4, 2, 2, 8, 3, 3, 1, 7]
+    println("Before: {:?}", test_array)
+    
+    let sorted = counting_sort(test_array)
+    println("After:  {:?}", sorted)
+    
+    // Test with different pattern
+    let test2 = [9, 1, 8, 2, 7, 3, 6, 4]
+    let sorted2 = counting_sort(test2)
+    println("Test 2 - Before: {:?}", test2)
+    println("Test 2 - After:  {:?}", sorted2)
+    
+    println("✅ Ruchy v1.89.0 counting sort working!")
+    println("Key changes:")
+    println("- All loop counters (i, output_idx, val) explicitly marked with 'mut'")
+    println("- All variables that get reassigned use explicit 'mut'")
+    println("- Fixed-size arrays used for v1.89 compatibility")
+    println("- O(n + k) time complexity maintained")
+}

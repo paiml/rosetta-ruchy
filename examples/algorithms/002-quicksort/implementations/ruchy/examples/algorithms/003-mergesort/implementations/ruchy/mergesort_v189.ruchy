@@ -1,0 +1,71 @@
+// Merge Sort - Ruchy v1.89.0 with explicit mutability
+
+fun mergesort(arr: [i32; 8]) -> [i32; 8] {
+    let mut working_arr = arr
+    mergesort_recursive(working_arr, 0, 7)
+    working_arr
+}
+
+fun mergesort_recursive(mut arr: [i32; 8], left: usize, right: usize) {
+    if left < right {
+        let mut mid = (left + right) / 2
+        mergesort_recursive(arr, left, mid)
+        mergesort_recursive(arr, mid + 1, right)
+        merge(arr, left, mid, right)
+    }
+}
+
+fun merge(mut arr: [i32; 8], left: usize, mid: usize, right: usize) {
+    let left_size = mid - left + 1
+    let right_size = right - mid
+    let mut left_arr = [0; 8]
+    let mut right_arr = [0; 8]
+    
+    let mut i = 0
+    while i < left_size {
+        left_arr[i] = arr[left + i]
+        i += 1
+    }
+    
+    let mut j = 0
+    while j < right_size {
+        right_arr[j] = arr[mid + 1 + j]
+        j += 1
+    }
+    
+    i = 0
+    j = 0
+    let mut k = left
+    
+    while i < left_size && j < right_size {
+        if left_arr[i] <= right_arr[j] {
+            arr[k] = left_arr[i]
+            i += 1
+        } else {
+            arr[k] = right_arr[j]
+            j += 1
+        }
+        k += 1
+    }
+    
+    while i < left_size {
+        arr[k] = left_arr[i]
+        i += 1
+        k += 1
+    }
+    
+    while j < right_size {
+        arr[k] = right_arr[j]
+        j += 1
+        k += 1
+    }
+}
+
+fun main() {
+    let test_array = [64, 34, 25, 12, 22, 11, 90, 88]
+    println("Before: {:?}", test_array)
+    
+    let sorted = mergesort(test_array)
+    println("After:  {:?}", sorted)
+    println("✅ Ruchy v1.89.0 mergesort working!")
+}

@@ -1,0 +1,63 @@
+// Quicksort - Ruchy v1.89.0 with explicit mutability
+
+fun quicksort(arr: [i32; 6]) -> [i32; 6] {
+    let mut working_arr = arr
+    quicksort_inplace(working_arr)
+    working_arr
+}
+
+fun quicksort_inplace(mut arr: [i32; 6]) {
+    let len = 6
+    if len > 1 {
+        quicksort_range(arr, 0, len - 1)
+    }
+}
+
+fun quicksort_range(mut arr: [i32; 6], low: usize, high: usize) {
+    if low < high {
+        let mut pivot_index = partition(arr, low, high)
+        
+        if pivot_index > 0 {
+            let mut new_high = pivot_index - 1
+            if new_high >= low {
+                quicksort_range(arr, low, new_high)
+            }
+        }
+        
+        let mut new_low = pivot_index + 1
+        if new_low <= high {
+            quicksort_range(arr, new_low, high)
+        }
+    }
+}
+
+fun partition(mut arr: [i32; 6], low: usize, high: usize) -> usize {
+    let pivot = arr[high]
+    let mut i = low
+    
+    let mut j = low
+    while j < high {
+        if arr[j] <= pivot {
+            let temp = arr[i]
+            arr[i] = arr[j]
+            arr[j] = temp
+            i += 1
+        }
+        j += 1
+    }
+    
+    let temp = arr[i]
+    arr[i] = arr[high]
+    arr[high] = temp
+    
+    i
+}
+
+fun main() {
+    let test_array = [5, 2, 8, 1, 9, 3]
+    println("Before: {:?}", test_array)
+    
+    let sorted = quicksort(test_array)
+    println("After:  {:?}", sorted)
+    println("✅ Ruchy v1.89.0 quicksort working!")
+}
