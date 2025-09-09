@@ -1,0 +1,94 @@
+// Merge Sort - Ruchy v1.89.0 with explicit mutability
+// Key changes: explicit 'mut' for all reassignments, 'fun' keyword only
+
+fun mergesort(arr: [i32; 8]) -> [i32; 8] {
+    let mut working_arr = arr
+    mergesort_recursive(working_arr, 0, 7)  // 8-1 = 7 for zero-based indexing
+    working_arr
+}
+
+fun mergesort_recursive(mut arr: [i32; 8], left: usize, right: usize) {
+    if left < right {
+        let mut mid = (left + right) / 2  // ✅ v1.89: explicit mut for calculation
+        
+        // Recursively sort both halves
+        mergesort_recursive(arr, left, mid)
+        mergesort_recursive(arr, mid + 1, right)
+        
+        // Merge the sorted halves
+        merge(arr, left, mid, right)
+    }
+}
+
+fun merge(mut arr: [i32; 8], left: usize, mid: usize, right: usize) {
+    // Create temporary arrays for left and right subarrays
+    let left_size = mid - left + 1
+    let right_size = right - mid
+    
+    // In v1.89, we'll use fixed-size arrays and copy data
+    let mut left_arr = [0; 8]   // ✅ v1.89: explicit mut for temp array
+    let mut right_arr = [0; 8]  // ✅ v1.89: explicit mut for temp array
+    
+    // Copy data to temporary arrays
+    let mut i = 0  // ✅ v1.89: explicit mut for loop counter
+    while i < left_size {
+        left_arr[i] = arr[left + i]
+        i += 1  // ✅ v1.89: reassignment works with mut
+    }
+    
+    let mut j = 0  // ✅ v1.89: explicit mut for loop counter
+    while j < right_size {
+        right_arr[j] = arr[mid + 1 + j]
+        j += 1  // ✅ v1.89: reassignment works with mut
+    }
+    
+    // Merge the temporary arrays back into arr[left..right]
+    i = 0      // ✅ v1.89: reuse mut variable
+    j = 0      // ✅ v1.89: reuse mut variable
+    let mut k = left  // ✅ v1.89: explicit mut for merge pointer
+    
+    while i < left_size && j < right_size {
+        if left_arr[i] <= right_arr[j] {
+            arr[k] = left_arr[i]
+            i += 1  // ✅ v1.89: reassignment works with mut
+        } else {
+            arr[k] = right_arr[j]
+            j += 1  // ✅ v1.89: reassignment works with mut
+        }
+        k += 1  // ✅ v1.89: reassignment works with mut
+    }
+    
+    // Copy remaining elements of left_arr, if any
+    while i < left_size {
+        arr[k] = left_arr[i]
+        i += 1  // ✅ v1.89: reassignment works with mut
+        k += 1  // ✅ v1.89: reassignment works with mut
+    }
+    
+    // Copy remaining elements of right_arr, if any
+    while j < right_size {
+        arr[k] = right_arr[j]
+        j += 1  // ✅ v1.89: reassignment works with mut
+        k += 1  // ✅ v1.89: reassignment works with mut
+    }
+}
+
+fun main() {
+    let test_array = [64, 34, 25, 12, 22, 11, 90, 88]
+    println("Before: {:?}", test_array)
+    
+    let sorted = mergesort(test_array)
+    println("After:  {:?}", sorted)
+    
+    // Test with different patterns
+    let reverse_array = [90, 88, 64, 34, 25, 22, 12, 11]
+    let sorted_reverse = mergesort(reverse_array)
+    println("Reverse sorted: {:?}", sorted_reverse)
+    
+    println("✅ Ruchy v1.89.0 mergesort with explicit mutability!")
+    println("Key changes:")
+    println("- All loop counters (i, j, k) explicitly marked with 'mut'")
+    println("- All temporary arrays use explicit 'mut'")
+    println("- All calculations that get reassigned use 'mut'")
+    println("- Stable O(n log n) time complexity maintained")
+}

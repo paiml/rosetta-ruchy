@@ -1,0 +1,112 @@
+use std::process::{Command, exit};
+use std::io::{stdout, Write};
+use std::fs;
+use std::path::Path;
+
+fn main() {
+    let algorithms = [
+        "001-fibonacci",
+        "002-quicksort", 
+        "003-mergesort",
+        "004-binary-search",
+        "005-hash-table",
+        "006-red-black-tree",
+        "007-dijkstra",
+        "008-longest-common-subsequence",
+        "009-knapsack-problem",
+        "010-edit-distance",
+        "011-matrix-chain-multiplication",
+        "012-coin-change",
+        "013-rod-cutting",
+        "014-graph-coloring",
+        "015-traveling-salesman",
+        "016-topological-sort",
+        "017-binary-search-tree",
+        "018-heap-sort",
+        "019-radix-sort",
+        "020-bucket-sort",
+        "021-counting-sort",
+        "022-selection-sort"
+    ];
+
+    let mut total = 0;
+    let mut passed = 0;
+    let mut failed = Vec::new();
+    
+    println!("🔬 Verifying all algorithms with Ruchy 1.88.0");
+    println!("=" * 80);
+
+    for algo in algorithms.iter() {
+        let path = format!("examples/algorithms/{}/implementations/ruchy", algo);
+        
+        if !Path::new(&path).exists() {
+            println!("⚠️  {} - No Ruchy implementation found", algo);
+            continue;
+        }
+        
+        print!("Verifying {} ... ", algo);
+        stdout().flush().unwrap();
+        
+        let ruchy_files: Vec<_> = fs::read_dir(&path)
+            .unwrap()
+            .filter_map(|entry| {
+                let entry = entry.ok()?;
+                let path = entry.path();
+                if path.extension()?.to_str()? == "ruchy" {
+                    Some(path)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        
+        let mut algo_passed = true;
+        let mut errors = Vec::new();
+        
+        for file in ruchy_files {
+            total += 1;
+            
+            let output = Command::new("ruchy")
+                .arg("check")
+                .arg(&file)
+                .output()
+                .expect("Failed to run ruchy check");
+            
+            if output.status.success() {
+                passed += 1;
+            } else {
+                algo_passed = false;
+                errors.push(format!("  - {}: {}", 
+                    file.file_name().unwrap().to_str().unwrap(),
+                    String::from_utf8_lossy(&output.stderr)
+                ));
+            }
+        }
+        
+        if algo_passed {
+            println!("✅ PASSED");
+        } else {
+            println!("❌ FAILED");
+            failed.push((algo.to_string(), errors));
+        }
+    }
+    
+    println!("=" * 80);
+    println!("📊 Summary:");
+    println!("  Total files checked: {}", total);
+    println!("  Passed: {} ({:.1}%)", passed, (passed as f64 / total as f64) * 100.0);
+    println!("  Failed: {} ({:.1}%)", total - passed, ((total - passed) as f64 / total as f64) * 100.0);
+    
+    if !failed.is_empty() {
+        println!("\n❌ Failed algorithms:");
+        for (algo, errors) in failed {
+            println!("\n{}:", algo);
+            for error in errors {
+                println!("{}", error);
+            }
+        }
+        exit(1);
+    } else {
+        println!("\n✅ All algorithms verified successfully with Ruchy 1.88.0!");
+    }
+}

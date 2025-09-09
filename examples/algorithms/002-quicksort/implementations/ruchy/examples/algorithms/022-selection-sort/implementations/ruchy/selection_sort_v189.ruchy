@@ -1,0 +1,86 @@
+// Selection Sort - Ruchy v1.89.0 with explicit mutability
+
+fun selection_sort(arr: [i32; 8]) -> [i32; 8] {
+    let mut working_arr = arr  // ✅ v1.89: explicit mut for working copy
+    
+    let mut i = 0  // ✅ v1.89: explicit mut for outer loop counter
+    while i < 8 {
+        let mut min_idx = i  // ✅ v1.89: explicit mut for min index tracking
+        
+        // Find the minimum element in the remaining unsorted array
+        let mut j = i + 1  // ✅ v1.89: explicit mut for inner loop counter
+        while j < 8 {
+            if working_arr[j] < working_arr[min_idx] {
+                min_idx = j  // ✅ v1.89: reassignment works with mut
+            }
+            j += 1  // ✅ v1.89: reassignment works with mut
+        }
+        
+        // Swap the found minimum element with the first element
+        if min_idx != i {
+            let temp = working_arr[i]
+            working_arr[i] = working_arr[min_idx]
+            working_arr[min_idx] = temp
+        }
+        
+        i += 1  // ✅ v1.89: reassignment works with mut
+    }
+    
+    working_arr
+}
+
+fun selection_sort_with_tracking(arr: [i32; 8]) -> [i32; 8] {
+    let mut working_arr = arr
+    let mut swaps = 0      // ✅ v1.89: explicit mut for swap counter
+    let mut comparisons = 0  // ✅ v1.89: explicit mut for comparison counter
+    
+    let mut i = 0
+    while i < 8 {
+        let mut min_idx = i
+        
+        let mut j = i + 1
+        while j < 8 {
+            comparisons += 1  // ✅ v1.89: reassignment works with mut
+            if working_arr[j] < working_arr[min_idx] {
+                min_idx = j
+            }
+            j += 1
+        }
+        
+        if min_idx != i {
+            swaps += 1  // ✅ v1.89: reassignment works with mut
+            let temp = working_arr[i]
+            working_arr[i] = working_arr[min_idx]
+            working_arr[min_idx] = temp
+        }
+        
+        i += 1
+    }
+    
+    println("Sorting completed with {} comparisons and {} swaps", comparisons, swaps)
+    working_arr
+}
+
+fun main() {
+    let test_array = [64, 34, 25, 12, 22, 11, 90, 88]
+    println("Before: {:?}", test_array)
+    
+    let sorted = selection_sort(test_array)
+    println("After:  {:?}", sorted)
+    
+    println()
+    
+    // Test with tracking
+    let test2 = [5, 2, 4, 6, 1, 3, 8, 7]
+    println("Before (with tracking): {:?}", test2)
+    let sorted2 = selection_sort_with_tracking(test2)
+    println("After (with tracking):  {:?}", sorted2)
+    
+    println("✅ Ruchy v1.89.0 selection sort working!")
+    println("Key changes:")
+    println("- All loop counters (i, j) explicitly marked with 'mut'")
+    println("- All tracking variables (min_idx, swaps, comparisons) use 'mut'")
+    println("- All reassignments work with explicit mutability")
+    println("- O(n²) time complexity maintained")
+    println("- In-place sorting with O(1) space complexity")
+}

@@ -1,4 +1,4 @@
-    Finished `release` profile [optimized] target(s) in 0.09s
+    Finished `release` profile [optimized] target(s) in 0.07s
      Running `/home/noah/src/rosetta-ruchy/target/release/rod-cutting-rust`
 Rod Cutting Problem - Multiple Algorithm Implementation
 =================================================================
@@ -32,7 +32,7 @@ Rod Cutting Result (Bottom-up DP):
   Optimal Cuts: [2, 6]
   Total Cut Length: 8
   Number of Pieces: 2
-  Computation Time: 0.001ms
+  Computation Time: 0.000ms
 
 Expected: 22, Got: 22, Test: PASS
 
@@ -76,7 +76,7 @@ Rod Cutting Result (Bottom-up DP):
   Optimal Cuts: [1, 1, 1, 1, 1]
   Total Cut Length: 5
   Number of Pieces: 5
-  Computation Time: 0.004ms
+  Computation Time: 0.003ms
 
 Expected: 50, Got: 50, Test: PASS
 
@@ -117,9 +117,9 @@ Medium Problem Performance Test:
 Performance Comparison: length=10, prices=[2, 5, 7, 8, 10, 12, 14, 15, 16, 17]
 ----------------------------------------------------------------------
 Bottom-up DP       | Revenue:   25 | Time:    0.001ms
-Top-down DP        | Revenue:   25 | Time:    0.004ms
+Top-down DP        | Revenue:   25 | Time:    0.003ms
 Greedy Heuristic   | Revenue:   25 | Time:    0.001ms
-Naive Recursive    | Revenue:   25 | Time:    0.006ms
+Naive Recursive    | Revenue:   25 | Time:    0.007ms
 ----------------------------------------------------------------------
 Optimal algorithms consistent: true
 Greedy approximation: 25 / 25 = 100.00% of optimal
@@ -136,7 +136,7 @@ Stress Test:
 Fibonacci prices, rod length 100:
 Maximum revenue: 300100
 Computation time: 0.01ms
-Subproblems per second: 1294498382
+Subproblems per second: 1493875112
 
 Unit Price Analysis Example:
 =============================================

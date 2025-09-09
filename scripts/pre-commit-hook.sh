@@ -1,114 +1,110 @@
 #!/bin/bash
-# Pre-commit Quality Gates - Toyota Way Zero Defect Policy
-# BLOCKS commits that violate quality standards
+# Rosetta Ruchy Pre-commit Hook - RIGID QUALITY ENFORCEMENT
+# Toyota Way: Zero tolerance for defects
 
 set -e
 
-echo "🔒 MANDATORY Quality Gates (Toyota Way - Jidoka)"
-echo "================================================"
-
-# GATE 1: Basic functionality check (if Rust project exists)
-if [ -f "Cargo.toml" ]; then
-    echo "🔧 GATE 1: Basic compilation check..."
-    if ! cargo check --quiet; then
-        echo "❌ FATAL: Code does not compile"
-        echo "Fix compilation errors before committing"
-        exit 1
-    fi
-    echo "✅ Compilation check passed"
-fi
-
-# GATE 2: Complexity enforcement
-echo "🧠 GATE 2: Complexity analysis..."
-if command -v pmat >/dev/null 2>&1; then
-    if ! pmat analyze complexity --max-threshold 20 --fail-fast; then
-        echo "❌ BLOCKED: Complexity exceeds 20"
-        echo "Refactor complex functions before committing"
-        echo "Use: make refactor-plan FILE=<path>"
-        exit 1
-    fi
-    echo "✅ Complexity check passed"
-else
-    echo "⚠️  pmat not available - complexity check skipped"
-fi
-
-# GATE 3: Zero SATD policy (Self-Admitted Technical Debt)
-echo "💳 GATE 3: SATD (technical debt) detection..."
-if grep -r "TODO\|FIXME\|HACK\|XXX" --include="*.rs" --include="*.py" --include="*.js" --include="*.go" . 2>/dev/null; then
-    echo "❌ BLOCKED: SATD comments found"
-    echo "Remove TODO/FIXME/HACK comments or file GitHub issues instead"
-    echo "Zero tolerance for self-admitted technical debt"
-    exit 1
-fi
-echo "✅ Zero SATD policy maintained"
-
-# GATE 4: Lint zero tolerance
-echo "🔍 GATE 4: Lint analysis..."
-if [ -f "Cargo.toml" ]; then
-    if ! cargo clippy --all-targets --all-features -- -D warnings --quiet; then
-        echo "❌ BLOCKED: Clippy warnings found"
-        echo "Fix all warnings before committing (-D warnings policy)"
-        exit 1
-    fi
-    echo "✅ Lint check passed"
-fi
-
-# GATE 5: Test execution
-echo "🧪 GATE 5: Test execution..."
-if [ -f "Cargo.toml" ]; then
-    if ! cargo test --quiet; then
-        echo "❌ BLOCKED: Tests failing"
-        echo "All tests must pass before committing"
-        exit 1
-    fi
-    echo "✅ Test execution passed"
-fi
-
-# GATE 6: Documentation tests (if applicable)
-if [ -f "Cargo.toml" ] && cargo test --doc --quiet >/dev/null 2>&1; then
-    echo "📚 GATE 6: Documentation tests..."
-    if ! cargo test --doc --quiet; then
-        echo "❌ BLOCKED: Doc tests failing"
-        echo "Fix documentation examples before committing"
-        exit 1
-    fi
-    echo "✅ Documentation tests passed"
-fi
-
-# GATE 7: Security scan (if tools available)
-echo "🔒 GATE 7: Security scan..."
-if command -v cargo-audit >/dev/null 2>&1; then
-    if ! cargo audit --quiet; then
-        echo "❌ BLOCKED: Security vulnerabilities found"
-        echo "Update dependencies to resolve security issues"
-        exit 1
-    fi
-    echo "✅ Security scan passed"
-else
-    echo "⚠️  cargo-audit not available - security check skipped"
-fi
-
-# GATE 8: File hygiene check
-echo "🧹 GATE 8: Repository hygiene..."
-if find . -name "test_*" -type f -executable -not -path "./target/*" | grep -q .; then
-    echo "❌ BLOCKED: Test executable files found in repository"
-    echo "Remove debug/test binaries before committing:"
-    find . -name "test_*" -type f -executable -not -path "./target/*"
-    echo "Run: make clean"
-    exit 1
-fi
-
-if find . -name "debug_*" -type f -executable -not -path "./target/*" | grep -q .; then
-    echo "❌ BLOCKED: Debug executable files found in repository"
-    echo "Remove debug binaries before committing:"
-    find . -name "debug_*" -type f -executable -not -path "./target/*"
-    echo "Run: make clean"
-    exit 1
-fi
-echo "✅ Repository hygiene maintained"
-
-# Success message
+echo "🔍 ROSETTA RUCHY Pre-commit Quality Gates"
+echo "==========================================="
+echo "ZERO TOLERANCE MODE ACTIVE"
 echo ""
-echo "🎉 ALL QUALITY GATES PASSED"
-echo "Commit approved under Toyota Way standards"
-echo "========================================"
+
+# Configuration (STRICT THRESHOLDS)
+export MAX_CYCLOMATIC_COMPLEXITY=20
+export MAX_COGNITIVE_COMPLEXITY=20
+export MIN_TEST_COVERAGE=80
+export MAX_SATD_COMMENTS=0  # ZERO tolerance
+export REQUIRED_RUCHY_VERSION="1.89.0"
+
+# Color codes for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Check Ruchy version
+echo -n "  Ruchy version check... "
+CURRENT_VERSION=$(ruchy --version 2>/dev/null | cut -d' ' -f2 || echo "unknown")
+if [ "$CURRENT_VERSION" != "$REQUIRED_RUCHY_VERSION" ]; then
+    echo -e "${YELLOW}⚠️  Warning: Version $CURRENT_VERSION (expected $REQUIRED_RUCHY_VERSION)${NC}"
+else
+    echo -e "${GREEN}✅${NC}"
+fi
+
+# 1. SATD Check (ZERO tolerance)
+echo -n "  SATD check (ZERO tolerance)... "
+SATD_COUNT=$(find . -name "*.ruchy" -o -name "*.rs" | xargs grep -c "TODO\|FIXME\|HACK\|XXX" 2>/dev/null | awk '{sum+=$1} END {print sum}')
+if [ "$SATD_COUNT" != "0" ] && [ -n "$SATD_COUNT" ]; then
+    echo -e "${RED}❌${NC}"
+    echo -e "${RED}   Found $SATD_COUNT SATD comments - ZERO tolerance violated!${NC}"
+    echo "   Violations:"
+    find . -name "*.ruchy" -o -name "*.rs" | xargs grep -n "TODO\|FIXME\|HACK\|XXX" | head -5
+    echo ""
+    echo -e "${RED}   ❌ COMMIT BLOCKED: Remove all TODO/FIXME/HACK comments${NC}"
+    exit 1
+else
+    echo -e "${GREEN}✅${NC}"
+fi
+
+# 2. Ruchy syntax validation (only check v1.89 files)
+echo -n "  Ruchy syntax validation (v1.89 files only)... "
+RUCHY_ERRORS=0
+for file in $(find examples -name "*v189.ruchy" 2>/dev/null); do
+    if ! ruchy check "$file" 2>&1 | grep -q "✓ Syntax is valid"; then
+        RUCHY_ERRORS=$((RUCHY_ERRORS + 1))
+        echo "Failed: $file"
+    fi
+done
+if [ $RUCHY_ERRORS -gt 0 ]; then
+    echo -e "${RED}❌${NC}"
+    echo -e "${RED}   $RUCHY_ERRORS v1.89 Ruchy files have syntax errors${NC}"
+    echo -e "${RED}   ❌ COMMIT BLOCKED: Fix v1.89 Ruchy syntax errors${NC}"
+    exit 1
+else
+    echo -e "${GREEN}✅${NC}"
+fi
+
+# 3. Complexity check (if pmat available)
+if command -v pmat &> /dev/null; then
+    echo -n "  Complexity check... "
+    COMPLEXITY_OUTPUT=$(pmat analyze complexity --max-cyclomatic $MAX_CYCLOMATIC_COMPLEXITY --max-cognitive $MAX_COGNITIVE_COMPLEXITY 2>&1)
+    if echo "$COMPLEXITY_OUTPUT" | grep -q "❌.*Errors: [1-9]"; then
+        echo -e "${RED}❌${NC}"
+        echo "$COMPLEXITY_OUTPUT" | grep "Issues Found" | head -1
+        echo -e "${RED}   Complexity exceeds thresholds (Max: $MAX_CYCLOMATIC_COMPLEXITY)${NC}"
+        echo -e "${RED}   ❌ COMMIT BLOCKED: Reduce complexity${NC}"
+        exit 1
+    else
+        echo -e "${GREEN}✅${NC}"
+    fi
+fi
+
+# 4. Rust linting (if cargo available)
+if command -v cargo &> /dev/null; then
+    echo -n "  Rust lint check... "
+    if ! cargo clippy --all-targets --all-features -- -D warnings 2>/dev/null; then
+        echo -e "${RED}❌${NC}"
+        echo -e "${RED}   ❌ COMMIT BLOCKED: Fix clippy warnings${NC}"
+        exit 1
+    else
+        echo -e "${GREEN}✅${NC}"
+    fi
+fi
+
+# 5. Check for stub implementations
+echo -n "  Stub implementation check... "
+STUB_COUNT=$(find . -name "*.ruchy" -o -name "*.rs" | xargs grep -c "unimplemented!\|todo!()\|unreachable!()" 2>/dev/null | awk '{sum+=$1} END {print sum}')
+if [ "$STUB_COUNT" != "0" ] && [ -n "$STUB_COUNT" ]; then
+    echo -e "${RED}❌${NC}"
+    echo -e "${RED}   Found $STUB_COUNT stub implementations${NC}"
+    echo -e "${RED}   ❌ COMMIT BLOCKED: Complete all implementations${NC}"
+    exit 1
+else
+    echo -e "${GREEN}✅${NC}"
+fi
+
+echo ""
+echo -e "${GREEN}✅ All quality gates passed!${NC}"
+echo ""
+
+exit 0

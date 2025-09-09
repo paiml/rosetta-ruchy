@@ -1,0 +1,75 @@
+// Binary Search - Ruchy v1.89.0 with explicit mutability
+
+fun binary_search(arr: [i32; 8], target: i32) -> i32 {
+    let mut left = 0      // ✅ v1.89: explicit mut for reassignment
+    let mut right = 7     // ✅ v1.89: explicit mut for reassignment (8-1)
+    
+    while left <= right {
+        let mut mid = (left + right) / 2  // ✅ v1.89: explicit mut for calculation
+        
+        if arr[mid] == target {
+            return mid as i32  // Found the target
+        } else if arr[mid] < target {
+            left = mid + 1     // ✅ v1.89: reassignment works with mut
+        } else {
+            right = mid - 1    // ✅ v1.89: reassignment works with mut
+        }
+    }
+    
+    -1  // Target not found
+}
+
+fun binary_search_recursive(arr: [i32; 8], target: i32, left: usize, right: usize) -> i32 {
+    if left > right {
+        return -1  // Base case: target not found
+    }
+    
+    let mut mid = (left + right) / 2  // ✅ v1.89: explicit mut for calculation
+    
+    if arr[mid] == target {
+        return mid as i32  // Found the target
+    } else if arr[mid] < target {
+        return binary_search_recursive(arr, target, mid + 1, right)
+    } else {
+        return binary_search_recursive(arr, target, left, mid - 1)
+    }
+}
+
+fun main() {
+    let sorted_array = [2, 5, 8, 12, 16, 23, 38, 45]
+    println("Sorted array: {:?}", sorted_array)
+    
+    // Test iterative binary search
+    println("\nIterative Binary Search:")
+    let target = 23
+    let result = binary_search(sorted_array, target)
+    if result >= 0 {
+        println("Found {} at index {}", target, result)
+    } else {
+        println("{} not found", target)
+    }
+    
+    let target_missing = 15
+    let result = binary_search(sorted_array, target_missing)
+    if result >= 0 {
+        println("Found {} at index {}", target_missing, result)
+    } else {
+        println("{} not found", target_missing)
+    }
+    
+    // Test recursive binary search
+    println("\nRecursive Binary Search:")
+    let target = 12
+    let result = binary_search_recursive(sorted_array, target, 0, 7)
+    if result >= 0 {
+        println("Found {} at index {}", target, result)
+    } else {
+        println("{} not found", target)
+    }
+    
+    println("✅ Ruchy v1.89.0 binary search working!")
+    println("Key changes:")
+    println("- left, right, mid variables explicitly marked with 'mut'")
+    println("- All reassignments work with explicit mutability")
+    println("- O(log n) time complexity maintained")
+}

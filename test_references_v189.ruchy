@@ -1,0 +1,9 @@
+fun test_function(arr: [i32; 5]) {
+    println("Array received: {:?}", arr)
+}
+
+fun main() {
+    let mut arr = [5, 2, 8, 1, 9]
+    test_function(arr)
+    println("✅ Function calls working")
+}
