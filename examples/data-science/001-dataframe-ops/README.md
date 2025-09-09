@@ -10,12 +10,23 @@ This example demonstrates basic data processing operations that form the foundat
 
 ## Implementations
 
-### ✅ Ruchy v1.9.3
-- **File**: `implementations/ruchy/dataframe_simple_v193.ruchy`
-- **Status**: Complete and verified
+### ✅ Ruchy v1.89.0 (Current)  
+- **File**: `implementations/ruchy/dataframe_ops_v189.ruchy`
+- **Status**: Complete and verified (Sprint 24 migration)
+- **Features**: Type-safe operations with explicit mutability and formal verification
+- **Migration**: Fixed-size arrays [T; N] replace Vec<T> collections
+- **Verification Results**:
+  - Syntax: ✅ Valid (v1.89 compatible)
+  - Explicit mutability: ✅ All reassignments use `mut` keyword
+  - Fixed arrays: ✅ Bounded memory allocation
+  - Quality Score: A+ grade target
+
+### ✅ Ruchy v1.9.3 (Legacy)
+- **File**: `implementations/ruchy/dataframe_simple_v193.ruchy`  
+- **Status**: Legacy implementation (pre-explicit mutability)
 - **Features**: Type-safe operations with formal verification
 - **Verification Results**:
-  - Syntax: ✅ Valid
+  - Syntax: ✅ Valid (v1.9.3)
   - Runtime: O(n³) complexity detected
   - Provability: 100/100 (Perfect mathematical verification)
   - Quality Score: 0.975 (A+)
