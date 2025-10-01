@@ -1,0 +1,468 @@
+#!/usr/bin/env ruchy
+// test_all_examples.ruchy - Comprehensive test aggregation for rosetta-ruchy
+// Inspired by ruchy-book's extract-examples.ts
+//
+// Purpose: Test ALL Ruchy examples across algorithms, data-science, and advanced-ai
+// Output: JSON report, console summary, and optional INTEGRATION.md update
+
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::collections::HashMap;
+
+// Error categories (inspired by ruchy-book)
+enum ErrorCategory {
+    Success,
+    SyntaxError,      // ruchy check failed
+    ProvabilityError, // ruchy provability failed
+    RuntimeError,     // ruchy runtime failed
+    ScoreError,       // ruchy score failed
+    FileNotFound,     // .ruchy file doesn't exist
+    Unknown,
+}
+
+struct ExampleResult {
+    path: String,
+    category: String,        // "algorithms", "data-science", "advanced-ai"
+    name: String,            // "001-fibonacci"
+    passed: bool,
+    error_category: ErrorCategory,
+    error_message: String,
+    check_output: String,
+    provability_score: f64,
+    quality_score: f64,
+}
+
+struct TestSummary {
+    total: usize,
+    passed: usize,
+    failed: usize,
+    success_rate: f64,
+    by_category: HashMap<String, CategoryStats>,
+    by_error: HashMap<String, usize>,
+    ruchy_version: String,
+    timestamp: String,
+}
+
+struct CategoryStats {
+    total: usize,
+    passed: usize,
+    success_rate: f64,
+}
+
+fun main() {
+    println!("🧪 Rosetta-Ruchy Comprehensive Test Suite");
+    println!("==========================================\n");
+
+    // Get ruchy version
+    let ruchy_version = get_ruchy_version();
+    println!("Ruchy Version: {}\n", ruchy_version);
+
+    // Find and test all examples
+    let mut results = Vec::new();
+
+    test_category("examples/algorithms", &mut results);
+    test_category("examples/data-science", &mut results);
+    test_category("examples/advanced-ai", &mut results);
+
+    // Generate summary
+    let summary = generate_summary(&results, &ruchy_version);
+
+    // Print console report
+    print_console_report(&summary);
+
+    // Write JSON report
+    write_json_report(&summary, &results);
+
+    // Check for --update-integration flag
+    let args: Vec<String> = std::env::args().collect();
+    if args.contains(&"--update-integration".to_string()) {
+        update_integration_md(&summary, &results);
+    }
+
+    // Exit with error code if any tests failed
+    if summary.failed > 0 {
+        std::process::exit(1);
+    }
+}
+
+fun get_ruchy_version() -> String {
+    let output = Command::new("ruchy")
+        .arg("--version")
+        .output()
+        .expect("Failed to get ruchy version");
+
+    String::from_utf8_lossy(&output.stdout)
+        .trim()
+        .to_string()
+}
+
+fun test_category(category_path: &str, results: &mut Vec<ExampleResult>) {
+    println!("📂 Testing category: {}", category_path);
+
+    // Check if directory exists
+    if !Path::new(category_path).exists() {
+        println!("   ⚠️  Directory not found: {}", category_path);
+        return;
+    }
+
+    // Find all example directories (e.g., 001-fibonacci, 002-quicksort)
+    let entries = fs::read_dir(category_path)
+        .expect(&format!("Failed to read directory: {}", category_path));
+
+    for entry in entries {
+        let entry = entry.expect("Failed to read directory entry");
+        let path = entry.path();
+
+        if path.is_dir() {
+            let example_name = path.file_name()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string();
+
+            test_example(category_path, &example_name, results);
+        }
+    }
+}
+
+fun test_example(category_path: &str, example_name: &str, results: &mut Vec<ExampleResult>) {
+    // Look for implementations/ruchy/*.ruchy files
+    let ruchy_impl_dir = format!("{}/{}/implementations/ruchy", category_path, example_name);
+
+    if !Path::new(&ruchy_impl_dir).exists() {
+        println!("   ⚠️  No Ruchy implementation: {}/{}", category_path, example_name);
+        return;
+    }
+
+    // Find all .ruchy files in the directory
+    let entries = fs::read_dir(&ruchy_impl_dir)
+        .expect(&format!("Failed to read directory: {}", ruchy_impl_dir));
+
+    for entry in entries {
+        let entry = entry.expect("Failed to read directory entry");
+        let path = entry.path();
+
+        // Only test .ruchy files, skip test_*.ruchy and build*.ruchy files
+        if let Some(filename) = path.file_name() {
+            let filename_str = filename.to_str().unwrap();
+            if filename_str.ends_with(".ruchy")
+                && !filename_str.starts_with("test_")
+                && !filename_str.starts_with("build")
+                && !filename_str.starts_with("benchmark") {
+
+                test_ruchy_file(&path, category_path, example_name, results);
+            }
+        }
+    }
+}
+
+fun test_ruchy_file(file_path: &Path, category: &str, example_name: &str, results: &mut Vec<ExampleResult>) {
+    let path_str = file_path.to_str().unwrap();
+    let category_name = Path::new(category).file_name().unwrap().to_str().unwrap();
+
+    print!("   Testing: {}... ", file_path.file_name().unwrap().to_str().unwrap());
+
+    // Run ruchy check
+    let check_result = Command::new("ruchy")
+        .arg("check")
+        .arg(path_str)
+        .output();
+
+    let mut result = ExampleResult {
+        path: path_str.to_string(),
+        category: category_name.to_string(),
+        name: example_name.to_string(),
+        passed: false,
+        error_category: ErrorCategory::Unknown,
+        error_message: String::new(),
+        check_output: String::new(),
+        provability_score: 0.0,
+        quality_score: 0.0,
+    };
+
+    match check_result {
+        Ok(output) => {
+            result.check_output = String::from_utf8_lossy(&output.stdout).to_string();
+
+            if output.status.success() {
+                // Syntax check passed, run provability and score
+                result.provability_score = get_provability_score(path_str);
+                result.quality_score = get_quality_score(path_str);
+
+                result.passed = true;
+                result.error_category = ErrorCategory::Success;
+                println!("✅ PASS (score: {:.2})", result.quality_score);
+            } else {
+                result.error_category = ErrorCategory::SyntaxError;
+                result.error_message = String::from_utf8_lossy(&output.stderr).to_string();
+                println!("❌ FAIL (syntax)");
+            }
+        }
+        Err(e) => {
+            result.error_category = ErrorCategory::Unknown;
+            result.error_message = e.to_string();
+            println!("❌ FAIL (error)");
+        }
+    }
+
+    results.push(result);
+}
+
+fun get_provability_score(file_path: &str) -> f64 {
+    let output = Command::new("ruchy")
+        .arg("provability")
+        .arg(file_path)
+        .output();
+
+    match output {
+        Ok(out) => {
+            let text = String::from_utf8_lossy(&out.stdout);
+            // Parse "Provability Score: 0.0/100"
+            if let Some(line) = text.lines().find(|l| l.contains("Provability Score:")) {
+                if let Some(score_str) = line.split(':').nth(1) {
+                    if let Some(num_str) = score_str.trim().split('/').next() {
+                        return num_str.parse::<f64>().unwrap_or(0.0);
+                    }
+                }
+            }
+            0.0
+        }
+        Err(_) => 0.0,
+    }
+}
+
+fun get_quality_score(file_path: &str) -> f64 {
+    let output = Command::new("ruchy")
+        .arg("score")
+        .arg(file_path)
+        .output();
+
+    match output {
+        Ok(out) => {
+            let text = String::from_utf8_lossy(&out.stdout);
+            // Parse "Score: 1.00/1.0"
+            if let Some(line) = text.lines().find(|l| l.contains("Score:")) {
+                if let Some(score_str) = line.split(':').nth(1) {
+                    if let Some(num_str) = score_str.trim().split('/').next() {
+                        return num_str.parse::<f64>().unwrap_or(0.0);
+                    }
+                }
+            }
+            0.0
+        }
+        Err(_) => 0.0,
+    }
+}
+
+fun generate_summary(results: &[ExampleResult], ruchy_version: &str) -> TestSummary {
+    let total = results.len();
+    let passed = results.iter().filter(|r| r.passed).count();
+    let failed = total - passed;
+    let success_rate = if total > 0 {
+        (passed as f64 / total as f64) * 100.0
+    } else {
+        0.0
+    };
+
+    // Group by category
+    let mut by_category = HashMap::new();
+    for result in results {
+        let stats = by_category.entry(result.category.clone())
+            .or_insert(CategoryStats {
+                total: 0,
+                passed: 0,
+                success_rate: 0.0,
+            });
+        stats.total += 1;
+        if result.passed {
+            stats.passed += 1;
+        }
+    }
+
+    // Calculate success rates for categories
+    for stats in by_category.values_mut() {
+        stats.success_rate = if stats.total > 0 {
+            (stats.passed as f64 / stats.total as f64) * 100.0
+        } else {
+            0.0
+        };
+    }
+
+    // Group by error type
+    let mut by_error = HashMap::new();
+    for result in results {
+        if !result.passed {
+            let error_name = match result.error_category {
+                ErrorCategory::SyntaxError => "SyntaxError",
+                ErrorCategory::ProvabilityError => "ProvabilityError",
+                ErrorCategory::RuntimeError => "RuntimeError",
+                ErrorCategory::ScoreError => "ScoreError",
+                ErrorCategory::FileNotFound => "FileNotFound",
+                _ => "Unknown",
+            };
+            *by_error.entry(error_name.to_string()).or_insert(0) += 1;
+        }
+    }
+
+    TestSummary {
+        total,
+        passed,
+        failed,
+        success_rate,
+        by_category,
+        by_error,
+        ruchy_version: ruchy_version.to_string(),
+        timestamp: chrono::Utc::now().to_rfc3339(),
+    }
+}
+
+fun print_console_report(summary: &TestSummary) {
+    println!("\n📊 TEST SUMMARY");
+    println!("==========================================");
+    println!("Ruchy Version: {}", summary.ruchy_version);
+    println!("Timestamp:     {}", summary.timestamp);
+    println!();
+    println!("Total Examples:  {}", summary.total);
+    println!("✅ Passed:       {} ({:.1}%)", summary.passed, summary.success_rate);
+    println!("❌ Failed:       {} ({:.1}%)", summary.failed, 100.0 - summary.success_rate);
+    println!();
+
+    // Category breakdown
+    println!("By Category:");
+    for (category, stats) in &summary.by_category {
+        println!("  {}: {}/{} ({:.1}%)",
+            category, stats.passed, stats.total, stats.success_rate);
+    }
+    println!();
+
+    // Error breakdown
+    if !summary.by_error.is_empty() {
+        println!("Error Categories:");
+        for (error, count) in &summary.by_error {
+            println!("  {}: {}", error, count);
+        }
+        println!();
+    }
+
+    println!("==========================================");
+}
+
+fun write_json_report(summary: &TestSummary, results: &[ExampleResult]) {
+    // Write detailed JSON report for CI/CD integration
+    let report = json!({
+        "summary": {
+            "total": summary.total,
+            "passed": summary.passed,
+            "failed": summary.failed,
+            "success_rate": summary.success_rate,
+            "ruchy_version": summary.ruchy_version,
+            "timestamp": summary.timestamp,
+        },
+        "by_category": summary.by_category,
+        "by_error": summary.by_error,
+        "results": results.iter().map(|r| {
+            json!({
+                "path": r.path,
+                "category": r.category,
+                "name": r.name,
+                "passed": r.passed,
+                "provability_score": r.provability_score,
+                "quality_score": r.quality_score,
+                "error_message": r.error_message,
+            })
+        }).collect::<Vec<_>>(),
+    });
+
+    fs::write("test-results.json", serde_json::to_string_pretty(&report).unwrap())
+        .expect("Failed to write test-results.json");
+
+    println!("📄 Detailed report written to: test-results.json");
+}
+
+fun update_integration_md(summary: &TestSummary, results: &[ExampleResult]) {
+    println!("\n📝 Updating INTEGRATION.md...");
+
+    // Read current INTEGRATION.md
+    let integration_path = "INTEGRATION.md";
+    let mut content = if Path::new(integration_path).exists() {
+        fs::read_to_string(integration_path)
+            .expect("Failed to read INTEGRATION.md")
+    } else {
+        String::new()
+    };
+
+    // Generate new status section
+    let new_status = format!(r#"# Ruchy Integration Report - rosetta-ruchy
+
+**Current Version**: {}
+**Generated**: {}
+**Success Rate**: {:.1}% ({}/{} examples passing)
+
+## Version History
+| Version | Date | Examples Passing | Success Rate | Notes |
+|---------|------|------------------|--------------|-------|
+| {} | {} | {}/{} | {:.1}% | Latest test run |
+
+## Current Status by Category
+{}
+
+## Known Issues
+{}
+
+---
+
+*This file is auto-generated by `scripts/test_all_examples.ruchy`*
+*Last updated: {}*
+"#,
+        summary.ruchy_version,
+        summary.timestamp,
+        summary.success_rate,
+        summary.passed,
+        summary.total,
+        summary.ruchy_version,
+        summary.timestamp.split('T').next().unwrap(),
+        summary.passed,
+        summary.total,
+        summary.success_rate,
+        format_category_status(&summary.by_category),
+        format_known_issues(&summary.by_error, results),
+        summary.timestamp
+    );
+
+    // Write updated INTEGRATION.md
+    fs::write(integration_path, new_status)
+        .expect("Failed to write INTEGRATION.md");
+
+    println!("✅ INTEGRATION.md updated successfully");
+}
+
+fun format_category_status(by_category: &HashMap<String, CategoryStats>) -> String {
+    let mut lines = Vec::new();
+    for (category, stats) in by_category {
+        lines.push(format!("- **{}**: {}/{} passing ({:.1}%)",
+            category, stats.passed, stats.total, stats.success_rate));
+    }
+    lines.join("\n")
+}
+
+fun format_known_issues(by_error: &HashMap<String, usize>, results: &[ExampleResult]) -> String {
+    if by_error.is_empty() {
+        return "✅ No known issues - all examples passing!".to_string();
+    }
+
+    let mut lines = Vec::new();
+    for (error_type, count) in by_error {
+        lines.push(format!("- **{}**: {} examples affected", error_type, count));
+    }
+
+    // Add sample failures
+    lines.push("\n### Sample Failures:".to_string());
+    for result in results.iter().filter(|r| !r.passed).take(5) {
+        lines.push(format!("- `{}`: {}",
+            result.path.replace("examples/", ""),
+            result.error_message.lines().next().unwrap_or("Unknown error")));
+    }
+
+    lines.join("\n")
+}
