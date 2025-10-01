@@ -1,8 +1,27 @@
 # Migration Patterns: v1.89.0 → v3.62.12
 
 **Date**: October 1, 2025
-**Sprint**: Sprint 35 - Phase 2
-**Status**: ✅ Solutions Validated
+**Sprint**: Sprint 35 - Phase 3
+**Status**: ⚠️ CRITICAL UPDATE - Option 1 BLOCKED by parser bug
+
+---
+
+## 🔴 CRITICAL DISCOVERY: Parser Bug in v3.62.12
+
+**BREAKING NEWS** (October 1, 2025 - Sprint 35 Day 3):
+
+Ruchy v3.62.12 has a **parser bug** that BLOCKS Option 1 (References):
+- `&[T; N]` syntax **fails** when function has **3+ parameters**
+- Works fine with 1-2 parameters, but **fails with 3+**
+- Affects ALL functions like `add_edge(matrix: &[i32; 25], from: i32, to: i32, weight: i32)`
+
+**Impact**:
+- ❌ Option 1 (References) is **NOT VIABLE** for most real-world functions
+- ✅ Option 2 (Wrapper Struct) is **REQUIRED** for migration
+- 📄 Full details: `docs/PARSER_BUG_V3_62_12.md`
+
+**Migration Decision**:
+Use **Option 2 (Wrapper Struct) ONLY** for all 4 files.
 
 ---
 
@@ -16,9 +35,9 @@
 
 ### Solutions (Both Work!)
 
-#### ✅ Option 1: References (RECOMMENDED)
+#### ❌ Option 1: References (BLOCKED - PARSER BUG)
 
-**Status**: ✅ Validated - Syntax is valid
+**Status**: ❌ BLOCKED - Parser bug with 3+ parameters
 
 **Pattern**:
 ```ruchy
@@ -52,7 +71,7 @@ Result: `✓ Syntax is valid`
 - ⚠️ Requires caller to pass `&array` instead of `array`
 - ⚠️ May need dereference operations
 
-**Recommendation**: **USE THIS** for most cases
+**Recommendation**: ❌ **DO NOT USE** - Parser bug prevents use with 3+ parameters
 
 ---
 
@@ -111,7 +130,7 @@ Result: `✓ Syntax is valid`
 - ⚠️ Requires struct definitions
 - ⚠️ Changes API surface area
 
-**Recommendation**: Use for complex types or when encapsulation adds value
+**Recommendation**: ✅ **REQUIRED** - Only viable workaround due to parser bug
 
 ---
 
@@ -189,9 +208,10 @@ impl Graph {
 | **Formal Verification** | ⭐⭐⭐ Should work | ⭐⭐⭐ Should work |
 | **Future Flexibility** | ⭐⭐ Limited | ⭐⭐⭐ High |
 
-**Recommendation for Sprint 35**:
-- **Use Option 1 (References)** for quick migration of 4 failing files
-- **Consider Option 2 (Wrapper)** for future refactoring if valuable
+**UPDATED Recommendation for Sprint 35**:
+- ❌ **Cannot use Option 1 (References)** - blocked by parser bug
+- ✅ **MUST use Option 2 (Wrapper Struct)** for all 4 failing files
+- 📄 See `docs/PARSER_BUG_V3_62_12.md` for full details
 
 ---
 
