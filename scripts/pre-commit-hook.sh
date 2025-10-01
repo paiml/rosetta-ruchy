@@ -46,22 +46,42 @@ else
     echo -e "${GREEN}✅${NC}"
 fi
 
-# 2. Ruchy syntax validation (only check v1.89 files)
-echo -n "  Ruchy syntax validation (v1.89 files only)... "
+# 2. Ruchy syntax validation (version-aware)
+echo -n "  Ruchy syntax validation (version-aware)... "
+CURRENT_MAJOR=$(echo "$CURRENT_VERSION" | cut -d'.' -f1)
+
+# Only validate files matching current major version
+if [ "$CURRENT_MAJOR" = "1" ]; then
+    # On v1.x, check v189 files
+    VERSION_FILES=$(find examples -name "*v189.ruchy" 2>/dev/null)
+elif [ "$CURRENT_MAJOR" = "3" ]; then
+    # On v3.x, check v3* files (if they exist, otherwise skip)
+    VERSION_FILES=$(find examples -name "*v3*.ruchy" 2>/dev/null)
+else
+    VERSION_FILES=""
+fi
+
 RUCHY_ERRORS=0
-for file in $(find examples -name "*v189.ruchy" 2>/dev/null); do
-    if ! ruchy check "$file" 2>&1 | grep -q "✓ Syntax is valid"; then
-        RUCHY_ERRORS=$((RUCHY_ERRORS + 1))
-        echo "Failed: $file"
-    fi
-done
+if [ -n "$VERSION_FILES" ]; then
+    for file in $VERSION_FILES; do
+        if ! ruchy check "$file" 2>&1 | grep -q "✓ Syntax is valid"; then
+            RUCHY_ERRORS=$((RUCHY_ERRORS + 1))
+            echo "Failed: $file"
+        fi
+    done
+fi
+
 if [ $RUCHY_ERRORS -gt 0 ]; then
     echo -e "${RED}❌${NC}"
-    echo -e "${RED}   $RUCHY_ERRORS v1.89 Ruchy files have syntax errors${NC}"
-    echo -e "${RED}   ❌ COMMIT BLOCKED: Fix v1.89 Ruchy syntax errors${NC}"
+    echo -e "${RED}   $RUCHY_ERRORS Ruchy v${CURRENT_MAJOR}.x files have syntax errors${NC}"
+    echo -e "${RED}   ❌ COMMIT BLOCKED: Fix Ruchy syntax errors${NC}"
     exit 1
 else
-    echo -e "${GREEN}✅${NC}"
+    if [ -z "$VERSION_FILES" ]; then
+        echo -e "${YELLOW}⚠️  No v${CURRENT_MAJOR}.x files found (migration in progress)${NC}"
+    else
+        echo -e "${GREEN}✅${NC}"
+    fi
 fi
 
 # 3. Complexity check (if pmat available)

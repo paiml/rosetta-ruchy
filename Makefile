@@ -3,7 +3,7 @@
 # RIGID ENFORCEMENT: Zero tolerance for defects, zero compromise on quality
 
 .PHONY: all install-dev-tools install-hooks clean help
-.PHONY: lint test test-fast test-doc test-property test-examples 
+.PHONY: lint test test-fast test-doc test-property test-examples
 .PHONY: complexity coverage security quality-gate quality-gate-strict quality-gate-full
 .PHONY: analyze-complexity analyze-debt analyze-duplicates analyze-satd
 .PHONY: refactor-plan pdmt-todos
@@ -13,6 +13,7 @@
 .PHONY: kaizen overnight-improve overnight-monitor overnight-swap-cron
 .PHONY: test-stratified test-unit test-services test-algorithms test-e2e
 .PHONY: dogfood dogfood-enforce help-toyota-way
+.PHONY: test-all-examples update-integration test-regression
 
 # Global Configuration
 EXAMPLES := $(wildcard examples/*/*/)
@@ -233,6 +234,39 @@ validate:
 	@echo "✅ Running validation suite..."
 	@./scripts/validate.sh
 
+# Comprehensive Example Testing (Inspired by ruchy-book)
+test-all-examples:
+	@echo "🧪 Testing ALL rosetta-ruchy examples..."
+	@echo "Running comprehensive test suite across algorithms, data-science, and advanced-ai"
+	@if command -v ruchy >/dev/null 2>&1; then \
+		./scripts/test_all_examples.sh; \
+	else \
+		echo "❌ ruchy not found - install via 'cargo install ruchy'"; \
+		exit 1; \
+	fi
+
+# Update INTEGRATION.md with latest test results
+update-integration: test-all-examples
+	@echo "📝 Updating INTEGRATION.md with latest test results..."
+	@./scripts/test_all_examples.sh --update-integration
+	@echo "✅ INTEGRATION.md updated successfully"
+	@echo "💡 Review changes with: git diff INTEGRATION.md"
+
+# Detect test success rate regressions
+test-regression:
+	@echo "📉 Checking for test regressions..."
+	@if [ ! -f test-results.json ]; then \
+		echo "⚠️  No test results found - run 'make test-all-examples' first"; \
+		exit 1; \
+	fi
+	@SUCCESS_RATE=$$(jq -r '.summary.success_rate' test-results.json 2>/dev/null || echo "0"); \
+	if [ "$$(echo "$$SUCCESS_RATE < 85" | bc -l)" -eq 1 ]; then \
+		echo "❌ REGRESSION DETECTED: Success rate $$SUCCESS_RATE% is below 85% threshold"; \
+		exit 1; \
+	else \
+		echo "✅ No regression detected: Success rate is $$SUCCESS_RATE%"; \
+	fi
+
 # Release Management (Canonical Version System)
 pre-release-checks:
 	@echo "🔍 Running pre-release validation..."
@@ -400,6 +434,11 @@ help:
 	@echo "  make complexity      - Complexity analysis (≤20)"
 	@echo "  make coverage        - Test coverage (≥80%)"
 	@echo "  make security        - Security vulnerability scan"
+	@echo ""
+	@echo "🧪 Comprehensive Testing:"
+	@echo "  make test-all-examples   - Test ALL examples (algorithms + data-science + AI)"
+	@echo "  make update-integration  - Update INTEGRATION.md with test results"
+	@echo "  make test-regression     - Detect success rate drops (<85% threshold)"
 	@echo ""
 	@echo "🔍 Analysis (Genchi Genbutsu):"
 	@echo "  make analyze-complexity  - Find complexity hotspots"

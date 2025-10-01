@@ -118,6 +118,7 @@ pub enum RegressionSeverity {
 
 /// Regression alerting configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct AlertConfiguration {
     /// Enable regression alerts
     pub enabled: bool,

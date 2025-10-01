@@ -16,11 +16,12 @@ This is rosetta-ruchy, a polyglot benchmark suite designed to demonstrate Ruchy'
 
 **MANDATORY**: All Ruchy integration work must be documented in [INTEGRATION.md](./INTEGRATION.md) for scientific rigor:
 
-- **Current Version**: Ruchy 1.8.0 (verified working)
+- **Current Version**: Ruchy 3.62.11 (verified working - upgraded from 1.89.0)
 - **Feature Status**: What works, what has limitations, what's unavailable
 - **Version Migration**: When upgrading Ruchy, test and document changes
 - **Feedback Loop**: Report issues to Ruchy team with reproducible examples
 - **Scientific Impact**: Document how limitations affect validation goals
+- **Test Infrastructure**: Use `make test-all-examples` to validate all examples after version upgrades
 
 **Core Principle**: This is science. Every version change requires systematic testing and documentation of capabilities to maintain reproducible results and provide valuable feedback to the Ruchy development team.
 
@@ -86,9 +87,24 @@ rosetta-ruchy/
 - `make all` - Build Docker images, run tests and benchmarks
 - `make quality-gate` - Run Toyota Way mandatory quality checks
 - `make test` - Run all tests across examples
-- `make bench` - Run all benchmarks  
+- `make bench` - Run all benchmarks
 - `make validate` - Run comprehensive project validation
 - `make compare` - Generate performance comparison reports
+
+### Comprehensive Testing Commands - 🆕 NEW (Inspired by ruchy-book)
+```bash
+# Test ALL examples across algorithms, data-science, and advanced-ai
+make test-all-examples      # Run comprehensive test suite (outputs test-results.json)
+make update-integration     # Update INTEGRATION.md with latest test results
+make test-regression        # Detect success rate drops (<85% threshold)
+```
+
+**Scientific Reproducibility**:
+- `test-all-examples` - Tests every .ruchy file across all categories
+- Generates `test-results.json` with detailed pass/fail data
+- Tracks success rates by category (algorithms, data-science, advanced-ai)
+- Integrated with CI/CD for automatic regression detection
+- Version history tracking in INTEGRATION.md
 
 ### Phase 3: Data Science Commands - 🆕 NEW FOCUS
 ```bash
