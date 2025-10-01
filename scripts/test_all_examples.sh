@@ -52,8 +52,8 @@ test_ruchy_file() {
     # Run ruchy check
     if ruchy check "$file_path" &>/dev/null; then
         echo -e "${GREEN}✅ PASS${NC}"
-        ((PASSED++))
-        ((CATEGORY_PASSED[$category]++))
+        ((PASSED++)) || true
+        ((CATEGORY_PASSED[$category]++)) || true
 
         # Get quality score if available
         SCORE=$(ruchy score "$file_path" 2>/dev/null | grep "Score:" | awk '{print $2}' | cut -d'/' -f1 || echo "0")
@@ -65,11 +65,11 @@ test_ruchy_file() {
         RESULTS_JSON+="{\"path\":\"$file_path\",\"category\":\"$category\",\"name\":\"$example_name\",\"passed\":true,\"score\":$SCORE}"
     else
         echo -e "${RED}❌ FAIL${NC}"
-        ((FAILED++))
+        ((FAILED++)) || true
 
         # Categorize error
         ERROR_TYPE="SyntaxError"
-        ((ERROR_TYPES[$ERROR_TYPE]++))
+        ((ERROR_TYPES[$ERROR_TYPE]++)) || true
 
         # Add to JSON results
         if [ "$RESULTS_JSON" != "[" ]; then
@@ -78,8 +78,8 @@ test_ruchy_file() {
         RESULTS_JSON+="{\"path\":\"$file_path\",\"category\":\"$category\",\"name\":\"$example_name\",\"passed\":false,\"error\":\"$ERROR_TYPE\"}"
     fi
 
-    ((TOTAL++))
-    ((CATEGORY_TOTAL[$category]++))
+    ((TOTAL++)) || true
+    ((CATEGORY_TOTAL[$category]++)) || true
 }
 
 # Test an example directory
