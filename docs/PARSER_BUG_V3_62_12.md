@@ -15,18 +15,21 @@
 **Impact**: ANY code using `from` as identifier will FAIL
 **Solution**: ✅ Rename to `from_vertex`, `source`, etc.
 **Discovered**: Sprint 35 (Day 3)
+**GitHub Issue**: https://github.com/paiml/ruchy/issues/23
 
 ### Issue #2: Parser Bug with `&[T; N]` References
 **Severity**: 🔴 CRITICAL
 **Impact**: Cannot use array references with 3+ parameters
 **Solution**: ✅ Use wrapper structs instead
 **Discovered**: Sprint 35 (Day 3)
+**GitHub Issue**: https://github.com/paiml/ruchy/issues/24
 
 ### Issue #3: No `mut` in Tuple Destructuring 🆕
 **Severity**: 🔴 CRITICAL
 **Impact**: Cannot use `mut` keywords in tuple destructuring patterns
 **Solution**: ✅ Use separate `let mut` declarations after destructuring
 **Discovered**: Sprint 36 (stream_processing migration)
+**GitHub Issue**: https://github.com/paiml/ruchy/issues/25
 
 ---
 
