@@ -1,9 +1,10 @@
 # Breaking Changes & Parser Issues: Ruchy v3.62.12
 
 **Date**: October 1, 2025
+**Last Updated**: October 1, 2025 (Sprint 36 - Added Breaking Change #3)
 **Severity**: 🔴 CRITICAL
 **Status**: RESOLVED with workarounds
-**Issues Found**: 2 critical breaking changes
+**Issues Found**: 3 critical breaking changes
 
 ---
 
@@ -11,24 +12,33 @@
 
 ### Issue #1: `from` is Now a Reserved Keyword
 **Severity**: 🔴 CRITICAL
-**Impact**: ANY function using `from` as parameter name will FAIL
+**Impact**: ANY code using `from` as identifier will FAIL
 **Solution**: ✅ Rename to `from_vertex`, `source`, etc.
+**Discovered**: Sprint 35 (Day 3)
 
 ### Issue #2: Parser Bug with `&[T; N]` References
 **Severity**: 🔴 CRITICAL
 **Impact**: Cannot use array references with 3+ parameters
 **Solution**: ✅ Use wrapper structs instead
+**Discovered**: Sprint 35 (Day 3)
+
+### Issue #3: No `mut` in Tuple Destructuring 🆕
+**Severity**: 🔴 CRITICAL
+**Impact**: Cannot use `mut` keywords in tuple destructuring patterns
+**Solution**: ✅ Use separate `let mut` declarations after destructuring
+**Discovered**: Sprint 36 (stream_processing migration)
 
 ---
 
 ## Summary
 
-Ruchy v3.62.12 has TWO critical breaking changes:
+Ruchy v3.62.12 has **THREE** critical breaking changes:
 
-1. **`from` keyword reservation**: Parameter names using `from` now fail with parser error
+1. **`from` keyword reservation**: All identifiers using `from` now fail with parser error
 2. **Array reference parser bug**: Fixed-size array references `&[T; N]` fail as parameters when there are 3 or more total parameters
+3. **No `mut` in tuple destructuring**: Cannot use `mut` keywords in destructuring patterns - must declare mutability separately
 
-Both issues BLOCK straightforward migration and require code changes.
+All three issues BLOCK straightforward migration and require code changes.
 
 ---
 
@@ -360,3 +370,221 @@ Blocks migration from v1.89.0 (which allowed `[T; N]` parameters)
 
 *Discovered: October 1, 2025 during Sprint 35 - Phase 3 migration*
 *Status: Blocking - requires wrapper struct workaround*
+
+
+---
+
+## Issue #3: No `mut` in Tuple Destructuring (NEWLY DISCOVERED - Sprint 36)
+
+### Reproduction
+
+#### ❌ FAILS: Using `mut` in tuple destructuring
+```ruchy
+fun create_tuple() -> ([i32; 10], i32, i32) {
+    ([0; 10], 0, 0)
+}
+
+fun main() {
+    let (mut arr, mut x, y) = create_tuple();
+    println!("x: {}", x);
+}
+```
+**Result**:
+```
+✗ Syntax error: Expected RightBrace, found Let
+```
+
+#### ✅ Works: Separate `let mut` declarations
+```ruchy
+fun create_tuple() -> ([i32; 10], i32, i32) {
+    ([0; 10], 0, 0)
+}
+
+fun main() {
+    let (arr_temp, x_temp, y) = create_tuple();
+    let mut arr = arr_temp;
+    let mut x = x_temp;
+    println!("x: {}", x);
+}
+```
+**Result**: `✓ Syntax is valid`
+
+### Root Cause
+
+The parser in v3.62.12 does **not** support `mut` keywords inside tuple destructuring patterns. This was valid syntax in v1.89.0.
+
+**v1.89.0 - WORKED ✅**:
+```ruchy
+let (mut buffer, mut head, tail) = create_stream_buffer();
+buffer = update_buffer(buffer);  // Can mutate
+head = head + 1;                  // Can mutate
+```
+
+**v3.62.12 - FAILS ❌**:
+```
+✗ Syntax error: Expected RightBrace, found Let
+Error: Syntax error: Expected RightBrace, found Let
+```
+
+### Solution
+
+**Workaround: Destructure first, then declare mutability**:
+```ruchy
+// Step 1: Destructure without mut
+let (buffer_temp, head_temp, tail) = create_stream_buffer();
+
+// Step 2: Declare mutability separately
+let mut buffer = buffer_temp;
+let mut head = head_temp;
+
+// Step 3: Use mutable variables as normal
+buffer = update_buffer(buffer);
+head = head + 1;
+```
+
+### Impact
+
+**Affected Code Patterns**:
+- ❌ `let (mut x, mut y) = tuple` - FAILS
+- ❌ `let (mut arr, head, tail) = create_stream()` - FAILS
+- ❌ `let (x, mut y, mut z) = func()` - FAILS
+- ✅ `let (x, y) = tuple; let mut x = x;` - WORKS
+
+**Files Affected**:
+- `stream_processing_v189.ruchy` - ✅ FIXED (line 168)
+- `topological_sort_v189.ruchy` - ⏳ Would need fixing (multiple instances)
+- Any code using mutable tuple destructuring
+
+### Reproducible Test Case
+
+```bash
+# Test 1: Confirm simple tuple destructuring works
+cat > /tmp/test_tuple_no_mut.ruchy << 'EOF'
+fun create_tuple() -> (i32, i32, i32) {
+    (0, 1, 2)
+}
+
+fun main() {
+    let (x, y, z) = create_tuple();
+    println!("x: {}", x);
+}
+EOF
+ruchy check /tmp/test_tuple_no_mut.ruchy  # Should pass
+
+# Test 2: Confirm mut in destructuring FAILS
+cat > /tmp/test_tuple_with_mut.ruchy << 'EOF'
+fun create_tuple() -> (i32, i32, i32) {
+    (0, 1, 2)
+}
+
+fun main() {
+    let (mut x, mut y, z) = create_tuple();
+    println!("x: {}", x);
+}
+EOF
+ruchy check /tmp/test_tuple_with_mut.ruchy  # Should FAIL
+
+# Test 3: Confirm separate mut declarations work
+cat > /tmp/test_tuple_separate_mut.ruchy << 'EOF'
+fun create_tuple() -> (i32, i32, i32) {
+    (0, 1, 2)
+}
+
+fun main() {
+    let (x_temp, y_temp, z) = create_tuple();
+    let mut x = x_temp;
+    let mut y = y_temp;
+    x = x + 1;
+    y = y + 1;
+    println!("x: {}, y: {}", x, y);
+}
+EOF
+ruchy check /tmp/test_tuple_separate_mut.ruchy  # Should pass
+```
+
+### Migration Example
+
+**Before (v1.89.0)**:
+```ruchy
+fun test_stream_processing() {
+    let (mut buffer, mut head, tail) = create_stream_buffer();
+
+    while head < 500 {
+        let (new_buffer, new_head, new_tail) = stream_push(buffer, head, tail, value);
+        buffer = new_buffer;
+        head = new_head;
+    }
+}
+```
+
+**After (v3.62.12)**:
+```ruchy
+fun test_stream_processing() {
+    let (buffer_temp, head_temp, tail) = create_stream_buffer();
+    let mut buffer = buffer_temp;
+    let mut head = head_temp;
+
+    while head < 500 {
+        let (new_buffer_temp, new_head, new_tail) = stream_push(buffer, head, tail, value);
+        buffer = new_buffer_temp;
+        head = new_head;
+    }
+}
+```
+
+### Automated Transformation
+
+For automated migration scripts, use `sed` to transform the pattern:
+
+```bash
+# Pattern: Replace tuple destructuring with mut
+sed 's/let (\(mut [^)]*\)) = /let (\1_temp) = /' | \
+  # Then add separate let mut declarations
+  # (requires more complex multiline sed or manual fixing)
+```
+
+**Note**: This is difficult to automate fully with `sed` - manual review recommended.
+
+---
+
+## All Three Breaking Changes: Combined Impact
+
+### Summary of Required Changes for v1.89.0 → v3.62.12 Migration
+
+1. **Rename all `from` identifiers**:
+   - Parameters: `from: i32` → `from_vertex: i32`
+   - Variables: `let from = ...` → `let source = ...`
+   - Struct fields: `struct Edge { from: i32 }` → `struct Edge { from_vertex: i32 }`
+
+2. **Replace array parameters with wrapper structs**:
+   ```ruchy
+   // OLD:
+   fun process(arr: [i32; 100], x: i32, y: i32) -> [i32; 100]
+
+   // NEW:
+   struct Array100 { data: [i32; 100] }
+   fun process(arr: Array100, x: i32, y: i32) -> Array100
+   ```
+
+3. **Remove `mut` from tuple destructuring**:
+   ```ruchy
+   // OLD:
+   let (mut x, mut y) = tuple;
+
+   // NEW:
+   let (x_temp, y_temp) = tuple;
+   let mut x = x_temp;
+   let mut y = y_temp;
+   ```
+
+### Migration Effort Estimate
+
+Based on Sprint 35+36 experience:
+
+| File Complexity | Estimated Time | Automation |
+|----------------|----------------|------------|
+| Simple (no tuples, few arrays) | 30-60 min | 90% automated |
+| Medium (arrays, simple tuples) | 1-2 hours | 70% automated |
+| Complex (nested tuples, many arrays) | 3-6 hours | 40% automated |
+
+**Success Rate**: 80% for simple/medium files (4/5 in Sprint 36)
