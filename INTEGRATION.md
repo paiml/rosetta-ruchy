@@ -1,10 +1,10 @@
 # Ruchy Integration Status
 
-**Current Version**: 3.63.0 🚧 **MIGRATION 40% COMPLETE**
+**Current Version**: 3.63.0 🚧 **MIGRATION 80% COMPLETE**
 **Previous Version**: 1.89.0 (100% validation complete)
-**Last Updated**: 2025-10-01 (Sprint 35 Complete)
+**Last Updated**: 2025-10-01 (Sprint 36 Complete)
 **Test Environment**: Linux 6.8.0-79-lowlatency
-**Sprint**: Sprint 35 Complete | Sprint 36 Next
+**Sprint**: Sprint 36 Complete | Sprint 37 Documentation
 
 ## Overview
 
@@ -16,37 +16,49 @@ This document tracks the integration status of Ruchy features for the rosetta-ru
 
 ---
 
-## ✅ Sprint 35 COMPLETE: v3.62.12+ Migration Progress
+## ✅ Sprint 36 COMPLETE: v3.62.12+ Migration Progress
 
-**Status**: 🟡 **PARTIAL SUCCESS** - 40% migration complete
-**Duration**: October 1, 2025 (8 hours)
-**Success Rate**: 66.0% (68/103 examples passing) [+0.7% from baseline]
-**Migrated Files**: 2/5 target files (dijkstra ✅, tsp ✅)
+**Status**: ✅ **SUCCESS** - 80% migration complete (4/5 target files)
+**Duration**: October 1, 2025 (~12 hours total, Sprints 35+36 combined)
+**Success Rate**: 66.7% (70/105 examples passing) [+1.4% from baseline]
+**Migrated Files**: 4/5 target files
 
 ### Current Test Results (v3.63.0)
 
 | Category | Passing | Total | Success Rate | Change from Baseline |
 |----------|---------|-------|--------------|----------------------|
-| **data-science** | 24 | 30 | 80.0% | ➡️ No change |
+| **data-science** | 26 | 32 | 81.2% | ⬆️ +2 files (+6.2%) |
 | **algorithms** | 44 | 72 | 61.1% | ⬆️ +2 files (+2.8%) |
 | **advanced-ai** | 0 | 1 | 0.0% | ➡️ No change |
-| **TOTAL** | **68** | **103** | **66.0%** | ⬆️ **+2 files (+0.7%)** |
+| **TOTAL** | **70** | **105** | **66.7%** | ⬆️ **+4 files (+1.4%)** |
 
-### Sprint 35 Achievements
+### Sprint 35+36 Achievements
 
 **✅ Successfully Migrated**:
-1. `dijkstra_v362.ruchy` (322 lines) - Graph shortest path algorithm
-2. `tsp_v362.ruchy` (763 lines) - NP-hard optimization problem
+1. `dijkstra_v362.ruchy` (322 lines) - Graph shortest path algorithm [Sprint 35]
+2. `tsp_v362.ruchy` (763 lines) - NP-hard optimization problem [Sprint 35]
+3. `graph_analytics_v362.ruchy` (327 lines) - Network analysis algorithms [Sprint 36]
+4. `stream_processing_v362.ruchy` (309 lines) - Real-time data streams [Sprint 36]
 
-**🔍 Critical Discoveries**:
+**⏳ Deferred**:
+- `topological_sort_v189.ruchy` - Complex nested tuples require manual refactoring (6+ hours)
+
+**🔍 Critical Discoveries - THREE Breaking Changes**:
 1. **`from` is a Reserved Keyword** (v3.62.12+)
    - Affects parameters, variables, AND struct fields
    - MUST rename ALL occurrences: `from` → `from_vertex`, `source`, etc.
+   - Files affected: dijkstra, tsp, graph_analytics
 
 2. **Parser Bug: `&[T; N]` fails with 3+ parameters**
    - Array references work with 1-2 params, fail with 3+
    - Workaround: Use wrapper structs instead
    - Documented in `docs/PARSER_BUG_V3_62_12.md`
+   - Files affected: ALL array-heavy code
+
+3. **No `mut` in Tuple Destructuring** 🆕 (v3.62.12+)
+   - `let (mut x, mut y) = ...` ❌ FAILS
+   - `let (x, y) = ...; let mut x = x;` ✅ WORKS
+   - Files affected: stream_processing, topological_sort
 
 **📄 Documentation Created**:
 - `docs/PARSER_BUG_V3_62_12.md` - Complete analysis of both breaking changes
