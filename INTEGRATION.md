@@ -1,10 +1,10 @@
 # Ruchy Integration Status
 
-**Current Version**: 3.62.12 🚧 **MIGRATION IN PROGRESS**
+**Current Version**: 3.63.0 🚧 **MIGRATION 40% COMPLETE**
 **Previous Version**: 1.89.0 (100% validation complete)
-**Last Updated**: 2025-10-01
+**Last Updated**: 2025-10-01 (Sprint 35 Complete)
 **Test Environment**: Linux 6.8.0-79-lowlatency
-**Sprint**: Sprint 35 - v3.62.12 Migration
+**Sprint**: Sprint 35 Complete | Sprint 36 Next
 
 ## Overview
 
@@ -16,65 +16,107 @@ This document tracks the integration status of Ruchy features for the rosetta-ru
 
 ---
 
-## 🚧 CRITICAL: v3.62.12 Migration Status (Sprint 35)
+## ✅ Sprint 35 COMPLETE: v3.62.12+ Migration Progress
 
-**Status**: 🔴 **REGRESSION DETECTED** - Below 85% threshold
-**Baseline Established**: October 1, 2025
-**Success Rate**: 65.3% (66/101 examples passing)
-**Target**: >85% (86+ examples) by end of Sprint 35
+**Status**: 🟡 **PARTIAL SUCCESS** - 40% migration complete
+**Duration**: October 1, 2025 (8 hours)
+**Success Rate**: 66.0% (68/103 examples passing) [+0.7% from baseline]
+**Migrated Files**: 2/5 target files (dijkstra ✅, tsp ✅)
 
-### Quick Summary
+### Current Test Results (v3.63.0)
 
-| Category | Passing | Total | Success Rate | Status |
-|----------|---------|-------|--------------|--------|
-| **data-science** | 24 | 30 | 80.0% | 🟡 Approaching threshold |
-| **algorithms** | 42 | 70 | 60.0% | 🔴 Significant regression |
-| **advanced-ai** | 0 | 1 | 0.0% | 🔴 Early stage |
-| **TOTAL** | **66** | **101** | **65.3%** | 🔴 **BELOW THRESHOLD** |
+| Category | Passing | Total | Success Rate | Change from Baseline |
+|----------|---------|-------|--------------|----------------------|
+| **data-science** | 24 | 30 | 80.0% | ➡️ No change |
+| **algorithms** | 44 | 72 | 61.1% | ⬆️ +2 files (+2.8%) |
+| **advanced-ai** | 0 | 1 | 0.0% | ➡️ No change |
+| **TOTAL** | **68** | **103** | **66.0%** | ⬆️ **+2 files (+0.7%)** |
 
-### Critical Findings
+### Sprint 35 Achievements
 
-**What Works**:
-- ✅ 19/24 algorithm v189 files (79%) - Most validated examples working
-- ✅ 24/30 data science examples (80%) - Strong performance
-- ✅ Formal verification tools operational (check, provability, score)
+**✅ Successfully Migrated**:
+1. `dijkstra_v362.ruchy` (322 lines) - Graph shortest path algorithm
+2. `tsp_v362.ruchy` (763 lines) - NP-hard optimization problem
 
-**What's Broken**:
-- ❌ 5 proven v189 files failing (dijkstra, tsp, topological_sort, stream_processing, graph_analytics)
-- ❌ 30 legacy/experimental files (v14, v18x, unversioned)
-- ❌ Function parameter syntax restriction blocking critical examples
+**🔍 Critical Discoveries**:
+1. **`from` is a Reserved Keyword** (v3.62.12+)
+   - Affects parameters, variables, AND struct fields
+   - MUST rename ALL occurrences: `from` → `from_vertex`, `source`, etc.
 
-### Breaking Change #1: Function Parameter Restrictions
+2. **Parser Bug: `&[T; N]` fails with 3+ parameters**
+   - Array references work with 1-2 params, fail with 3+
+   - Workaround: Use wrapper structs instead
+   - Documented in `docs/PARSER_BUG_V3_62_12.md`
+
+**📄 Documentation Created**:
+- `docs/PARSER_BUG_V3_62_12.md` - Complete analysis of both breaking changes
+- `docs/SPRINT_35_RESULTS.md` - Full sprint retrospective
+- `docs/MIGRATION_PATTERNS_V3.md` - Updated with workarounds
+
+### Remaining Work (Sprint 36)
+
+**⏳ In Progress**:
+- `topological_sort_v362.ruchy` - Complex tuple handling (60% complete)
+
+**❌ Not Started**:
+- `graph_analytics_v362.ruchy` - Same pattern as completed files
+- `stream_processing_v362.ruchy` - Different breaking change (RightBrace/println)
+
+**Target**: 71/106 passing (67.0%) by end of Sprint 36
+
+### Breaking Change #1: `from` Reserved Keyword
 
 **Error**: "Function parameters must be simple identifiers or destructuring patterns"
 
-**Impact**: Blocks graph algorithms and data science examples using array parameters
+**Impact**: 🔴 CRITICAL - affects ANY identifier named `from`
 
-**Example**:
+**Examples**:
 ```ruchy
-// v1.89.0 - Worked
-fun add_edge(matrix: [i32; 25], from: i32, to: i32, weight: i32) -> [i32; 25] { }
+// v1.89.0 - ALL WORKED ✅
+fun test(from: i32) -> i32 { from }  // Parameter
+let from = 5;  // Variable
+struct Edge { from: i32 }  // Field
 
-// v3.62.12 - ERROR
-// Syntax error: Function parameters must be simple identifiers or destructuring patterns
+// v3.62.12+ - ALL FAIL ❌
+// Error: "Function parameters must be simple identifiers..."
 ```
 
-**Affected Files**:
-- dijkstra_v189.ruchy
-- tsp_v189.ruchy (analysis pending)
-- topological_sort_v189.ruchy (analysis pending)
-- stream_processing_v189.ruchy (analysis pending)
-- graph_analytics_v189.ruchy (analysis pending)
+**Solution**: ✅ Rename to `from_vertex`, `from_node`, `source`, etc.
 
-**Migration Status**: 🔴 **INVESTIGATION REQUIRED**
+**Status**: ✅ RESOLVED in dijkstra_v362.ruchy and tsp_v362.ruchy
 
-### Detailed Analysis
+### Breaking Change #2: Parser Bug with Array References
 
-For complete baseline analysis, see: [`docs/BASELINE_V3_62_12.md`](./docs/BASELINE_V3_62_12.md)
+**Error**: "Function parameters must be simple identifiers or destructuring patterns"
 
-**Test Results**: `test-results.json` (generated by `make test-all-examples`)
+**Impact**: 🔴 CRITICAL - blocks reference-based migration
 
-**Sprint Plan**: [`docs/SPRINT_35_V3_MIGRATION.md`](./docs/SPRINT_35_V3_MIGRATION.md)
+**Examples**:
+```ruchy
+// Works ✅
+fun test(arr: &[i32; 25]) -> i32 { 42 }  // 1 param
+fun test(arr: &[i32; 25], x: i32) -> i32 { 42 }  // 2 params
+
+// FAILS ❌
+fun test(arr: &[i32; 25], x: i32, y: i32) -> i32 { 42 }  // 3 params
+```
+
+**Solution**: ✅ Use wrapper structs
+```ruchy
+struct Matrix25 { data: [i32; 25] }
+fun test(m: Matrix25, x: i32, y: i32) -> i32 { 42 }  // Works!
+```
+
+**Status**: ✅ PATTERN VALIDATED and applied to 2 files
+
+### Detailed Documentation
+
+- **Baseline Analysis**: [`docs/BASELINE_V3_62_12.md`](./docs/BASELINE_V3_62_12.md)
+- **Sprint Results**: [`docs/SPRINT_35_RESULTS.md`](./docs/SPRINT_35_RESULTS.md)
+- **Parser Bug Details**: [`docs/PARSER_BUG_V3_62_12.md`](./docs/PARSER_BUG_V3_62_12.md)
+- **Migration Patterns**: [`docs/MIGRATION_PATTERNS_V3.md`](./docs/MIGRATION_PATTERNS_V3.md)
+- **Sprint Plan**: [`docs/SPRINT_35_V3_MIGRATION.md`](./docs/SPRINT_35_V3_MIGRATION.md)
+- **Test Results**: `test-results.json` (generated by `make test-all-examples`)
 
 ---
 
