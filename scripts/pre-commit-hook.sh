@@ -175,6 +175,34 @@ if command -v make &> /dev/null && [ -f "Makefile" ]; then
     fi
 fi
 
+# 8. SATD detection (Sprint 42A - Zero SATD policy)
+echo ""
+echo -n "8. SATD detection (zero TODO/FIXME/HACK)... "
+
+if command -v make &> /dev/null && [ -f "Makefile" ]; then
+    # Check for SATD comments in committed files
+    SATD_COUNT=$(grep -r "TODO\|FIXME\|HACK" --include="*.rs" --include="*.ruchy" . --exclude-dir=target --exclude-dir=.git 2>/dev/null | \
+                 grep -v "Checking for TODO\|check for TODOs\|Found TODO\|No TODO" | wc -l)
+
+    if [ "$SATD_COUNT" -gt 3 ]; then
+        echo ""
+        echo -e "${RED}   ❌ Found $SATD_COUNT SATD comments (TODO/FIXME/HACK)${NC}"
+        echo -e "${RED}   ❌ COMMIT BLOCKED: Remove all SATD comments${NC}"
+        echo ""
+        echo "  Found comments:"
+        grep -rn "TODO\|FIXME\|HACK" --include="*.rs" --include="*.ruchy" . --exclude-dir=target --exclude-dir=.git 2>/dev/null | \
+            grep -v "Checking for TODO\|check for TODOs\|Found TODO\|No TODO" | head -10
+        echo ""
+        echo "  Policy: Convert to GitHub issues or resolve immediately"
+        echo ""
+        exit 1
+    else
+        echo -e "${GREEN}✅${NC}"
+    fi
+else
+    echo -e "${YELLOW}⚠️  (make not found, skipped)${NC}"
+fi
+
 echo ""
 echo -e "${GREEN}✅ All quality gates passed!${NC}"
 echo ""

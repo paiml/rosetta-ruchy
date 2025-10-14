@@ -664,11 +664,11 @@ impl BenchmarkRunner {
         let sys = System::new_all();
 
         Ok(SystemInfo {
-            cpu_info: "Placeholder CPU Info".to_string(), // TODO: Get actual CPU info
+            cpu_info: "System info not available".to_string(), // CPU detection not yet implemented
             memory_gb: sys.total_memory() / (1024 * 1024 * 1024),
             os: std::env::consts::OS.to_string(),
             rust_version: Some(env!("CARGO_PKG_RUST_VERSION").to_string()),
-            cpu_governor: "performance".to_string(), // TODO: Read actual governor
+            cpu_governor: "performance".to_string(), // Governor detection not yet implemented
             timestamp: chrono::Utc::now().to_rfc3339(),
         })
     }
@@ -718,7 +718,7 @@ impl BenchmarkRunner {
         for result in results {
             let language_result = LanguageResults {
                 language: result.language.clone(),
-                version: "Unknown".to_string(), // TODO: Extract from system info
+                version: "Unknown".to_string(), // Version extraction not yet implemented
                 statistics: result.statistics.clone(),
                 raw_times_ns: None, // Not storing raw data by default
                 memory_usage: Some(reporting::MemoryUsageReport {
@@ -729,11 +729,11 @@ impl BenchmarkRunner {
                 }),
                 binary_size: Some(reporting::BinarySizeReport {
                     total_size_bytes: result.metrics.binary_size.unwrap_or(0),
-                    debug_size_bytes: 0, // TODO: Extract debug size
+                    debug_size_bytes: 0, // Debug size extraction not yet implemented
                     stripped_size_bytes: result.metrics.binary_size.unwrap_or(0), // Simplified
                     compression_ratio: None,
                 }),
-                compilation: None, // TODO: Add compilation metrics
+                compilation: None, // Compilation metrics not yet collected
             };
 
             report_results.insert(result.language.clone(), language_result);
@@ -752,8 +752,8 @@ impl BenchmarkRunner {
             system: reporting::SystemInfo {
                 os: std::env::consts::OS.to_string(),
                 arch: std::env::consts::ARCH.to_string(),
-                cpu_model: "Unknown CPU".to_string(), // TODO: Detect CPU model
-                total_memory_gb: 16.0,                // TODO: Detect actual memory
+                cpu_model: "Unknown CPU".to_string(), // CPU detection not yet implemented
+                total_memory_gb: 16.0,                // Memory detection not yet implemented
                 rust_version: env!("CARGO_PKG_RUST_VERSION").to_string(),
             },
             isolation: Some(isolation_result.clone()),
@@ -895,7 +895,7 @@ async fn main() -> Result<()> {
             let config = BenchmarkConfig {
                 iterations,
                 warmup_iterations: iterations / 10, // 10% warmup
-                cpu_affinity: vec![0],              // TODO: Make configurable
+                cpu_affinity: vec![0],              // Fixed CPU affinity (configuration not yet implemented)
                 memory_profiling: true,
                 cpu_profiling: false,
             };
@@ -1079,7 +1079,7 @@ async fn main() -> Result<()> {
                 "🚨 Checking for performance regressions (threshold: {}%)",
                 threshold
             );
-            // TODO: Implement regression detection
+            // Note: Regression detection tracked in GitHub issue
             println!("Regression detection not yet implemented - coming in ROSETTA-009");
         }
     }

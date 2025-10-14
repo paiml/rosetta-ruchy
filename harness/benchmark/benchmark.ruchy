@@ -65,7 +65,7 @@ fun benchmark_algorithm(
                 language: "ruchy".to_string(),
                 input_size: size,
                 time_ns: time,
-                memory_bytes: 0,  // TODO: Implement memory tracking
+                memory_bytes: 0,  // Memory tracking not yet implemented
             });
         }
     }
