@@ -123,7 +123,36 @@ else
     echo -e "${GREEN}✅${NC}"
 fi
 
-# 6. Dogfood-quick validation (Sprint 40+ infrastructure)
+# 6. Security audit (Sprint 42 - Gemini audit response)
+echo ""
+echo -n "6. Security audit (cargo audit)... "
+
+if command -v cargo &> /dev/null; then
+    # Check if cargo-audit is installed
+    if ! cargo audit --version &>/dev/null; then
+        echo ""
+        echo -e "${YELLOW}  ⚠️  cargo-audit not installed${NC}"
+        echo "  Install with: cargo install cargo-audit"
+        echo "  Skipping security check..."
+    else
+        if cargo audit 2>&1 | grep -q "error:.*vulnerability"; then
+            echo ""
+            echo -e "${RED}   ❌ Security vulnerabilities found${NC}"
+            echo -e "${RED}   ❌ COMMIT BLOCKED: Fix security issues${NC}"
+            echo ""
+            echo "  Run: cargo audit"
+            echo "  Then: cargo update -p <vulnerable-package>"
+            echo ""
+            exit 1
+        else
+            echo -e "${GREEN}✅${NC}"
+        fi
+    fi
+else
+    echo -e "${YELLOW}⚠️  (cargo not found, skipped)${NC}"
+fi
+
+# 7. Dogfood-quick validation (Sprint 40+ infrastructure)
 if command -v make &> /dev/null && [ -f "Makefile" ]; then
     echo ""
     echo "  Running dogfood-quick (3 tools: check, lint, score)..."
