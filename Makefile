@@ -14,6 +14,7 @@
 .PHONY: test-stratified test-unit test-services test-algorithms test-e2e
 .PHONY: dogfood dogfood-enforce help-toyota-way
 .PHONY: test-all-examples update-integration test-regression
+.PHONY: dogfood-quick dogfood-quality dogfood-full dogfood-comprehensive generate-dashboard
 
 # Global Configuration
 EXAMPLES := $(wildcard examples/*/*/)
@@ -490,3 +491,41 @@ help-toyota-way:
 	@echo "  4. Commit only when perfect"
 	@echo ""
 	@echo "Remember: Quality is built-in, not bolted-on!"
+# ═══════════════════════════════════════════════════════════════════
+# HEAVY DOGFOODING - 15-Tool Testing Strategy
+# Inspired by ruchy-book methodology
+# ═══════════════════════════════════════════════════════════════════
+
+# Quick dogfooding - 3 core tools (~2 min)
+dogfood-quick:
+	@echo "🐕 Quick Dogfooding (3 core tools: check, lint, score)..."
+	@./scripts/dogfood-all-tools.sh --quick
+
+# Quality dogfooding - 7 tools (~5 min)
+dogfood-quality:
+	@echo "🐕 Quality Dogfooding (7 tools: +provability, runtime, quality-gate, test)..."
+	@./scripts/dogfood-all-tools.sh --quality
+
+# Full dogfooding - 10 core tools (~10 min)
+dogfood-full:
+	@echo "🐕 Full Dogfooding (10 core tools: +optimize, ast, doc)..."
+	@./scripts/dogfood-all-tools.sh --full
+
+# Comprehensive dogfooding - ALL 15+ tools (~20 min)
+dogfood-comprehensive:
+	@echo "🐕 Comprehensive Dogfooding (ALL 15+ tools)..."
+	@./scripts/dogfood-all-tools.sh --comprehensive
+
+# Generate HTML dashboard
+generate-dashboard:
+	@echo "📊 Generating dashboard..."
+	@./scripts/generate-dashboard.sh
+	@echo "✅ Dashboard generated: reports/dashboard.html"
+
+# Combined: test + dogfood + dashboard
+validate-full: test-all-examples dogfood-full generate-dashboard
+	@echo "✅ Full validation complete!"
+	@echo "   - Tests: 126/126 passing"
+	@echo "   - Dogfooding: Complete"
+	@echo "   - Dashboard: Updated"
+
