@@ -79,7 +79,11 @@ All 126 validated examples have been verified using Ruchy 3.79.0 advanced toolin
 
 #### Basic Tools (100% Success)
 1. **Syntax Validation** (`ruchy check`) - ✅ 126/126 (100.0%)
-2. **Style Analysis** (`ruchy lint`) - ✅ 126/126 (100.0%)
+2. **Style Analysis** (`ruchy lint`) - ✅ 126/126 (100.0% pass, ~2,400 warnings advisory)
+   - **Note**: All files pass lint (exit code 0), but 121/126 files have advisory warnings
+   - **Baseline** (2025-10-14): ~2,400 total warnings (mostly unused variables)
+   - **Policy**: Phased cleanup approach - see reports/LINT-POLICY-PROPOSAL.md
+   - **Target**: Zero warnings by Sprint 46 (6-week gradual reduction)
 3. **Quality Scoring** (`ruchy score`) - ✅ 126/126 (100.0%)
 
 #### Advanced Formal Verification Tools (100% Success) ⭐
@@ -121,7 +125,7 @@ make dogfood-comprehensive # ALL 15 available tools, ~20 min, 89.8% success
 **Dogfood-Full Tool Results** (2025-10-14 11:29:34 UTC):
 ```
 check:       126/126 (100.0%) A+ - Syntax validation
-lint:        126/126 (100.0%) A+ - Style analysis
+lint:        126/126 (100.0%) A+ - Style analysis (~2,400 warnings, advisory mode)
 score:       126/126 (100.0%) A+ - Quality scoring
 provability: 126/126 (100.0%) A+ ⭐ Formal verification
 runtime:     126/126 (100.0%) A+ ⭐ Complexity analysis
@@ -139,7 +143,7 @@ TOTAL:       1153/1161 (99.3%)
 **Dogfood-Comprehensive Tool Results** (2025-10-14 13:47:45 UTC) - ALL 15 Available Tools:
 ```
 check:       126/126 (100.0%) A+ ⭐ - Syntax validation
-lint:        126/126 (100.0%) A+ ⭐ - Style analysis
+lint:        126/126 (100.0%) A+ ⭐ - Style analysis (~2,400 warnings, advisory mode)
 score:       126/126 (100.0%) A+ ⭐ - Quality scoring
 provability: 126/126 (100.0%) A+ ⭐ - Formal verification
 runtime:     126/126 (100.0%) A+ ⭐ - Complexity analysis
