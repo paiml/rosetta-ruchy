@@ -50,38 +50,58 @@ Tested full compilation pipeline:
 
 ## Discovered Constraint
 
-### Issue: Parameterization Gap
-**Finding**: Most Ruchy examples use hardcoded test values rather than command-line arguments.
+### Issue: Ruchy 3.78.0 Missing String Parse Capability
+**Finding**: Ruchy 3.78.0 does not support `.parse::<T>()` syntax for converting strings to numbers, which is required for CLI argument parsing.
 
-**Example** (fibonacci_simple.ruchy):
+**What Works**:
 ```ruchy
-// Hardcoded test value
-let n = 10;
-let result = fibonacci(n);
+fun main() {
+    let args = std::env::args();  // ✅ Works
+    let n = 10;                   // ✅ Works
+}
 ```
 
-**Rust version** (main.rs):
+**What Doesn't Work** (Syntax Error):
+```ruchy
+fun main() {
+    let args = std::env::args();
+    let s = args[1];
+    let n = s.parse::<i32>().unwrap_or(10);  // ❌ Syntax Error
+}
+```
+
+**Rust Reference Implementation** (what we need):
 ```rust
-// Accepts command-line arguments
 let n: u32 = args[1].parse().expect("Invalid number");
-let result = fib_iterative(n);
 ```
 
-**Impact**: Benchmark runner cannot parameterize Ruchy examples for different input sizes without modifying source files.
+**Technical Blocker**: Without `.parse::<T>()` support, Ruchy cannot convert command-line string arguments to integers, making parameterized benchmarking impossible.
+
+**Impact**:
+- Cannot adapt Ruchy examples to accept CLI arguments
+- Cannot run benchmarks with different input sizes
+- Option 1 (adapt examples) is blocked by missing language feature
+- Benchmarking infrastructure complete, but execution requires Ruchy language upgrade
 
 ## Options for Full Benchmarking
 
-### Option 1: Adapt Ruchy Examples (Recommended)
-**Effort**: 2-4 hours
+### Option 1: Adapt Ruchy Examples ~~(Recommended)~~ **BLOCKED**
+**Status**: ❌ **Blocked by Ruchy 3.78.0 language limitation**
+**Effort**: 2-4 hours (after Ruchy adds `.parse::<T>()` support)
 **Approach**: Add command-line argument support to Ruchy examples
-- Modify 5 algorithms to accept args
-- Test with multiple input sizes
-- Run full benchmark suite
+- ❌ Requires `.parse::<T>()` syntax (not available in Ruchy 3.78.0)
+- ❌ Cannot convert CLI string arguments to integers
+- ⏳ Wait for Ruchy language upgrade
 
-**Benefits**:
+**Benefits** (when unblocked):
 - Enables parameterized testing
 - Improves example quality
 - Makes benchmarking repeatable
+
+**Required Ruchy Feature**:
+```ruchy
+let n = args[1].parse::<i32>().unwrap_or(10);  // Needed but not supported
+```
 
 ### Option 2: Fixed-Input Benchmarking
 **Effort**: 1 hour
@@ -104,16 +124,25 @@ let result = fib_iterative(n);
 
 ## Recommendation
 
-**Defer full benchmarking to future sprint** when:
-1. Ruchy examples are refactored for CLI arguments
-2. More time available for multi-day benchmark collection
-3. Performance comparison becomes higher priority
+**Defer full benchmarking** until Ruchy language adds required feature:
+
+### Critical Blocker: Missing `.parse::<T>()` Support
+1. **Language Limitation**: Ruchy 3.78.0 does not support string-to-number parsing
+2. **Required Feature**: `.parse::<T>()` syntax for CLI argument conversion
+3. **INTEGRATION.md Report**: Document this as a formal language gap
+4. **Ruchy Team Feedback**: Request `.parse::<T>()` implementation in next release
+
+**Alternative: Option 2 (Fixed-Input Benchmarking)**
+- Can be executed now with hardcoded values
+- Provides single-datapoint performance comparison
+- Limited scientific value (no scaling analysis)
+- Estimated effort: 1 hour
 
 **Rationale**:
-- Infrastructure is complete and validated
-- Code adaptation is out of scope for this ticket
-- Sprint 41 has other completed objectives
-- 80% completion demonstrates significant progress
+- ✅ Infrastructure is complete and validated (80%)
+- ❌ Execution blocked by missing Ruchy language feature (Toyota Way: identify root cause)
+- 📝 Must document in INTEGRATION.md per project protocol
+- ⏳ Cannot proceed until Ruchy adds `.parse::<T>()` support
 
 ## Deliverables Completed
 
