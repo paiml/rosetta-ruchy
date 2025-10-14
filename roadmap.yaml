@@ -592,24 +592,34 @@ sprints:
       - id: ROSETTA-414
         title: "Establish Ruchy vs Rust performance baseline"
         priority: medium
-        status: infrastructure_complete
+        status: blocked
+        blocker:
+          issue: "Missing .parse::<T>() support in Ruchy 3.78.0"
+          description: "Ruchy cannot parse string CLI arguments to numbers, blocking parameterized benchmarks"
+          discovered: "2025-10-14"
+          reported_to: "Ruchy team (INTEGRATION.md Breaking Change #4)"
+          workaround: "None - language feature required"
+          blocking_since: "Sprint 41"
         requirements:
           - "Select 5 representative algorithms for benchmarking"
           - "Verify Rust and Ruchy implementations exist"
           - "Create benchmarking harness"
           - "Document methodology (statistical rigor)"
+          - "❌ BLOCKED: Adapt Ruchy examples for CLI arguments (needs .parse::<T>())"
         tests:
           - "Benchmark script executes"
           - "Rust compilation verified"
           - "Timing measurements accurate"
+          - "❌ BLOCKED: Parameterized input sizes (needs .parse::<T>())"
         acceptance:
-          - "5 algorithms selected and verified"
-          - "Benchmarking infrastructure complete"
-          - "Methodology documented"
-        deliverable: "scripts/benchmark-runner.sh + reports/performance/BENCHMARKING_PLAN.md + ROSETTA-414-STATUS.md"
-        completed: "2025-10-14"
+          - "✅ 5 algorithms selected and verified"
+          - "✅ Benchmarking infrastructure complete"
+          - "✅ Methodology documented"
+          - "❌ BLOCKED: Full benchmark execution"
+        deliverable: "scripts/benchmark-runner.sh + reports/performance/BENCHMARKING_PLAN.md + ROSETTA-414-STATUS.md + INTEGRATION.md (Breaking Change #4)"
+        completed: "partial"
         completion_percentage: 80
-        notes: "Infrastructure complete (80%). Benchmarking methodology, automated runner script, and 5 algorithms selected. Full execution deferred - requires adapting Ruchy examples to accept CLI arguments for parameterized testing. Ready to execute when examples refactored."
+        notes: "Infrastructure complete (80%). Discovered critical blocker: Ruchy 3.78.0 does not support .parse::<T>() for string-to-number conversion, making CLI argument parsing impossible. Cannot adapt examples for parameterized benchmarks without this language feature. Documented as Breaking Change #4 in INTEGRATION.md following Toyota Way (Genchi Genbutsu - identified root cause)."
 
       - id: ROSETTA-415
         title: "Investigate fmt tool issue"

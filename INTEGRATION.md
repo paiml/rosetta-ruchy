@@ -220,6 +220,25 @@ ruchy runtime fibonacci.ruchy
    - `let (mut x, mut y) = ...` fails
    - Workaround: `let (x, y) = ...; let mut x = x;`
 
+4. **Missing `.parse::<T>()` Support** (v3.78.0) 🔴 **BLOCKING**
+   - String-to-number parsing unavailable
+   - `s.parse::<i32>()` causes syntax error
+   - **Impact**: Cannot parse CLI arguments, blocks parameterized benchmarking
+   - **Blocked Tickets**: ROSETTA-414 (performance baseline)
+   - **Required For**: Dynamic input sizes in benchmarks
+   - **Status**: Reported to Ruchy team (Sprint 41)
+   - **Example**:
+     ```ruchy
+     // ❌ Does not work (Syntax Error: Expected RightBrace, found Let)
+     let args = std::env::args();
+     let n = args[1].parse::<i32>().unwrap_or(10);
+
+     // ✅ Only hardcoded values work
+     let n = 10;
+     ```
+   - **Workaround**: None available - feature must be added to language
+   - **Documented**: `reports/performance/ROSETTA-414-STATUS.md`
+
 See `docs/MIGRATION_PATTERNS_V3.md` for complete migration guide.
 
 ---
