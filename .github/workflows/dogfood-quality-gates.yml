@@ -40,6 +40,28 @@ jobs:
       - name: Security audit
         run: cargo audit
 
+      - name: Lint warning no-increase check (Sprint 43)
+        run: |
+          chmod +x scripts/count-lint-warnings.sh
+          CURRENT_WARNINGS=$(./scripts/count-lint-warnings.sh)
+          BASELINE_WARNINGS=$(cat .lint-baseline)
+
+          echo "Baseline warnings: $BASELINE_WARNINGS"
+          echo "Current warnings:  $CURRENT_WARNINGS"
+
+          if [ "$CURRENT_WARNINGS" -gt "$BASELINE_WARNINGS" ]; then
+            echo "❌ Lint warning count increased by $((CURRENT_WARNINGS - BASELINE_WARNINGS))"
+            echo "Policy: No new lint warnings allowed (Kaizen improvement only)"
+            exit 1
+          else
+            REDUCTION=$((BASELINE_WARNINGS - CURRENT_WARNINGS))
+            if [ "$REDUCTION" -gt 0 ]; then
+              echo "✅ Lint warnings reduced by $REDUCTION!"
+            else
+              echo "✅ No new lint warnings"
+            fi
+          fi
+
       - name: Run test-all-examples
         run: make test-all-examples
 

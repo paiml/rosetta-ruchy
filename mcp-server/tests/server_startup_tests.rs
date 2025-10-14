@@ -50,7 +50,7 @@ fn test_default_host_port() {
 #[test]
 fn test_custom_host_argument() {
     let mut cmd = Command::cargo_bin("rosetta-ruchy-mcp").unwrap();
-    cmd.args(&["--host", "0.0.0.0"]);
+    cmd.args(["--host", "0.0.0.0"]);
 
     // Server will attempt to start and may fail in CI, but should parse arguments
     // We're testing argument parsing, not full server startup
@@ -72,7 +72,7 @@ fn test_custom_host_argument() {
 #[test]
 fn test_custom_port_argument() {
     let mut cmd = Command::cargo_bin("rosetta-ruchy-mcp").unwrap();
-    cmd.args(&["--port", "9090"]);
+    cmd.args(["--port", "9090"]);
 
     cmd.timeout(Duration::from_secs(2));
 
@@ -91,7 +91,7 @@ fn test_custom_port_argument() {
 #[test]
 fn test_invalid_port_argument() {
     let mut cmd = Command::cargo_bin("rosetta-ruchy-mcp").unwrap();
-    cmd.args(&["--port", "invalid"]);
+    cmd.args(["--port", "invalid"]);
 
     // Should fail with parsing error or runtime error
     cmd.assert().failure();
@@ -101,7 +101,7 @@ fn test_invalid_port_argument() {
 #[test]
 fn test_custom_ruchy_path() {
     let mut cmd = Command::cargo_bin("rosetta-ruchy-mcp").unwrap();
-    cmd.args(&["--ruchy-path", "/custom/path/to/ruchy"]);
+    cmd.args(["--ruchy-path", "/custom/path/to/ruchy"]);
 
     cmd.timeout(Duration::from_secs(2));
 
@@ -119,7 +119,7 @@ fn test_custom_ruchy_path() {
 #[test]
 fn test_combined_arguments() {
     let mut cmd = Command::cargo_bin("rosetta-ruchy-mcp").unwrap();
-    cmd.args(&[
+    cmd.args([
         "--host", "localhost",
         "--port", "3000",
         "--ruchy-path", "ruchy",
@@ -148,7 +148,7 @@ async fn test_server_initialization_logging() {
     use tokio::process::Command as TokioCommand;
 
     let mut child = TokioCommand::new(env!("CARGO_BIN_EXE_rosetta-ruchy-mcp"))
-        .args(&["--host", "127.0.0.1", "--port", "8081"])
+        .args(["--host", "127.0.0.1", "--port", "8081"])
         .kill_on_drop(true)
         .spawn()
         .expect("Failed to spawn server");
