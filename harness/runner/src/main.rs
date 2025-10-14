@@ -878,7 +878,14 @@ impl BenchmarkRunner {
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
+    run_app(cli).await
+}
 
+/// Main application logic (extracted for testability)
+///
+/// This function contains all command handling logic, extracted from main()
+/// to enable unit testing. Coverage: Sprint 43 Ticket 2 refactoring.
+pub async fn run_app(cli: Cli) -> Result<()> {
     // Initialize logging with appropriate level
     let log_level = if cli.verbose { "debug" } else { "info" };
     tracing_subscriber::fmt().with_env_filter(log_level).init();

@@ -12,6 +12,14 @@ use tracing_subscriber::FmtSubscriber;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    start_server().await
+}
+
+/// Main server startup logic (extracted for testability)
+///
+/// This function contains all server initialization and startup logic,
+/// extracted from main() to enable unit testing. Coverage: Sprint 43 Ticket 2 refactoring.
+pub async fn start_server() -> Result<()> {
     // Initialize tracing
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::INFO)
