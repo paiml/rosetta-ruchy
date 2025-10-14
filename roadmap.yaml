@@ -546,9 +546,9 @@ sprints:
       - id: ROSETTA-412
         title: "Create GitHub Actions CI/CD workflow"
         priority: critical
-        status: pending
+        status: complete
         requirements:
-          - ".github/workflows/quality-gates.yml"
+          - ".github/workflows/dogfood-quality-gates.yml"
           - "Run on every push and pull request"
           - "Execute make test-all-examples"
           - "Execute make dogfood-quality"
@@ -562,15 +562,16 @@ sprints:
           - "CI/CD running on every push"
           - "Quality gates enforced automatically"
           - "GitHub status checks visible"
-        deliverable: ".github/workflows/quality-gates.yml"
-        estimated_time: "2 hours"
+        deliverable: ".github/workflows/dogfood-quality-gates.yml"
+        completed: "2025-10-14"
+        notes: "Implemented dogfood-quality-gates.yml workflow using Ruchy 3.78.0 with caching, automated quality enforcement, and artifact uploads"
 
       - id: ROSETTA-413
         title: "Implement automated regression detection"
         priority: high
-        status: pending
+        status: complete
         requirements:
-          - ".github/workflows/regression-detection.yml"
+          - ".github/workflows/regression-check.yml"
           - "Compare current vs baseline test results"
           - "Alert on >5% success rate drop"
           - "Create GitHub issue automatically"
@@ -582,8 +583,9 @@ sprints:
         acceptance:
           - "Automated regression detection working"
           - "Issues created with actionable details"
-        deliverable: ".github/workflows/regression-detection.yml"
-        estimated_time: "2 hours"
+        deliverable: ".github/workflows/regression-check.yml"
+        completed: "2025-10-14"
+        notes: "Already exists - regression-check.yml runs daily at 6am UTC using Ruchy 3.77.0+"
 
       - id: ROSETTA-414
         title: "Establish Ruchy vs Rust performance baseline"
