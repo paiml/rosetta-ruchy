@@ -264,13 +264,7 @@ impl BenchmarkRunner {
         example_path: &std::path::Path,
         languages: &[String],
     ) -> Result<Vec<BenchmarkResult>> {
-        info!("🚀 Starting benchmark run with Toyota Way quality standards");
-        info!("Example: {}", example_path.display());
-        info!("Languages: {:?}", languages);
-        info!(
-            "Iterations: {} (minimum for statistical significance)",
-            self.config.iterations
-        );
+        self.log_benchmark_start(example_path, languages);
 
         // Step 1: Set up environment isolation
         let mut env_controller = EnvironmentController::new()
@@ -288,25 +282,10 @@ impl BenchmarkRunner {
             .await
             .context("Failed to apply environment isolation")?;
 
-        if !isolation_result.success {
-            warn!("⚠️ Environment isolation partially failed - benchmark quality may be reduced");
-            for error in &isolation_result.errors {
-                warn!("  Error: {}", error);
-            }
-        }
-
-        for warning in &isolation_result.warnings {
-            warn!("  Warning: {}", warning);
-        }
+        self.log_isolation_status(&isolation_result);
 
         let mut results = Vec::new();
-        let analyzer = StatisticalAnalyzer::new()
-            .with_min_sample_size(if self.config.iterations >= 1000 {
-                1000
-            } else {
-                30
-            })
-            .with_confidence_level(0.95);
+        let analyzer = self.create_statistical_analyzer();
 
         for language in languages {
             info!("📊 Benchmarking {} implementation", language);
@@ -871,6 +850,48 @@ impl BenchmarkRunner {
             }
             _ => None,
         }
+    }
+
+    /// Log benchmark startup information
+    ///
+    /// Extracted from run_benchmark() for complexity reduction (Sprint 43 Ticket 4)
+    fn log_benchmark_start(&self, example_path: &std::path::Path, languages: &[String]) {
+        info!("🚀 Starting benchmark run with Toyota Way quality standards");
+        info!("Example: {}", example_path.display());
+        info!("Languages: {:?}", languages);
+        info!(
+            "Iterations: {} (minimum for statistical significance)",
+            self.config.iterations
+        );
+    }
+
+    /// Log environment isolation status
+    ///
+    /// Extracted from run_benchmark() for complexity reduction (Sprint 43 Ticket 4)
+    fn log_isolation_status(&self, isolation_result: &IsolationResult) {
+        if !isolation_result.success {
+            warn!("⚠️ Environment isolation partially failed - benchmark quality may be reduced");
+            for error in &isolation_result.errors {
+                warn!("  Error: {}", error);
+            }
+        }
+
+        for warning in &isolation_result.warnings {
+            warn!("  Warning: {}", warning);
+        }
+    }
+
+    /// Create statistical analyzer with appropriate configuration
+    ///
+    /// Extracted from run_benchmark() for complexity reduction (Sprint 43 Ticket 4)
+    fn create_statistical_analyzer(&self) -> StatisticalAnalyzer {
+        StatisticalAnalyzer::new()
+            .with_min_sample_size(if self.config.iterations >= 1000 {
+                1000
+            } else {
+                30
+            })
+            .with_confidence_level(0.95)
     }
 }
 
