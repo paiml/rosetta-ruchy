@@ -1,0 +1,74 @@
+
+audit_date: 2025-10-14
+auditor: Gemini
+ruchy_version: 3.77.0
+
+summary: |
+  The Ruchy toolchain shows promise but has significant discrepancies between its documentation and actual behavior.
+  While basic syntax checking, testing, and scoring appear to function, core features like compilation and advanced analysis tools are either broken or provide incomplete information.
+  The documentation, which I'm referring to as "the book", is outdated and does not reflect the current state of the toolchain, leading to a confusing and frustrating user experience.
+  The highest priority should be to fix the compilation issues and update the documentation to be accurate.
+
+suggestions:
+  - Prioritize fixing the `ruchy compile` command, as it is a critical feature for a compiled language.
+  - Update the documentation (especially README.md, COMPILATION_GUIDE.md, DEBUGGING_GUIDE.md) to reflect the actual output and behavior of the `ruchy` toolchain. Remove or mark features that are not implemented or not working.
+  - Improve the output of `ruchy runtime` and `ruchy provability` to provide the detailed metrics shown in the documentation.
+  - Investigate the discrepancies in `ruchy provability` scores. A score of 0 for a simple fibonacci implementation seems incorrect.
+  - Create a CI job that runs the documentation examples to ensure they remain valid as the toolchain evolves.
+
+working_features:
+  - feature:
+      name: ruchy check
+      description: Validates the syntax of .ruchy files.
+      status: working
+      notes: Successfully identifies valid syntax.
+  - feature:
+      name: ruchy score
+      description: Calculates a quality score for .ruchy files.
+      status: working
+      notes: Provides a score as expected.
+  - feature:
+      name: ruchy test
+      description: Runs test files.
+      status: working
+      notes: Successfully executes tests and reports results.
+
+broken_features:
+  - feature:
+      name: ruchy compile
+      description: Compiles .ruchy files to native executables.
+      status: broken
+      notes: Fails to compile a basic, documented "working" example.
+  - feature:
+      name: ruchy runtime
+      description: Analyzes runtime complexity.
+      status: partially_working
+      notes: The command runs but provides minimal, unhelpful output compared to the documentation.
+  - feature:
+      name: ruchy provability
+      description: Analyzes the provability of code.
+      status: questionable
+      notes: Gives a score of 0 for a simple algorithm that should have high provability.
+
+bug_reports:
+  - bug:
+      id: 1
+      title: "`ruchy compile` fails on a documented working example"
+      steps_to_reproduce:
+        - "Run `ruchy compile /home/noah/src/rosetta-ruchy/examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci.ruchy --output /home/noah/src/rosetta-ruchy/fibonacci_test`"
+      expected_behavior: "The command should successfully compile the file into an executable."
+      actual_behavior: "The command fails with a Rust compilation error: `error[E0317]: `if` may be missing an `else` clause`."
+  - bug:
+      id: 2
+      title: "`ruchy runtime` provides minimal output"
+      steps_to_reproduce:
+        - "Run `ruchy runtime /home/noah/src/rosetta-ruchy/examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci.ruchy`"
+      expected_behavior: "The command should output detailed performance metrics, including complexity, as shown in the README.md."
+      actual_behavior: "The command only prints the file path and a header."
+  - bug:
+      id: 3
+      title: "`ruchy provability` gives a zero score for a simple algorithm"
+      steps_to_reproduce:
+        - "Run `ruchy provability /home/noah/src/rosetta-ruchy/examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci.ruchy`"
+      expected_behavior: "The command should return a high provability score, as indicated in the README.md."
+      actual_behavior: "The command returns `Provability Score: 0.0/100`."
