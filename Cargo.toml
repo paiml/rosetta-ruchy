@@ -31,11 +31,11 @@ thiserror = "1.0"
 
 # Performance and profiling
 criterion = { version = "0.5", features = ["html_reports"] }
-pprof = { version = "0.13", features = ["criterion", "flamegraph"] }
-iai-callgrind = "0.10"
+pprof = { version = "0.15", features = ["criterion", "flamegraph"] }
+iai-callgrind = "0.16"
 
 # Statistical analysis
-statrs = "0.16"
+statrs = "0.18"
 approx = "0.5"
 
 # System interaction
@@ -47,7 +47,7 @@ bollard = "0.15"
 
 # Logging and monitoring
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-subscriber = { version = "0.3.20", features = ["env-filter", "json"] }
 
 # Development and testing
 tempfile = "3.8"
