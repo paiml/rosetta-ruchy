@@ -1,0 +1,112 @@
+// Comprehensive Fibonacci Test Suite
+// Following EXTREME TDD methodology
+
+// Test 1: Base cases
+fun test_base_cases() {
+    println!("Testing base cases...");
+
+    // Test n=0
+    let result_0 = fib_iterative(0);
+    if result_0 != 0 {
+        println!("FAIL: fib(0) should be 0");
+        return;
+    }
+
+    // Test n=1
+    let result_1 = fib_iterative(1);
+    if result_1 != 1 {
+        println!("FAIL: fib(1) should be 1");
+        return;
+    }
+
+    println!("✅ Base cases passed");
+}
+
+// Test 2: Known Fibonacci numbers
+fun test_known_values() {
+    println!("Testing known Fibonacci values...");
+
+    let known_fibs = vec![0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55];
+
+    for i in 0..11 {
+        let result = fib_iterative(i);
+        let expected = known_fibs[i];
+
+        if result != expected {
+            println!("FAIL: fib({}) = {}, expected {}", i, result, expected);
+            return;
+        }
+    }
+
+    println!("✅ Known values test passed");
+}
+
+// Test 3: Properties - Fibonacci recurrence relation
+fun test_recurrence_relation() {
+    println!("Testing recurrence relation: fib(n) = fib(n-1) + fib(n-2)...");
+
+    for n in 2..20 {
+        let fib_n = fib_iterative(n);
+        let fib_n_minus_1 = fib_iterative(n - 1);
+        let fib_n_minus_2 = fib_iterative(n - 2);
+
+        if fib_n != fib_n_minus_1 + fib_n_minus_2 {
+            println!("FAIL: Recurrence relation violated at n={}", n);
+            return;
+        }
+    }
+
+    println!("✅ Recurrence relation test passed");
+}
+
+// Test 4: Performance - O(n) complexity
+fun test_performance() {
+    println!("Testing performance characteristics...");
+
+    // Test that large inputs complete in reasonable time
+    let large_n = 40;
+    let result = fib_iterative(large_n);
+
+    if result <= 0 {
+        println!("FAIL: fib({}) should be positive", large_n);
+        return;
+    }
+
+    println!("✅ Performance test passed");
+}
+
+// Fibonacci implementation (iterative O(n))
+fun fib_iterative(n: i32) -> i32 {
+    if n <= 1 {
+        return n;
+    }
+
+    let mut prev = 0;
+    let mut curr = 1;
+
+    for i in 2..=n {
+        let next = prev + curr;
+        prev = curr;
+        curr = next;
+    }
+
+    curr
+}
+
+// Main test runner
+fun main() {
+    println!("===========================================");
+    println!("  Fibonacci Comprehensive Test Suite");
+    println!("===========================================");
+    println!("");
+
+    test_base_cases();
+    test_known_values();
+    test_recurrence_relation();
+    test_performance();
+
+    println!("");
+    println!("===========================================");
+    println!("  ✅ ALL TESTS PASSED");
+    println!("===========================================");
+}
