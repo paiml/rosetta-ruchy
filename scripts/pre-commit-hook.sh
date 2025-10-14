@@ -14,7 +14,7 @@ export MAX_CYCLOMATIC_COMPLEXITY=20
 export MAX_COGNITIVE_COMPLEXITY=20
 export MIN_TEST_COVERAGE=80
 export MAX_SATD_COMMENTS=0  # ZERO tolerance
-export REQUIRED_RUCHY_VERSION="1.89.0"
+export REQUIRED_RUCHY_VERSION="3.78.0"
 
 # Color codes for output
 RED='\033[0;31m'
@@ -123,8 +123,33 @@ else
     echo -e "${GREEN}✅${NC}"
 fi
 
+# 6. Dogfood-quick validation (Sprint 40+ infrastructure)
+if command -v make &> /dev/null && [ -f "Makefile" ]; then
+    echo ""
+    echo "  Running dogfood-quick (3 tools: check, lint, score)..."
+    echo "  This may take ~2 minutes..."
+    echo ""
+
+    if make dogfood-quick 2>&1 | tail -20; then
+        echo ""
+        echo -e "${GREEN}  ✅ Dogfood-quick passed (all examples validated)${NC}"
+    else
+        echo ""
+        echo -e "${RED}  ❌ Dogfood-quick failed${NC}"
+        echo -e "${RED}  ❌ COMMIT BLOCKED: Fix failing examples${NC}"
+        echo ""
+        echo "  Debug commands:"
+        echo "    make test-all-examples    # See which files fail"
+        echo "    cat test-results.json     # View detailed results"
+        echo ""
+        exit 1
+    fi
+fi
+
 echo ""
 echo -e "${GREEN}✅ All quality gates passed!${NC}"
+echo ""
+echo "To bypass this hook (use sparingly): git commit --no-verify"
 echo ""
 
 exit 0
