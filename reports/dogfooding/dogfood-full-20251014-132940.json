@@ -1,0 +1,92 @@
+{
+  "timestamp": "2025-10-14 11:29:34 UTC",
+  "ruchy_version": "3.78.0",
+  "mode": "full",
+  "total_files": 126,
+  "total_tests": 1161,
+  "total_pass": 1153,
+  "total_fail": 8,
+  "overall_pass_rate": 99.3,
+  "tools": {
+    "check": {
+      "pass": 126,
+      "fail": 0,
+      "skip": 0,
+      "tested": 126,
+      "pass_rate": 1.000
+    }
+,
+    "lint": {
+      "pass": 126,
+      "fail": 0,
+      "skip": 0,
+      "tested": 126,
+      "pass_rate": 1.000
+    }
+,
+    "score": {
+      "pass": 126,
+      "fail": 0,
+      "skip": 0,
+      "tested": 126,
+      "pass_rate": 1.000
+    }
+,
+    "provability": {
+      "pass": 126,
+      "fail": 0,
+      "skip": 0,
+      "tested": 126,
+      "pass_rate": 1.000
+    }
+,
+    "runtime": {
+      "pass": 126,
+      "fail": 0,
+      "skip": 0,
+      "tested": 126,
+      "pass_rate": 1.000
+    }
+,
+    "quality-gate": {
+      "pass": 126,
+      "fail": 0,
+      "skip": 0,
+      "tested": 126,
+      "pass_rate": 1.000
+    }
+,
+    "test": {
+      "pass": 19,
+      "fail": 8,
+      "skip": 99,
+      "tested": 27,
+      "pass_rate": 0.704
+    }
+,
+    "optimize": {
+      "pass": 126,
+      "fail": 0,
+      "skip": 0,
+      "tested": 126,
+      "pass_rate": 1.000
+    }
+,
+    "ast": {
+      "pass": 126,
+      "fail": 0,
+      "skip": 0,
+      "tested": 126,
+      "pass_rate": 1.000
+    }
+,
+    "doc": {
+      "pass": 126,
+      "fail": 0,
+      "skip": 0,
+      "tested": 126,
+      "pass_rate": 1.000
+    }
+
+  }
+}
