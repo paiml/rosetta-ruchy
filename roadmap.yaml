@@ -205,20 +205,141 @@ sprints:
         deliverable: "Updated Makefile"
         estimated_time: "1 hour"
 
-  # SPRINT 38: Version Migration Completion
+  # SPRINT 38: EXTREME TDD - Combined Infrastructure + 80% Milestone
   - id: sprint-38
-    name: "Complete v3.62.12+ Migration"
-    goal: "Migrate remaining examples to Ruchy v3.63.0+"
+    name: "EXTREME TDD - Quality Infrastructure + 80% Success Rate"
+    goal: "Implement comprehensive TDD infrastructure while achieving 80% success rate"
     duration: 1_week
-    status: pending
+    status: in_progress
     dependencies:
       - sprint: 37
         status: "complete"
+    approach: "Test-FIRST development with CI/CD automation and live dashboards"
     tickets:
-      - id: ROSETTA-207
-        title: "Migrate topological_sort to v3.62.12+"
+      # PHASE 1: Test Infrastructure (TDD Foundation)
+      - id: ROSETTA-301
+        title: "Create comprehensive tests/ directory structure"
+        priority: critical
+        status: in_progress
+        requirements:
+          - "tests/ directory with category-based organization"
+          - "Test files for all 124 passing examples"
+          - "Property-based tests for algorithms"
+          - "Test runner integration with ruchy test command"
+        tests:
+          - "test_directory_structure_exists"
+          - "test_all_algorithms_have_tests"
+          - "test_property_tests_comprehensive"
+        acceptance:
+          - "tests/ directory created with full structure"
+          - "124+ test files covering all passing examples"
+          - "make test-coverage target working"
+          - "Test results integrated with INTEGRATION.md"
+        deliverable: "tests/ directory with comprehensive test suite"
+        estimated_time: "2 hours"
+
+      - id: ROSETTA-302
+        title: "Implement test coverage reporting"
         priority: high
         status: pending
+        requirements:
+          - "Coverage analysis for all .ruchy files"
+          - "Per-category coverage reports"
+          - "Integration with test-results.json"
+          - "HTML coverage report generation"
+        tests:
+          - "test_coverage_calculation_accurate"
+          - "test_coverage_report_generation"
+          - "test_coverage_thresholds_enforced"
+        acceptance:
+          - "make test-coverage generates reports"
+          - "Coverage ≥85% for passing examples"
+          - "Coverage data in test-results.json"
+        deliverable: "scripts/test-coverage.sh + coverage reports"
+        estimated_time: "1 hour"
+
+      # PHASE 2: CI/CD Automation
+      - id: ROSETTA-303
+        title: "Create GitHub Actions CI/CD workflows"
+        priority: critical
+        status: pending
+        requirements:
+          - ".github/workflows/quality-gates.yml"
+          - ".github/workflows/regression-check.yml"
+          - ".github/workflows/nightly-tests.yml"
+          - "Automated test-all-examples on every push"
+          - "Regression detection with issue creation"
+        tests:
+          - "test_workflows_syntax_valid"
+          - "test_quality_gates_run"
+          - "test_regression_detection"
+        acceptance:
+          - "CI runs on every commit"
+          - "Quality gates block merges on failure"
+          - "Automatic issue creation for regressions"
+          - "Status badges update automatically"
+        deliverable: ".github/workflows/ with 3 workflow files"
+        estimated_time: "1.5 hours"
+
+      - id: ROSETTA-304
+        title: "Build HTML dashboard generator"
+        priority: high
+        status: pending
+        requirements:
+          - "Dashboard from .paiml-display.yaml config"
+          - "Real-time success rate visualization"
+          - "Category breakdown with charts"
+          - "Failing examples analysis"
+          - "Trend graphs (success rate over time)"
+        tests:
+          - "test_dashboard_generation"
+          - "test_charts_render_correctly"
+          - "test_data_accuracy"
+        acceptance:
+          - "make generate-dashboard creates HTML"
+          - "Dashboard deployed to GitHub Pages"
+          - "Live updates on every commit"
+        deliverable: "scripts/generate-dashboard.sh + reports/dashboard.html"
+        estimated_time: "2 hours"
+
+      # PHASE 3: Fix Failing Examples (80% Milestone)
+      - id: ROSETTA-305
+        title: "Fix data-science failing examples (5 files)"
+        priority: critical
+        status: pending
+        requirements:
+          - "Fix dataframe-advanced v193 (2 files)"
+          - "Fix stream-processing (1 file)"
+          - "Fix io-memory v193 (1 file)"
+          - "Fix graph-analytics v189 (1 file)"
+        tests:
+          - "All 5 files pass ruchy check"
+          - "Category success rate: 87.5% → 100%"
+        acceptance:
+          - "data-science: 40/40 passing (100%)"
+          - "Overall: 129/170 → 75.9%"
+        deliverable: "5 migrated .ruchy files"
+        estimated_time: "1.5 hours"
+
+      - id: ROSETTA-306
+        title: "Fix high-priority algorithm failures (Quick wins)"
+        priority: high
+        status: pending
+        requirements:
+          - "Fix binary-search old versions (8 files)"
+          - "Fix dijkstra old versions (4 files)"
+          - "Fix build/benchmark scripts (5 files)"
+        tests:
+          - "17 files pass ruchy check"
+          - "Algorithm success rate improves"
+        acceptance:
+          - "algorithms: 85/124 → 102/124 (82.3%)"
+          - "Overall: 129/170 → 146/170 (85.9%)"
+        deliverable: "17 fixed algorithm files"
+        estimated_time: "2 hours"
+
+      - id: ROSETTA-307
+        title: "Migrate topological_sort to v3.77+"
         requirements:
           - "Fix complex tuple destructuring patterns"
           - "Replace `from` reserved keyword with `from_vertex`"

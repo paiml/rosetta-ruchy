@@ -1,0 +1,190 @@
+name: Nightly Comprehensive Tests
+
+on:
+  schedule:
+    # Run nightly at 2am UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  comprehensive-tests:
+    name: Full Test Suite + Quality Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Ruchy
+        run: |
+          cargo install ruchy --version 3.77.0 || cargo install ruchy
+          ruchy --version
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq bc
+
+      - name: Run comprehensive test suite
+        run: |
+          make test-all-examples
+          cat test-results.json
+
+      - name: Run formal verification on passing examples
+        run: |
+          echo "Running formal verification on passing examples..."
+          mkdir -p reports/verification
+
+          # Run provability analysis on sample of passing examples
+          for file in examples/algorithms/001-fibonacci/implementations/ruchy/*.ruchy; do
+            if ruchy check "$file" > /dev/null 2>&1; then
+              echo "Analyzing: $file"
+              ruchy provability "$file" > "reports/verification/$(basename $file .ruchy)_provability.txt" 2>&1 || true
+              ruchy score "$file" > "reports/verification/$(basename $file .ruchy)_score.txt" 2>&1 || true
+              ruchy runtime "$file" > "reports/verification/$(basename $file .ruchy)_runtime.txt" 2>&1 || true
+            fi
+          done
+
+      - name: Generate comprehensive report
+        run: |
+          cat > reports/nightly-report.md <<EOF
+          # Nightly Test Report
+
+          **Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Ruchy Version**: $(ruchy --version | awk '{print $2}')
+
+          ## Test Results
+
+          $(cat test-results.json | jq -r '
+            "**Total Examples**: \(.summary.total_examples)\n" +
+            "**Passing**: \(.summary.passing)\n" +
+            "**Failing**: \(.summary.failing)\n" +
+            "**Success Rate**: \((.summary.success_rate * 100 | floor))%\n\n" +
+            "### By Category\n" +
+            "- algorithms: \(.by_category.algorithms.passing)/\(.by_category.algorithms.total) (\((.by_category.algorithms.rate * 100 | floor))%)\n" +
+            "- data-science: \(.by_category[\"data-science\"].passing)/\(.by_category[\"data-science\"].total) (\((.by_category[\"data-science\"].rate * 100 | floor))%)\n" +
+            "- advanced-ai: \(.by_category[\"advanced-ai\"].passing)/\(.by_category[\"advanced-ai\"].total) (\((.by_category[\"advanced-ai\"].rate * 100 | floor))%)"
+          ')
+
+          ## Formal Verification Sample
+
+          $(ls reports/verification/*_provability.txt | head -5 | xargs -I {} sh -c 'echo "### $(basename {} _provability.txt)"; cat {}; echo ""')
+          EOF
+
+      - name: Upload comprehensive report
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-report-${{ github.run_number }}
+          path: |
+            reports/
+            test-results.json
+            INTEGRATION.md
+
+      - name: Check for quality degradation
+        run: |
+          SUCCESS_RATE=$(jq -r '.summary.success_rate' test-results.json)
+
+          if (( $(echo "$SUCCESS_RATE < 0.70" | bc -l) )); then
+            echo "❌ ALERT: Success rate dropped below 70%"
+            echo "Current: $(awk "BEGIN {printf \"%.1f\", $SUCCESS_RATE * 100}")%"
+            exit 1
+          fi
+
+      - name: Post results to PR (if applicable)
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('reports/nightly-report.md', 'utf8');
+
+            const title = `🌙 Nightly Test Failure Alert`;
+            const body = `## Nightly Test Failure
+
+            The nightly comprehensive test run has detected issues.
+
+            ${report}
+
+            ### Action Required
+            Please review the failing examples and address any regressions.
+
+            **Workflow Run**: [View Details](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+            `;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['nightly-test', 'quality', 'automated']
+            });
+
+  version-check:
+    name: Check for New Ruchy Version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get current Ruchy version
+        id: current
+        run: |
+          CURRENT_VERSION=$(grep 'ruchy_version:' roadmap.yaml | awk '{print $2}' | tr -d '"')
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check latest Ruchy version
+        id: latest
+        run: |
+          LATEST_VERSION=$(cargo search ruchy --limit 1 | head -1 | awk '{print $3}' | tr -d '"')
+          echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create issue if new version available
+        if: steps.current.outputs.version != steps.latest.outputs.version
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const current = '${{ steps.current.outputs.version }}';
+            const latest = '${{ steps.latest.outputs.version }}';
+
+            const title = `🆕 New Ruchy Version Available: ${latest}`;
+            const body = `## New Ruchy Version Detected
+
+            A new version of Ruchy is available.
+
+            - **Current**: ${current}
+            - **Latest**: ${latest}
+
+            ### Upgrade Procedure
+            1. Install new version: \`cargo install ruchy --version ${latest}\`
+            2. Run baseline tests: \`make test-all-examples\`
+            3. Document any breaking changes in \`INTEGRATION.md\`
+            4. Update \`roadmap.yaml\` with new version
+            5. Create migration sprint if needed
+
+            ### Testing Checklist
+            - [ ] Run \`make test-all-examples\`
+            - [ ] Run \`make test-regression\`
+            - [ ] Document breaking changes
+            - [ ] Update \`INTEGRATION.md\`
+            - [ ] Commit results with version bump
+
+            **Auto-generated by nightly version check**
+            `;
+
+            // Check if issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'version-upgrade'
+            });
+
+            const existingIssue = issues.data.find(issue => issue.title.includes(latest));
+
+            if (!existingIssue) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['version-upgrade', 'enhancement', 'automated']
+              });
+            }

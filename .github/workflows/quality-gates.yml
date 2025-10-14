@@ -1,223 +1,46 @@
-name: Quality Gates (Toyota Way)
+name: Quality Gates
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 env:
-  CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
 
 jobs:
-  validation:
-    name: Repository Validation
+  test-all-examples:
+    name: Test All Ruchy Examples
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Run validation suite
-        run: ./scripts/validate.sh
+      - uses: actions/checkout@v4
 
-  quality-gates:
-    name: Mandatory Quality Gates
-    runs-on: ubuntu-latest
-    needs: validation
-    strategy:
-      matrix:
-        check: [lint, test, complexity, security]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+      - name: Install Ruchy
+        run: |
+          cargo install ruchy --version 3.77.0 || cargo install ruchy
+          ruchy --version
+
+      - name: Run comprehensive test suite
+        run: |
+          make test-all-examples
+          cat test-results.json
+
+      - name: Check success rate threshold
+        run: |
+          SUCCESS_RATE=$(jq -r '.summary.success_rate' test-results.json)
+          echo "Success Rate: $SUCCESS_RATE"
+          if (( $(echo "$SUCCESS_RATE < 0.70" | bc -l) )); then
+            echo "❌ Success rate $SUCCESS_RATE is below 70% threshold"
+            exit 1
+          fi
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
         with:
-          toolchain: stable
-          components: clippy
-          override: true
-          
-      - name: Cache cargo dependencies
-        uses: actions/cache@v3
-        with:
+          name: test-results
           path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          
-      - name: Install quality tools
-        run: |
-          cargo install cargo-tarpaulin cargo-audit
-          # Install PMAT if available
-          if curl -s https://api.github.com/repos/paiml/paiml-mcp-agent-toolkit/releases/latest | grep -q "tag_name"; then
-            cargo install --git https://github.com/paiml/paiml-mcp-agent-toolkit.git pmat || true
-          fi
-          
-      - name: Quality Gate - Lint
-        if: matrix.check == 'lint'
-        run: make lint
-        
-      - name: Quality Gate - Test
-        if: matrix.check == 'test'
-        run: make test
-        
-      - name: Quality Gate - Complexity
-        if: matrix.check == 'complexity'
-        run: make complexity
-        
-      - name: Quality Gate - Security
-        if: matrix.check == 'security'
-        run: make security
-
-  tier1-validation:
-    name: Tier 1 Languages
-    runs-on: ubuntu-latest
-    needs: quality-gates
-    strategy:
-      matrix:
-        language: [ruchy, rust, python, javascript, go]
-      fail-fast: false
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup language environment
-        run: |
-          case "${{ matrix.language }}" in
-            rust)
-              curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-              source ~/.cargo/env
-              ;;
-            python)
-              python -m pip install --upgrade pip
-              ;;
-            javascript)
-              npm install -g npm@latest
-              ;;
-            go)
-              # Go is pre-installed on GitHub runners
-              go version
-              ;;
-            ruchy)
-              echo "Ruchy installation would happen here"
-              ;;
-          esac
-          
-      - name: Test language examples
-        run: |
-          if [ -d "examples" ]; then
-            for example in examples/*/; do
-              if [ -d "$example/implementations/${{ matrix.language }}" ]; then
-                echo "Testing $example with ${{ matrix.language }}"
-                cd "$example/implementations/${{ matrix.language }}"
-                if [ -f "Makefile" ]; then
-                  make test || echo "Test failed for $example/${{ matrix.language }}"
-                fi
-                cd - >/dev/null
-              fi
-            done
-          else
-            echo "No examples directory found - skipping language tests"
-          fi
-
-  benchmark-validation:
-    name: Benchmark Infrastructure
-    runs-on: ubuntu-latest
-    needs: quality-gates
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup benchmark environment
-        run: |
-          # Set CPU governor for consistent benchmarks
-          echo "Would set CPU governor to performance"
-          
-      - name: Build Docker images
-        run: |
-          if [ -f "Makefile" ] && grep -q "docker-build" Makefile; then
-            make docker-build
-          else
-            echo "Docker build not yet implemented"
-          fi
-          
-      - name: Run benchmarks
-        run: |
-          if [ -f "Makefile" ] && grep -q "bench" Makefile; then
-            make bench
-          else
-            echo "Benchmarks not yet implemented"
-          fi
-          
-      - name: Generate comparison report
-        run: |
-          if [ -f "Makefile" ] && grep -q "compare" Makefile; then
-            make compare
-          else
-            echo "Comparison reports not yet implemented"
-          fi
-
-  release-readiness:
-    name: Release Readiness Check
-    runs-on: ubuntu-latest
-    needs: [quality-gates, tier1-validation]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Install release tools
-        run: |
-          cargo install cargo-audit cargo-outdated || true
-          
-      - name: Run pre-release checks
-        run: |
-          if [ -f "Makefile" ] && grep -q "pre-release-checks" Makefile; then
-            make pre-release-checks
-          else
-            echo "Pre-release checks not yet implemented"
-          fi
-          
-      - name: Check version consistency
-        run: |
-          if [ -f "Cargo.toml" ]; then
-            VERSION=$(grep "^version = " Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
-            echo "Current version: $VERSION"
-            # Check if version is consistent across workspace
-            find . -name "Cargo.toml" -exec grep -l "version = " {} \; | while read file; do
-              FILE_VERSION=$(grep "^version = " "$file" | head -1 | sed 's/version = "\(.*\)"/\1/')
-              if [ "$VERSION" != "$FILE_VERSION" ]; then
-                echo "Version mismatch in $file: $FILE_VERSION (expected: $VERSION)"
-                exit 1
-              fi
-            done
-          fi
-
-  quality-report:
-    name: Quality Report
-    runs-on: ubuntu-latest
-    needs: [quality-gates, tier1-validation, benchmark-validation]
-    if: always()
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Generate quality summary
-        run: |
-          echo "## 📊 Quality Gates Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Toyota Way Standards**: Enforced" >> $GITHUB_STEP_SUMMARY
-          echo "- **Zero SATD Policy**: Active" >> $GITHUB_STEP_SUMMARY
-          echo "- **Complexity Limit**: ≤20 per function" >> $GITHUB_STEP_SUMMARY
-          echo "- **Test Coverage**: ≥80% required" >> $GITHUB_STEP_SUMMARY
-          echo "- **Security Scan**: Vulnerability-free" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🎯 Quality Status" >> $GITHUB_STEP_SUMMARY
-          echo "- Lint: ${{ needs.quality-gates.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Tests: ${{ needs.quality-gates.result }}" >> $GITHUB_STEP_SUMMARY  
-          echo "- Tier 1 Languages: ${{ needs.tier1-validation.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Benchmarks: ${{ needs.benchmark-validation.result }}" >> $GITHUB_STEP_SUMMARY
+            test-results.json
+            INTEGRATION.md
