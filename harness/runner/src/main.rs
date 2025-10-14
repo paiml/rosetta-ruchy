@@ -465,9 +465,7 @@ impl BenchmarkRunner {
         }
 
         // Step 3: Cleanup environment isolation
-        if let Err(e) = env_controller.restore_environment().await {
-            warn!("Failed to restore environment: {}", e);
-        }
+        self.cleanup_environment(&mut env_controller).await;
 
         // Step 4: Generate comprehensive reports
         if !results.is_empty() {
@@ -892,6 +890,15 @@ impl BenchmarkRunner {
                 30
             })
             .with_confidence_level(0.95)
+    }
+
+    /// Cleanup environment isolation
+    ///
+    /// Extracted from run_benchmark() for complexity reduction (Sprint 43 Ticket 4)
+    async fn cleanup_environment(&self, env_controller: &mut EnvironmentController) {
+        if let Err(e) = env_controller.restore_environment().await {
+            warn!("Failed to restore environment: {}", e);
+        }
     }
 }
 
