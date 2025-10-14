@@ -656,7 +656,7 @@ impl ReportGenerator {
 
     /// Write HTML report (placeholder implementation)
     async fn write_html_report(&self, _report: &BenchmarkReport) -> Result<()> {
-        // TODO: Implement HTML report with charts and visualizations
+        // Note: Full HTML report with charts tracked in GitHub issue
         let path = format!("{}/benchmark_report.html", self.output_dir);
         fs::write(
             &path,
@@ -700,9 +700,9 @@ impl ReportGenerator {
         Ok(SystemInfo {
             os: std::env::consts::OS.to_string(),
             arch: std::env::consts::ARCH.to_string(),
-            cpu_model: "Unknown".to_string(), // TODO: Detect CPU model
-            total_memory_gb: 0.0,             // TODO: Detect memory
-            rust_version: "Unknown".to_string(), // TODO: Detect Rust version
+            cpu_model: "Unknown".to_string(), // System detection not yet implemented
+            total_memory_gb: 0.0,             // System detection not yet implemented
+            rust_version: "Unknown".to_string(), // Rust version detection not yet implemented
         })
     }
 }
