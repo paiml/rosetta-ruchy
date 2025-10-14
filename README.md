@@ -2,8 +2,10 @@
 
 A polyglot benchmark suite demonstrating Ruchy's performance parity with Rust while maintaining Python-like ergonomics. **Features real Ruchy formal verification and complexity analysis tools** providing empirical evidence of zero-cost abstractions through systematic comparison across production workloads.
 
-[![Quality Gates](https://github.com/pragmatic-ai-labs/rosetta-ruchy/actions/workflows/quality-gates.yml/badge.svg)](https://github.com/pragmatic-ai-labs/rosetta-ruchy/actions/workflows/quality-gates.yml)
+[![Dogfood Quality Gates](https://github.com/pragmatic-ai-labs/rosetta-ruchy/actions/workflows/dogfood-quality-gates.yml/badge.svg)](https://github.com/pragmatic-ai-labs/rosetta-ruchy/actions/workflows/dogfood-quality-gates.yml)
 [![Toyota Way](https://img.shields.io/badge/Toyota%20Way-Quality%20Built--in-green.svg)](https://lean.org/toyota-production-system/)
+[![Ruchy Version](https://img.shields.io/badge/Ruchy-v3.79.0-blue.svg)](https://github.com/paiml/ruchy)
+[![Test Success Rate](https://img.shields.io/badge/Tests-126%2F126%20(100%25)-brightgreen.svg)](INTEGRATION.md)
 
 ## Project Architecture
 
@@ -37,19 +39,26 @@ rosetta-ruchy/
 The project enforces **zero-tolerance quality standards** through:
 
 - **Kaizen (改善)**: Continuous improvement via complexity analysis
-- **Genchi Genbutsu (現地現物)**: Measure actual performance, don't guess  
+- **Genchi Genbutsu (現地現物)**: Measure actual performance, don't guess
 - **Jidoka (自働化)**: Automated quality gates that stop the line for defects
 
-#### Mandatory Quality Gates
-- ✅ **Zero SATD Policy**: No TODO/FIXME/HACK comments allowed
-- ✅ **Complexity ≤20**: All functions under cognitive complexity threshold
-- ✅ **Test Coverage ≥80%**: Statistical significance required
-- ✅ **Zero Lint Warnings**: `-D warnings` flag enforced
-- ✅ **Security Scan**: Zero critical vulnerabilities
+#### Mandatory Quality Gates (8 Enforced)
+1. ✅ **Ruchy Version Check**: Ensures v3.79.0 installed
+2. ✅ **SATD Detection**: Zero TODO/FIXME/HACK comments allowed (ZERO tolerance)
+3. ✅ **Ruchy Syntax Validation**: Version-aware `ruchy check` on all .ruchy files
+4. ✅ **Complexity Check**: All functions under cyclomatic/cognitive complexity ≤20
+5. ✅ **Rust Linting**: Zero clippy warnings with `-D warnings` flag
+6. ✅ **Security Audit**: Zero critical vulnerabilities via `cargo audit`
+7. ✅ **Dogfood-quick Validation**: All 126 examples pass 3 core Ruchy tools (check, lint, score)
+8. ✅ **Stub Detection**: Zero `unimplemented!()`, `todo!()`, `unreachable!()` allowed
+
+**Enforcement**: All gates integrated in [pre-commit hook](scripts/pre-commit-hook.sh) and [CI/CD pipeline](.github/workflows/dogfood-quality-gates.yml).
 
 ## 🔬 Ruchy Formal Verification Workflow
 
-Every algorithm implementation demonstrates **real Ruchy toolchain capabilities** using the installed `ruchy` binary (v1.7.0):
+Every algorithm implementation demonstrates **real Ruchy toolchain capabilities** using the installed `ruchy` binary (**v3.79.0**):
+
+**📊 Current Status**: 126/126 examples passing (100.0% success rate) - See [INTEGRATION.md](INTEGRATION.md) for comprehensive validation results.
 
 ### 1. Syntax Validation
 ```bash
@@ -95,38 +104,55 @@ ruchy score algorithm.ruchy
 #   Idiomaticity: 1.000 (5%)
 ```
 
-### 5. Advanced Capabilities (Ruchy v1.7.0)
+### 5. Advanced Capabilities (Ruchy v3.79.0)
 ```bash
-ruchy ast algorithm.ruchy           # Enhanced AST analysis
-ruchy optimize algorithm.ruchy      # Hardware-aware optimization
-ruchy prove algorithm.ruchy         # Interactive theorem prover
-ruchy mcp algorithm.ruchy           # Real-time quality analysis
-ruchy quality-gate algorithm.ruchy  # Quality gate enforcement
+ruchy ast algorithm.ruchy           # Enhanced AST analysis (100% success)
+ruchy optimize algorithm.ruchy      # Hardware-aware optimization (stub)
+ruchy prove algorithm.ruchy         # Interactive theorem prover (specialized)
+ruchy mcp algorithm.ruchy           # Real-time quality analysis (server mode)
+ruchy quality-gate algorithm.ruchy  # Quality gate enforcement (100% success)
 ```
+
+**⚠️ Known Limitations**:
+- **fmt tool**: Has a P0 bug that outputs AST debug representation instead of formatted code. Use `ruchy fmt --check` only for validation, never for formatting. See [FMT_TOOL_INVESTIGATION.md](docs/FMT_TOOL_INVESTIGATION.md) for details.
+- **String parsing**: `.parse::<T>()` not yet supported in v3.79.0, blocks dynamic CLI argument parsing. See [INTEGRATION.md](INTEGRATION.md) Breaking Change #4.
+
+**📖 Comprehensive Documentation**:
+- [INTEGRATION.md](INTEGRATION.md) - Real-time test results and version tracking
+- [COMPREHENSIVE-TOOLCHAIN-VALIDATION.md](docs/COMPREHENSIVE-TOOLCHAIN-VALIDATION.md) - Complete toolchain validation (15 tools tested)
+- [FMT_TOOL_INVESTIGATION.md](docs/FMT_TOOL_INVESTIGATION.md) - fmt tool bug investigation
+- [SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md) - Security vulnerability tracking
 
 ### 🚀 Benchmark Infrastructure
 
 #### Statistical Rigor
 - **Minimum 1000 iterations** for statistical significance
-- **Confidence intervals** with standard deviation analysis  
+- **Confidence intervals** with standard deviation analysis
 - **Performance regression detection** (5% threshold)
 - **Memory profiling** and binary size analysis
 - **CPU isolation** with performance governor control
 
+**🔧 Performance Baseline Status**: 80% complete infrastructure
+- ✅ Benchmark runner script with nanosecond precision
+- ✅ 5 diverse algorithms selected (fibonacci, quicksort, binary search, dijkstra, edit distance)
+- ✅ Statistical methodology with 100+ iterations
+- ⏸️ **ON HOLD**: Waiting for `.parse::<T>()` support in Ruchy for CLI argument parsing
+- 📖 See [BENCHMARKING_PLAN.md](reports/performance/BENCHMARKING_PLAN.md) and [ROSETTA-414-STATUS.md](reports/performance/ROSETTA-414-STATUS.md)
+
 #### Language Tiers
 - **Tier 1** (Full CI): Ruchy, Rust, Python, JavaScript, Go
-- **Tier 2** (Community): TypeScript, Java, C++, C#, Swift  
+- **Tier 2** (Community): TypeScript, Java, C++, C#, Swift
 - **Tier 3** (Reference): Single implementations
 
 ### 📊 Performance Targets
 
 | Metric | Target | Current Status |
 |--------|---------|---------------|
-| **Ruchy vs Rust** | Within 5% for CPU tasks | 🚧 In Development |
-| **Ruchy vs Python** | 10-50x faster | 🚧 In Development |
-| **Memory Usage** | ±10% of Rust baseline | 🚧 In Development |
-| **Lines of Code** | 30-50% fewer than Rust | 🚧 In Development |
-| **Compilation Time** | <100ms incremental | 🚧 In Development |
+| **Ruchy vs Rust** | Within 5% for CPU tasks | ⏸️ Benchmarking infrastructure ready, waiting for .parse::<T>() |
+| **Ruchy vs Python** | 10-50x faster | ⏸️ Benchmarking infrastructure ready |
+| **Memory Usage** | ±10% of Rust baseline | ⏸️ Benchmarking infrastructure ready |
+| **Lines of Code** | 30-50% fewer than Rust | ✅ Demonstrated across 126 examples |
+| **Compilation Time** | <100ms incremental | 🚧 Not yet measured |
 
 ## Quick Start
 
