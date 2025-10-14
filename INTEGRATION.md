@@ -1,7 +1,7 @@
 # Ruchy Integration Status
 
-**Current Version**: 3.79.0
-**Last Updated**: 2025-10-14 14:15:00 UTC
+**Current Version**: 3.82.0
+**Last Updated**: 2025-10-14 20:20:07 UTC
 **Test Results**: Auto-generated from `test-results.json` + dogfooding reports
 **Formal Verification**: ✅ **100% VALIDATED** (Sprint 40)
 
@@ -18,7 +18,7 @@ All data is auto-generated from `make test-all-examples` and updated via `make u
 
 ---
 
-## 📊 Current Test Results (2025-10-14 10:55:17 UTC)
+## 📊 Current Test Results (2025-10-14 20:20:07 UTC)
 
 ### Summary
 
@@ -28,7 +28,7 @@ All data is auto-generated from `make test-all-examples` and updated via `make u
 | **Passing** | ✅ 126 |
 | **Failing** | ❌ 0 |
 | **Success Rate** | 100.0% |
-| **Ruchy Version** | 3.79.0 |
+| **Ruchy Version** | 3.82.0 |
 
 ### By Category
 
@@ -49,8 +49,8 @@ All data is auto-generated from `make test-all-examples` and updated via `make u
 git clone https://github.com/paiml/rosetta-ruchy.git
 cd rosetta-ruchy
 
-# 2. Install Ruchy 3.79.0
-cargo install ruchy --version 3.79.0
+# 2. Install Ruchy 3.82.0
+cargo install ruchy --version 3.82.0
 
 # 3. Run comprehensive test suite
 make test-all-examples
@@ -75,7 +75,7 @@ cat test-results.json
 
 **MILESTONE**: 100% formal verification validation achieved (2025-10-14 11:17:20 UTC)
 
-All 126 validated examples have been verified using Ruchy 3.79.0 advanced tooling:
+All 126 validated examples have been verified using Ruchy 3.82.0 advanced tooling:
 
 #### Basic Tools (100% Success)
 1. **Syntax Validation** (`ruchy check`) - ✅ 126/126 (100.0%)
@@ -259,7 +259,8 @@ See `docs/MIGRATION_PATTERNS_V3.md` for complete migration guide.
 
 | Date | Version | Success Rate | Change |
 |------|---------|--------------|--------|
-| 2025-10-14 10:55:17 UTC | 3.78.0 | 100.0% | Auto-generated from test-results.json |
+| 2025-10-14 20:20:07 UTC | 3.82.0 | 100.0% | Ruchy upgraded v3.79.0 → v3.82.0, all 126 examples passing |
+| 2025-10-14 10:55:17 UTC | 3.79.0 | 100.0% | Auto-generated from test-results.json |
 
 ---
 
