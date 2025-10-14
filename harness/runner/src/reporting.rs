@@ -743,4 +743,250 @@ mod tests {
         // This would fail without actual benchmark data, but tests the structure
         assert!(generator.create_metadata().format_version == "1.0.0");
     }
+
+    #[test]
+    fn test_report_generator_builder() {
+        let generator = ReportGenerator::new()
+            .with_raw_data(true)
+            .with_output_dir("/tmp/reports")
+            .with_formats(vec![ReportFormat::Json, ReportFormat::Markdown]);
+
+        assert!(generator.include_raw_data);
+        assert_eq!(generator.output_dir, "/tmp/reports");
+        assert_eq!(generator.formats.len(), 2);
+    }
+
+    #[test]
+    fn test_report_metadata_creation() {
+        let metadata = ReportMetadata {
+            generated_at: Utc::now(),
+            format_version: "1.0.0".to_string(),
+            generator: "Rosetta Ruchy Benchmark Harness".to_string(),
+            suite_version: "1.6.0".to_string(),
+            quality_gates: vec![
+                "Statistical significance testing".to_string(),
+                "Environment isolation validation".to_string(),
+            ],
+        };
+
+        assert_eq!(metadata.format_version, "1.0.0");
+        assert_eq!(metadata.suite_version, "1.6.0");
+        assert_eq!(metadata.quality_gates.len(), 2);
+    }
+
+    #[test]
+    fn test_system_info_structure() {
+        let system_info = SystemInfo {
+            os: "linux".to_string(),
+            arch: "x86_64".to_string(),
+            cpu_model: "Intel Core i7".to_string(),
+            total_memory_gb: 32.0,
+            rust_version: "1.70".to_string(),
+        };
+
+        assert_eq!(system_info.os, "linux");
+        assert_eq!(system_info.arch, "x86_64");
+        assert_eq!(system_info.total_memory_gb, 32.0);
+    }
+
+    #[test]
+    fn test_benchmark_configuration() {
+        let config = BenchmarkConfiguration {
+            iterations: 1000,
+            warmup_iterations: 100,
+            confidence_level: 0.95,
+            outlier_removal: true,
+            min_sample_size: 30,
+        };
+
+        assert_eq!(config.iterations, 1000);
+        assert_eq!(config.warmup_iterations, 100);
+        assert_eq!(config.confidence_level, 0.95);
+        assert!(config.outlier_removal);
+    }
+
+    #[test]
+    fn test_language_results_structure() {
+        use crate::statistics::{SampleStatistics, OutlierAnalysis, Quartiles, DistributionMetrics, ConfidenceIntervals, Percentiles};
+
+        let results = LanguageResults {
+            language: "rust".to_string(),
+            version: "1.70.0".to_string(),
+            statistics: StatisticalAnalysis {
+                sample_stats: SampleStatistics {
+                    count: 1000,
+                    mean: 500000.0,
+                    median: 490000.0,
+                    std_dev: 50000.0,
+                    std_error: 1581.0,
+                    min: 400000.0,
+                    max: 650000.0,
+                },
+                confidence_intervals: ConfidenceIntervals {
+                    ci_95: (496898.0, 503102.0),
+                    ci_99: (495927.0, 504073.0),
+                },
+                outliers: OutlierAnalysis {
+                    outlier_count: 5,
+                    outlier_percentage: 0.5,
+                    outlier_values: vec![],
+                    quartiles: Quartiles {
+                        q1: 450000.0,
+                        q3: 550000.0,
+                        iqr: 100000.0,
+                        lower_fence: 300000.0,
+                        upper_fence: 700000.0,
+                    },
+                },
+                distribution: DistributionMetrics {
+                    skewness: 0.1,
+                    kurtosis: 0.0,
+                    coefficient_of_variation: 0.1,
+                    percentiles: Percentiles {
+                        p5: 420000.0,
+                        p25: 450000.0,
+                        p50: 490000.0,
+                        p75: 550000.0,
+                        p95: 600000.0,
+                        p99: 640000.0,
+                    },
+                },
+            },
+            raw_times_ns: Some(vec![500000, 510000, 490000]),
+            memory_usage: None,
+            binary_size: None,
+            compilation: None,
+        };
+
+        assert_eq!(results.language, "rust");
+        assert_eq!(results.version, "1.70.0");
+        assert_eq!(results.statistics.sample_stats.count, 1000);
+    }
+
+    #[test]
+    fn test_performance_comparison() {
+        let comparison = PerformanceComparison {
+            baseline: "rust".to_string(),
+            compared: "python".to_string(),
+            result: ComparisonResult {
+                percent_change: 900.0,
+                absolute_change: 4500000.0,
+                significance: SignificanceLevel::SignificantRegression,
+                baseline_mean: 500000.0,
+                current_mean: 5000000.0,
+            },
+            interpretation: "Significantly slower by 900%".to_string(),
+        };
+
+        assert_eq!(comparison.baseline, "rust");
+        assert_eq!(comparison.compared, "python");
+        assert_eq!(comparison.result.percent_change, 900.0);
+        assert!(matches!(
+            comparison.result.significance,
+            SignificanceLevel::SignificantRegression
+        ));
+    }
+
+    #[test]
+    fn test_benchmark_summary() {
+        let summary = BenchmarkSummary {
+            fastest_implementation: "rust".to_string(),
+            most_memory_efficient: "rust".to_string(),
+            smallest_binary: "rust".to_string(),
+            fastest_compilation: "rust".to_string(),
+            performance_ranking: vec![
+                PerformanceRanking {
+                    rank: 1,
+                    implementation: "rust".to_string(),
+                    score: 500000.0,
+                    score_type: "execution_time_ns".to_string(),
+                }
+            ],
+            insights: vec!["All implementations performed well".to_string()],
+            recommendations: vec!["Consider memory optimization".to_string()],
+        };
+
+        assert_eq!(summary.fastest_implementation, "rust");
+        assert_eq!(summary.performance_ranking.len(), 1);
+        assert_eq!(summary.insights.len(), 1);
+    }
+
+    #[test]
+    fn test_performance_rank() {
+        let rank = PerformanceRanking {
+            rank: 1,
+            implementation: "rust".to_string(),
+            score: 500000.0,
+            score_type: "execution_time_ns".to_string(),
+        };
+
+        assert_eq!(rank.rank, 1);
+        assert_eq!(rank.implementation, "rust");
+        assert_eq!(rank.score, 500000.0);
+    }
+
+    #[test]
+    fn test_environment_report_structure() {
+        let report = EnvironmentReport {
+            system: SystemInfo {
+                os: "linux".to_string(),
+                arch: "x86_64".to_string(),
+                cpu_model: "Test CPU".to_string(),
+                total_memory_gb: 16.0,
+                rust_version: "1.70.0".to_string(),
+            },
+            isolation: None,
+            state: Default::default(),
+        };
+
+        assert_eq!(report.system.os, "linux");
+        assert_eq!(report.system.total_memory_gb, 16.0);
+        assert!(report.isolation.is_none());
+    }
+
+    #[test]
+    fn test_benchmark_report_structure() {
+        let report = BenchmarkReport {
+            metadata: ReportMetadata {
+                generated_at: Utc::now(),
+                format_version: "1.0.0".to_string(),
+                generator: "Test".to_string(),
+                suite_version: "1.0".to_string(),
+                quality_gates: vec![],
+            },
+            environment: EnvironmentReport {
+                system: SystemInfo {
+                    os: "linux".to_string(),
+                    arch: "x86_64".to_string(),
+                    cpu_model: "Test".to_string(),
+                    total_memory_gb: 16.0,
+                    rust_version: "1.70".to_string(),
+                },
+                isolation: None,
+                state: Default::default(),
+            },
+            configuration: BenchmarkConfiguration {
+                iterations: 1000,
+                warmup_iterations: 100,
+                confidence_level: 0.95,
+                outlier_removal: false,
+                min_sample_size: 30,
+            },
+            results: HashMap::new(),
+            comparisons: vec![],
+            summary: BenchmarkSummary {
+                fastest_implementation: "rust".to_string(),
+                most_memory_efficient: "rust".to_string(),
+                smallest_binary: "rust".to_string(),
+                fastest_compilation: "rust".to_string(),
+                performance_ranking: vec![],
+                insights: vec![],
+                recommendations: vec![],
+            },
+        };
+
+        assert_eq!(report.metadata.format_version, "1.0.0");
+        assert_eq!(report.configuration.iterations, 1000);
+        assert_eq!(report.summary.fastest_implementation, "rust");
+    }
 }
