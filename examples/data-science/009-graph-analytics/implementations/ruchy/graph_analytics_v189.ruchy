@@ -12,23 +12,23 @@ fun create_graph() -> ([bool; 10000], i32) {  // 100x100 adjacency matrix
 }
 
 // Add edge to graph
-fun add_edge(matrix: [bool; 10000], nodes: i32, from: i32, to: i32) -> [bool; 10000] {
+fun add_edge(matrix: [bool; 10000], nodes: i32, from_node: i32, to: i32) -> [bool; 10000] {
     let mut result = matrix;  // ✅ v1.89: explicit mut for matrix modification
-    
-    if from >= 0 && from < nodes && to >= 0 && to < nodes && from < 100 && to < 100 {
-        let index = (from * 100 + to) as usize;
+
+    if from_node >= 0 && from_node < nodes && to >= 0 && to < nodes && from_node < 100 && to < 100 {
+        let index = (from_node * 100 + to) as usize;
         if index < 10000 {
             result[index] = true;
         }
     }
-    
+
     result
 }
 
 // Check if edge exists
-fun has_edge(matrix: [bool; 10000], from: i32, to: i32) -> bool {
-    if from >= 0 && from < 100 && to >= 0 && to < 100 {
-        let index = (from * 100 + to) as usize;
+fun has_edge(matrix: [bool; 10000], from_node: i32, to: i32) -> bool {
+    if from_node >= 0 && from_node < 100 && to >= 0 && to < 100 {
+        let index = (from_node * 100 + to) as usize;
         if index < 10000 {
             return matrix[index];
         }

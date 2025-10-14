@@ -19,23 +19,23 @@ fun create_adjacency_matrix() -> [bool; 400] {
 }
 
 // Set edge in adjacency matrix
-fun set_edge(matrix: [bool; 400], from: i32, to: i32, value: bool) -> [bool; 400] {
+fun set_edge(matrix: [bool; 400], from_node: i32, to: i32, value: bool) -> [bool; 400] {
     let mut new_matrix = matrix  // ✅ v1.89: explicit mut for array modification
-    
-    if from >= 0 && from < 20 && to >= 0 && to < 20 {
-        let index = from * 20 + to;
+
+    if from_node >= 0 && from_node < 20 && to >= 0 && to < 20 {
+        let index = from_node * 20 + to;
         if index >= 0 && index < 400 {
             new_matrix[index] = value;
         }
     }
-    
+
     new_matrix
 }
 
 // Check if edge exists in adjacency matrix
-fun has_edge(matrix: [bool; 400], from: i32, to: i32) -> bool {
-    if from >= 0 && from < 20 && to >= 0 && to < 20 {
-        let index = from * 20 + to;
+fun has_edge(matrix: [bool; 400], from_node: i32, to: i32) -> bool {
+    if from_node >= 0 && from_node < 20 && to >= 0 && to < 20 {
+        let index = from_node * 20 + to;
         if index >= 0 && index < 400 {
             return matrix[index];
         }
@@ -364,18 +364,18 @@ fun verify_topological_sort(matrix: [bool; 400], topo_order: [i32; 20], order_co
     }
     
     // Check all edges respect topological order
-    let mut from = 0  // ✅ v1.89: explicit mut for outer loop counter
-    while from <= max_node && from < 20 {
+    let mut from_node = 0  // ✅ v1.89: explicit mut for outer loop counter
+    while from_node <= max_node && from_node < 20 {
         let mut to = 0  // ✅ v1.89: explicit mut for inner loop counter
         while to <= max_node && to < 20 {
-            if has_edge(matrix, from, to) {
-                if position[from] >= position[to] {
+            if has_edge(matrix, from_node, to) {
+                if position[from_node] >= position[to] {
                     return false;  // Edge violates topological order
                 }
             }
             to = to + 1  // ✅ v1.89: reassignment works with mut
         }
-        from = from + 1  // ✅ v1.89: reassignment works with mut
+        from_node = from_node + 1  // ✅ v1.89: reassignment works with mut
     }
     
     true

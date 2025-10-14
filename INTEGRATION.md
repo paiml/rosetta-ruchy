@@ -1,7 +1,7 @@
 # Ruchy Integration Status
 
 **Current Version**: 3.78.0
-**Last Updated**: 2025-10-14 10:48:16 UTC
+**Last Updated**: 2025-10-14 10:55:17 UTC
 **Test Results**: Auto-generated from `test-results.json`
 
 ## Overview
@@ -17,24 +17,24 @@ All data is auto-generated from `make test-all-examples` and updated via `make u
 
 ---
 
-## 📊 Current Test Results (2025-10-14 10:48:16 UTC)
+## 📊 Current Test Results (2025-10-14 10:55:17 UTC)
 
 ### Summary
 
 | Metric | Value |
 |--------|-------|
 | **Total Examples** | 126 |
-| **Passing** | ✅ 124 |
-| **Failing** | ❌ 2 |
-| **Success Rate** | 98.4% |
+| **Passing** | ✅ 126 |
+| **Failing** | ❌ 0 |
+| **Success Rate** | 100.0% |
 | **Ruchy Version** | 3.78.0 |
 
 ### By Category
 
 | Category | Passing | Total | Success Rate |
 |----------|---------|-------|--------------|
-| **algorithms** | 85 | 86 | 98.8% |
-| **data-science** | 35 | 36 | 97.2% |
+| **algorithms** | 86 | 86 | 100.0% |
+| **data-science** | 36 | 36 | 100.0% |
 | **advanced-ai** | 4 | 4 | 100.0% |
 
 ---
@@ -113,7 +113,7 @@ ruchy runtime fibonacci.ruchy
 ### Migration Progress
 
 - **v1.89.0 Baseline**: 100% success rate (12/12 data science examples)
-- **v3.62.12+ Migration**: 98.4% success rate (124/126 examples)
+- **v3.62.12+ Migration**: 100.0% success rate (126/126 examples)
 - **Target**: 90% success rate for production readiness
 
 ### Known Breaking Changes
@@ -140,14 +140,6 @@ See `docs/MIGRATION_PATTERNS_V3.md` for complete migration guide.
 
 ### Failure Categories
 
-#### algorithms (1 failing)
-
-- examples/algorithms/016-topological-sort/implementations/ruchy/topological_sort_v189.ruchy
-
-#### data-science (1 failing)
-
-- examples/data-science/009-graph-analytics/implementations/ruchy/graph_analytics_v189.ruchy
-
 
 ---
 
@@ -155,7 +147,7 @@ See `docs/MIGRATION_PATTERNS_V3.md` for complete migration guide.
 
 | Date | Version | Success Rate | Change |
 |------|---------|--------------|--------|
-| 2025-10-14 10:48:16 UTC | 3.78.0 | 98.4% | Auto-generated from test-results.json |
+| 2025-10-14 10:55:17 UTC | 3.78.0 | 100.0% | Auto-generated from test-results.json |
 
 ---
 
