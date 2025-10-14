@@ -45,7 +45,7 @@ fn test_missing_subcommand() {
 #[test]
 fn test_run_missing_example() {
     let mut cmd = Command::cargo_bin("rosetta-runner").unwrap();
-    cmd.args(&["run", "nonexistent/example"]);
+    cmd.args(["run", "nonexistent/example"]);
 
     // May succeed parsing args but fail on execution
     // Just verify it doesn't crash with argument parsing error (code 2)
@@ -58,7 +58,7 @@ fn test_run_missing_example() {
 #[test]
 fn test_run_command_arguments() {
     let mut cmd = Command::cargo_bin("rosetta-runner").unwrap();
-    cmd.args(&["run", "--help"]);
+    cmd.args(["run", "--help"]);
 
     cmd.assert()
         .success()
@@ -69,7 +69,7 @@ fn test_run_command_arguments() {
 #[test]
 fn test_compare_missing_directory() {
     let mut cmd = Command::cargo_bin("rosetta-runner").unwrap();
-    cmd.args(&["compare", "--help"]);
+    cmd.args(["compare", "--help"]);
 
     cmd.assert()
         .success()
@@ -83,7 +83,7 @@ fn test_compare_html_flag() {
     let results_path = temp_dir.path();
 
     let mut cmd = Command::cargo_bin("rosetta-runner").unwrap();
-    cmd.args(&["compare", results_path.to_str().unwrap(), "--html"]);
+    cmd.args(["compare", results_path.to_str().unwrap(), "--html"]);
 
     // May fail due to empty directory, but should accept the flag
     cmd.assert().code(predicate::ne(2)); // Not argument parsing error
@@ -104,7 +104,7 @@ fn test_validate_command() {
 #[test]
 fn test_regression_command_help() {
     let mut cmd = Command::cargo_bin("rosetta-runner").unwrap();
-    cmd.args(&["regression", "--help"]);
+    cmd.args(["regression", "--help"]);
 
     cmd.assert()
         .success()
@@ -123,7 +123,7 @@ fn test_regression_threshold() {
     fs::write(&current, r#"{"results": []}"#).unwrap();
 
     let mut cmd = Command::cargo_bin("rosetta-runner").unwrap();
-    cmd.args(&[
+    cmd.args([
         "regression",
         baseline.to_str().unwrap(),
         current.to_str().unwrap(),
@@ -139,7 +139,7 @@ fn test_regression_threshold() {
 #[test]
 fn test_verbose_flag() {
     let mut cmd = Command::cargo_bin("rosetta-runner").unwrap();
-    cmd.args(&["--verbose", "validate"]);
+    cmd.args(["--verbose", "validate"]);
 
     // Should accept verbose flag
     cmd.assert().code(predicate::ne(2));
@@ -153,7 +153,7 @@ fn test_config_file_argument() {
     fs::write(&config_path, "[config]").unwrap();
 
     let mut cmd = Command::cargo_bin("rosetta-runner").unwrap();
-    cmd.args(&[
+    cmd.args([
         "--config",
         config_path.to_str().unwrap(),
         "validate",
@@ -167,7 +167,7 @@ fn test_config_file_argument() {
 #[test]
 fn test_output_format_json() {
     let mut cmd = Command::cargo_bin("rosetta-runner").unwrap();
-    cmd.args(&["--format", "json", "validate"]);
+    cmd.args(["--format", "json", "validate"]);
 
     cmd.assert().code(predicate::ne(2));
 }
@@ -176,7 +176,7 @@ fn test_output_format_json() {
 #[test]
 fn test_output_format_yaml() {
     let mut cmd = Command::cargo_bin("rosetta-runner").unwrap();
-    cmd.args(&["--format", "yaml", "validate"]);
+    cmd.args(["--format", "yaml", "validate"]);
 
     cmd.assert().code(predicate::ne(2));
 }
@@ -185,7 +185,7 @@ fn test_output_format_yaml() {
 #[test]
 fn test_output_format_markdown() {
     let mut cmd = Command::cargo_bin("rosetta-runner").unwrap();
-    cmd.args(&["--format", "markdown", "validate"]);
+    cmd.args(["--format", "markdown", "validate"]);
 
     cmd.assert().code(predicate::ne(2));
 }
@@ -194,7 +194,7 @@ fn test_output_format_markdown() {
 #[test]
 fn test_output_format_html() {
     let mut cmd = Command::cargo_bin("rosetta-runner").unwrap();
-    cmd.args(&["--format", "html", "validate"]);
+    cmd.args(["--format", "html", "validate"]);
 
     cmd.assert().code(predicate::ne(2));
 }
@@ -203,7 +203,7 @@ fn test_output_format_html() {
 #[test]
 fn test_invalid_output_format() {
     let mut cmd = Command::cargo_bin("rosetta-runner").unwrap();
-    cmd.args(&["--format", "invalid", "validate"]);
+    cmd.args(["--format", "invalid", "validate"]);
 
     // Should fail with argument parsing error
     cmd.assert()
@@ -215,7 +215,7 @@ fn test_invalid_output_format() {
 #[test]
 fn test_run_iterations_argument() {
     let mut cmd = Command::cargo_bin("rosetta-runner").unwrap();
-    cmd.args(&["run", "examples/test", "--iterations", "100"]);
+    cmd.args(["run", "examples/test", "--iterations", "100"]);
 
     // May fail due to missing example, but should parse arguments
     cmd.assert().code(predicate::ne(2));
@@ -225,7 +225,7 @@ fn test_run_iterations_argument() {
 #[test]
 fn test_run_languages_argument() {
     let mut cmd = Command::cargo_bin("rosetta-runner").unwrap();
-    cmd.args(&[
+    cmd.args([
         "run",
         "examples/test",
         "--languages",
@@ -246,7 +246,7 @@ fn test_combined_flags() {
     fs::write(&config_path, "[config]").unwrap();
 
     let mut cmd = Command::cargo_bin("rosetta-runner").unwrap();
-    cmd.args(&[
+    cmd.args([
         "--verbose",
         "--config",
         config_path.to_str().unwrap(),

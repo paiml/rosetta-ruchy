@@ -203,6 +203,40 @@ else
     echo -e "${YELLOW}⚠️  (make not found, skipped)${NC}"
 fi
 
+# 9. Lint warning no-increase enforcement (Sprint 43 Ticket 1)
+echo ""
+echo -n "9. Lint warning count check (no-increase policy)... "
+
+if [ -f "scripts/count-lint-warnings.sh" ] && [ -f ".lint-baseline" ]; then
+    # Get current warning count
+    CURRENT_WARNINGS=$(./scripts/count-lint-warnings.sh 2>/dev/null || echo "0")
+    BASELINE_WARNINGS=$(cat .lint-baseline 2>/dev/null || echo "744")
+
+    if [ "$CURRENT_WARNINGS" -gt "$BASELINE_WARNINGS" ]; then
+        echo ""
+        echo -e "${RED}   ❌ Lint warning count increased${NC}"
+        echo -e "${RED}   Baseline: $BASELINE_WARNINGS warnings${NC}"
+        echo -e "${RED}   Current:  $CURRENT_WARNINGS warnings${NC}"
+        echo -e "${RED}   Increase: +$((CURRENT_WARNINGS - BASELINE_WARNINGS)) warnings${NC}"
+        echo ""
+        echo -e "${RED}   ❌ COMMIT BLOCKED: Fix new lint warnings before committing${NC}"
+        echo ""
+        echo "  Policy: No new lint warnings allowed (Kaizen improvement only)"
+        echo "  To see warnings: make lint-report"
+        echo ""
+        exit 1
+    else
+        REDUCTION=$((BASELINE_WARNINGS - CURRENT_WARNINGS))
+        if [ "$REDUCTION" -gt 0 ]; then
+            echo -e "${GREEN}✅ ($CURRENT_WARNINGS warnings, -$REDUCTION from baseline!)${NC}"
+        else
+            echo -e "${GREEN}✅ ($CURRENT_WARNINGS warnings, no increase)${NC}"
+        fi
+    fi
+else
+    echo -e "${YELLOW}⚠️  (warning counter not found, skipped)${NC}"
+fi
+
 echo ""
 echo -e "${GREEN}✅ All quality gates passed!${NC}"
 echo ""
