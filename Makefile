@@ -239,7 +239,7 @@ test-all-examples:
 	@echo "🧪 Testing ALL rosetta-ruchy examples..."
 	@echo "Running comprehensive test suite across algorithms, data-science, and advanced-ai"
 	@if command -v ruchy >/dev/null 2>&1; then \
-		./scripts/test_all_examples.sh; \
+		./scripts/test-all-examples.sh; \
 	else \
 		echo "❌ ruchy not found - install via 'cargo install ruchy'"; \
 		exit 1; \
@@ -248,24 +248,14 @@ test-all-examples:
 # Update INTEGRATION.md with latest test results
 update-integration: test-all-examples
 	@echo "📝 Updating INTEGRATION.md with latest test results..."
-	@./scripts/test_all_examples.sh --update-integration
+	@./scripts/update-integration.sh
 	@echo "✅ INTEGRATION.md updated successfully"
 	@echo "💡 Review changes with: git diff INTEGRATION.md"
 
 # Detect test success rate regressions
 test-regression:
 	@echo "📉 Checking for test regressions..."
-	@if [ ! -f test-results.json ]; then \
-		echo "⚠️  No test results found - run 'make test-all-examples' first"; \
-		exit 1; \
-	fi
-	@SUCCESS_RATE=$$(jq -r '.summary.success_rate' test-results.json 2>/dev/null || echo "0"); \
-	if [ "$$(echo "$$SUCCESS_RATE < 85" | bc -l)" -eq 1 ]; then \
-		echo "❌ REGRESSION DETECTED: Success rate $$SUCCESS_RATE% is below 85% threshold"; \
-		exit 1; \
-	else \
-		echo "✅ No regression detected: Success rate is $$SUCCESS_RATE%"; \
-	fi
+	@./scripts/test-regression.sh
 
 # Release Management (Canonical Version System)
 pre-release-checks:

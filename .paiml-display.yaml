@@ -1,0 +1,404 @@
+# Rosetta Ruchy Display Configuration
+# Controls display settings for benchmark metrics and quality gates
+
+version: "1.0"
+
+# Project identification
+project:
+  name: "Rosetta Ruchy"
+  type: "scientific_validation"
+  language: "ruchy"
+  repository: "https://github.com/paiml/rosetta-ruchy"
+  baseline_language: "rust"
+
+# Panel configurations
+panels:
+  # Example test results display
+  examples:
+    max_failures: 100       # Maximum failures to display
+    show_passing: true      # Show passing tests
+    group_by: category      # Group by: category | algorithm | language
+    sort_by: status         # Sort by: status | category | name
+    categories:
+      - algorithms
+      - data-science
+      - advanced-ai
+
+  # Category progress visualization
+  categories:
+    max_categories: 10      # Maximum categories
+    show_empty: true        # Show categories with no examples
+    completion_threshold: 0.90  # 90% pass rate required
+    show_regression: true   # Highlight regressions
+
+  # Quality gates display
+  quality:
+    show_all_gates: true    # Show all gates even if passing
+    threshold_warnings: true # Warn when approaching threshold
+    max_violations: 50      # Maximum violations to list
+    gates:
+      - name: "test_compilation"
+        threshold: 0.90
+        blocking: true
+      - name: "regression_detection"
+        threshold: 0.95
+        blocking: true
+      - name: "complexity_check"
+        threshold: 20
+        blocking: true
+      - name: "satd_detection"
+        threshold: 0
+        blocking: true
+      - name: "provability_minimum"
+        threshold: 90
+        blocking: false
+      - name: "quality_score_minimum"
+        threshold: 0.90
+        blocking: false
+
+  # Version tracking display
+  versions:
+    show_history: true      # Show version qualification history
+    max_versions: 20        # Maximum versions to display
+    compare_with_previous: true # Compare with previous version
+    track_migrations: true  # Track v1.89 → v3.63 migration
+
+  # Dependency graph (for algorithms)
+  dependency:
+    max_nodes: 100          # Maximum algorithm nodes
+    max_edges: 200          # Maximum dependencies
+    grouping: category      # Grouping: category | complexity | none
+    show_status: true       # Show completion status
+
+# Export configuration
+export:
+  formats:
+    - markdown              # Markdown reports (INTEGRATION.md)
+    - json                  # JSON data (test-results.json)
+    - html                  # HTML dashboard (reports/)
+
+  locations:
+    markdown: "INTEGRATION.md"
+    json: "test-results.json"
+    json_baseline: "test-results-baseline.json"
+    html: "reports/dashboard.html"
+
+  include_metadata: true    # Include generation metadata
+  include_raw_data: true    # Include raw test results
+  include_graphs: true      # Include visual graphs
+
+# Metrics configuration
+metrics:
+  # Example testing metrics
+  examples:
+    track_by_category: true
+    track_pass_rate: true
+    track_compilation_time: true
+    track_error_types: true
+    track_per_file: true
+
+  # Ruchy tooling metrics
+  tooling:
+    track_provability_scores: true
+    track_quality_scores: true
+    track_complexity_analysis: true
+    track_runtime_analysis: true
+    track_ast_analysis: true
+
+  # Performance metrics
+  performance:
+    track_test_runtime: true
+    track_ruchy_vs_rust: true
+    track_memory_usage: true
+    track_binary_size: true
+
+  # Version metrics
+  versions:
+    track_pass_rate_delta: true  # Track change in pass rate
+    track_new_failures: true     # Track new failing examples
+    track_fixed_examples: true   # Track newly passing examples
+    track_breaking_changes: true # Track breaking changes
+
+  # Migration metrics
+  migration:
+    track_v189_baseline: true    # Track v1.89.0 baseline
+    track_v362_progress: true    # Track v3.62.12+ migration
+    track_migration_patterns: true # Track common migration patterns
+
+# Performance settings
+performance:
+  cache_enabled: true       # Enable result caching
+  cache_ttl: 3600          # Cache TTL in seconds (1 hour)
+  parallel_workers: 8       # Number of parallel test workers
+  max_memory: 4096         # Max memory in MB
+  timeout_per_example: 60  # Timeout per example in seconds
+
+# Alerting configuration
+alerts:
+  # Alert when pass rate drops
+  pass_rate_threshold: 0.90
+  pass_rate_action: "warn"
+  regression_threshold: 0.05  # 5% drop triggers alert
+  regression_action: "block"
+
+  # Alert on SATD comments
+  satd_tolerance: 0
+  satd_action: "block"
+
+  # Alert on complexity violations
+  complexity_threshold: 20
+  complexity_action: "block"
+
+  # Alert on quality gate failures
+  quality_gate_action: "block"
+
+  # Alert on provability scores
+  provability_threshold: 90
+  provability_action: "warn"
+
+  # Alert on quality scores
+  quality_score_threshold: 0.90
+  quality_score_action: "warn"
+
+# Display themes
+themes:
+  default: "github_dark"
+  available:
+    - "github_dark"
+    - "github_light"
+    - "solarized_dark"
+    - "solarized_light"
+    - "monokai"
+
+# Dashboard configuration
+dashboard:
+  title: "Rosetta Ruchy - Scientific Validation Dashboard"
+  refresh_interval: 300     # Refresh every 5 minutes
+
+  sections:
+    - name: "Overview"
+      widgets:
+        - type: "pass_rate"
+          size: "large"
+          show_trend: true
+        - type: "category_progress"
+          size: "large"
+          show_bars: true
+        - type: "recent_tests"
+          size: "medium"
+          max_recent: 20
+
+    - name: "Quality Gates"
+      widgets:
+        - type: "gate_status"
+          size: "large"
+          show_all: true
+        - type: "satd_detector"
+          size: "medium"
+        - type: "complexity_analysis"
+          size: "medium"
+
+    - name: "Ruchy Tooling"
+      widgets:
+        - type: "provability_scores"
+          size: "large"
+          show_distribution: true
+        - type: "quality_scores"
+          size: "large"
+          show_distribution: true
+        - type: "runtime_analysis"
+          size: "medium"
+
+    - name: "Migration Progress"
+      widgets:
+        - type: "v189_vs_v362"
+          size: "large"
+          show_comparison: true
+        - type: "breaking_changes"
+          size: "medium"
+        - type: "migration_patterns"
+          size: "medium"
+
+    - name: "Trends"
+      widgets:
+        - type: "pass_rate_history"
+          size: "large"
+          days: 90
+        - type: "version_comparison"
+          size: "large"
+        - type: "sprint_velocity"
+          size: "medium"
+
+    - name: "Details"
+      widgets:
+        - type: "failing_examples"
+          size: "full"
+          group_by: "category"
+        - type: "recent_commits"
+          size: "medium"
+          max_commits: 10
+        - type: "breaking_changes_log"
+          size: "medium"
+
+# Notification settings
+notifications:
+  enabled: true
+  channels:
+    - type: "github_commit_status"
+      enabled: true
+    - type: "github_issues"
+      enabled: true
+      create_on_regression: true
+    - type: "slack"
+      enabled: false
+      webhook_url: "${SLACK_WEBHOOK_URL}"
+    - type: "email"
+      enabled: false
+      recipients: []
+
+# Report generation
+reports:
+  # Sprint summary report
+  sprint:
+    enabled: true
+    trigger: "on_sprint_complete"
+    format: "markdown"
+    include:
+      - pass_rate
+      - category_breakdown
+      - quality_gates
+      - version_info
+      - migration_progress
+      - breaking_changes
+
+  # Daily status report
+  daily:
+    enabled: true
+    time: "09:00"
+    format: "markdown"
+    include:
+      - pass_rate
+      - recent_failures
+      - quality_gates
+      - version_info
+
+  # Weekly summary report
+  weekly:
+    enabled: true
+    day: "monday"
+    time: "09:00"
+    format: "html"
+    include:
+      - pass_rate_trend
+      - category_progress
+      - quality_metrics
+      - version_comparison
+      - migration_progress
+
+  # On-demand reports
+  on_demand:
+    formats:
+      - markdown
+      - json
+      - html
+    max_history: 90       # Keep 90 days of history
+
+# Integration settings
+integrations:
+  # GitHub integration
+  github:
+    enabled: true
+    update_commit_status: true
+    create_issues_on_regression: true
+    create_issues_on_breaking_changes: true
+    label_prefix: "rosetta-"
+
+  # Ruchy compiler integration
+  ruchy:
+    enabled: true
+    version_tracking: true
+    auto_sync: false      # Manual version upgrades
+    sync_frequency: "per_sprint"
+    tools:
+      - check
+      - test
+      - provability
+      - runtime
+      - score
+      - quality-gate
+      - ast
+      - optimize
+      - prove
+
+  # PMAT integration
+  pmat:
+    enabled: true
+    roadmap_file: "roadmap.yaml"
+    auto_update_integration: true
+
+# Logging configuration
+logging:
+  level: "info"           # trace | debug | info | warn | error
+  format: "json"          # json | text
+  output:
+    - "stdout"
+    - "file:logs/rosetta-ruchy.log"
+
+  # Rotate logs
+  rotation:
+    enabled: true
+    max_size: 100         # MB
+    max_age: 30           # days
+    max_backups: 10
+
+# Advanced settings
+advanced:
+  # Experimental features
+  experimental:
+    ai_failure_analysis: false
+    auto_fix_suggestions: false
+    semantic_search: false
+
+  # Debug settings
+  debug:
+    save_intermediate_results: false
+    verbose_errors: true
+    include_stack_traces: true
+
+  # Optimization settings
+  optimization:
+    skip_passing_tests: false
+    incremental_testing: true
+    cache_compiled_examples: true
+
+# Scientific validation settings
+scientific:
+  # Formal verification tracking
+  formal_verification:
+    track_provability_scores: true
+    track_complexity_analysis: true
+    track_runtime_analysis: true
+    track_ast_metrics: true
+    minimum_provability: 90
+    minimum_quality_score: 0.90
+
+  # Benchmark comparison
+  benchmarks:
+    baseline_language: "rust"
+    performance_target: 0.95  # Within 5% of Rust
+    memory_target: 1.10       # Within 10% of Rust
+    ergonomics_target: 0.50   # 50% fewer lines than Rust
+
+  # Statistical rigor
+  statistics:
+    minimum_iterations: 1000
+    confidence_interval: 0.95
+    significance_level: 0.05
+    outlier_detection: true
+
+  # Reproducibility
+  reproducibility:
+    track_environment: true
+    track_compiler_version: true
+    track_system_info: true
+    seed_rng: true
