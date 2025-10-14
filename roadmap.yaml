@@ -513,6 +513,117 @@ sprints:
         deliverable: "reports/dogfooding/dogfood-comprehensive-20251014-134752.json + docs/COMPREHENSIVE-TOOLCHAIN-VALIDATION.md (1000+ lines)"
         completed: "2025-10-14"
 
+  # CURRENT SPRINT: Sprint 41 - CI/CD Integration & Performance Benchmarking
+  - id: sprint-41
+    name: "CI/CD Integration & Performance Benchmarking"
+    goal: "Integrate quality gates into CI/CD and begin Ruchy vs Rust performance comparison"
+    duration: 1_week
+    status: in_progress
+    dependencies:
+      - sprint: 40
+        status: "complete"
+    approach: "Automate quality gates in GitHub Actions and establish performance baseline"
+    tickets:
+      - id: ROSETTA-411
+        title: "Integrate dogfood-quality into pre-commit hooks"
+        priority: high
+        status: pending
+        requirements:
+          - "Add .git/hooks/pre-commit script"
+          - "Run dogfood-quick (fast, 2min) on pre-commit"
+          - "Allow git commit --no-verify for emergencies"
+          - "Document hook installation in README"
+        tests:
+          - "Hook executes on git commit"
+          - "Hook blocks commits when quality gates fail"
+          - "Hook can be bypassed with --no-verify"
+        acceptance:
+          - "Pre-commit hook installed and functional"
+          - "Documentation updated"
+        deliverable: ".git/hooks/pre-commit + docs/DEVELOPMENT.md"
+        estimated_time: "1 hour"
+
+      - id: ROSETTA-412
+        title: "Create GitHub Actions CI/CD workflow"
+        priority: critical
+        status: pending
+        requirements:
+          - ".github/workflows/quality-gates.yml"
+          - "Run on every push and pull request"
+          - "Execute make test-all-examples"
+          - "Execute make dogfood-quality"
+          - "Fail build on quality gate failures"
+          - "Cache Ruchy installation for speed"
+        tests:
+          - "Workflow triggers on push"
+          - "All quality gates execute"
+          - "Build fails appropriately"
+        acceptance:
+          - "CI/CD running on every push"
+          - "Quality gates enforced automatically"
+          - "GitHub status checks visible"
+        deliverable: ".github/workflows/quality-gates.yml"
+        estimated_time: "2 hours"
+
+      - id: ROSETTA-413
+        title: "Implement automated regression detection"
+        priority: high
+        status: pending
+        requirements:
+          - ".github/workflows/regression-detection.yml"
+          - "Compare current vs baseline test results"
+          - "Alert on >5% success rate drop"
+          - "Create GitHub issue automatically"
+          - "Daily regression checks"
+        tests:
+          - "Regression detected when rates drop"
+          - "GitHub issue created automatically"
+          - "No false positives"
+        acceptance:
+          - "Automated regression detection working"
+          - "Issues created with actionable details"
+        deliverable: ".github/workflows/regression-detection.yml"
+        estimated_time: "2 hours"
+
+      - id: ROSETTA-414
+        title: "Establish Ruchy vs Rust performance baseline"
+        priority: medium
+        status: pending
+        requirements:
+          - "Select 5 representative algorithms for benchmarking"
+          - "Implement Rust equivalents (if not already present)"
+          - "Create benchmarking harness in Ruchy"
+          - "Measure execution time, memory usage"
+          - "Statistical analysis (mean, stddev, confidence intervals)"
+        tests:
+          - "All benchmarks execute successfully"
+          - "Results are reproducible"
+          - "Statistical significance verified"
+        acceptance:
+          - "5 algorithms benchmarked: Ruchy vs Rust"
+          - "Performance data with error bars"
+          - "Initial performance comparison report"
+        deliverable: "reports/performance/baseline-comparison.md"
+        estimated_time: "3 days"
+
+      - id: ROSETTA-415
+        title: "Investigate fmt tool issue"
+        priority: low
+        status: pending
+        requirements:
+          - "Test fmt tool on sample files"
+          - "Determine if issue is tool bug or formatting standards"
+          - "Document findings"
+          - "File GitHub issue with Ruchy team if bug"
+        tests:
+          - "Root cause identified"
+          - "Workaround documented if applicable"
+        acceptance:
+          - "Issue understood and documented"
+          - "GitHub issue filed if tool bug"
+        deliverable: "docs/FMT_TOOL_INVESTIGATION.md"
+        estimated_time: "1 hour"
+
 quality_gates:
   mandatory:
     - gate: "test_compilation"
