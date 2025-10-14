@@ -513,16 +513,31 @@ sprints:
         deliverable: "reports/dogfooding/dogfood-comprehensive-20251014-134752.json + docs/COMPREHENSIVE-TOOLCHAIN-VALIDATION.md (1000+ lines)"
         completed: "2025-10-14"
 
-  # CURRENT SPRINT: Sprint 41 - CI/CD Integration & Performance Benchmarking
+  # Sprint 41 - CI/CD Integration & Performance Benchmarking (COMPLETE)
   - id: sprint-41
     name: "CI/CD Integration & Performance Benchmarking"
     goal: "Integrate quality gates into CI/CD and begin Ruchy vs Rust performance comparison"
     duration: 1_week
-    status: in_progress
+    status: complete
+    completion_date: "2025-10-14"
     dependencies:
       - sprint: 40
         status: "complete"
     approach: "Automate quality gates in GitHub Actions and establish performance baseline"
+    achievements:
+      - "✅ Pre-commit hooks enhanced with dogfood-quick validation"
+      - "✅ GitHub Actions CI/CD workflow implemented with quality gates"
+      - "✅ Automated regression detection verified (existing workflow)"
+      - "🔴 Performance benchmarking blocked by missing .parse::<T>() in Ruchy 3.78.0"
+      - "✅ fmt tool investigated - discovered critical P0 bug (AST debug output)"
+    tickets_summary:
+      complete: 4
+      blocked: 1
+      total: 5
+      success_rate: "80%"
+    blockers_discovered:
+      - "Breaking Change #4: Missing .parse::<T>() support blocks CLI argument parsing"
+      - "fmt tool P0 bug: Outputs AST debug representation, destroys files"
     tickets:
       - id: ROSETTA-411
         title: "Integrate dogfood-quality into pre-commit hooks"
@@ -624,20 +639,28 @@ sprints:
       - id: ROSETTA-415
         title: "Investigate fmt tool issue"
         priority: low
-        status: pending
+        status: complete
         requirements:
-          - "Test fmt tool on sample files"
-          - "Determine if issue is tool bug or formatting standards"
-          - "Document findings"
-          - "File GitHub issue with Ruchy team if bug"
+          - "✅ Test fmt tool on sample files"
+          - "✅ Determine if issue is tool bug or formatting standards"
+          - "✅ Document findings"
+          - "⏳ File GitHub issue with Ruchy team if bug (pending)"
         tests:
-          - "Root cause identified"
-          - "Workaround documented if applicable"
+          - "✅ Root cause identified: fmt outputs AST debug representation"
+          - "✅ Workaround documented: Only use --check flag"
         acceptance:
-          - "Issue understood and documented"
-          - "GitHub issue filed if tool bug"
+          - "✅ Issue understood and documented"
+          - "⏳ GitHub issue to be filed with Ruchy team"
         deliverable: "docs/FMT_TOOL_INVESTIGATION.md"
-        estimated_time: "1 hour"
+        completed: "2025-10-14"
+        findings:
+          severity: "P0 - CRITICAL"
+          issue: "fmt tool outputs AST debug representation instead of formatted code"
+          impact: "Data loss - destroys source files permanently"
+          root_cause: "Missing pretty-printer implementation, uses Debug::fmt() on AST"
+          workaround: "Only use 'ruchy fmt --check' flag, never format mode"
+          pass_rate: "0/126 (0.0%)"
+        notes: "Systematic testing revealed critical bug: fmt tool writes AST debug output (e.g., 'Call { func: Expr...') instead of formatted Ruchy code, completely destroying files. Check mode (--check) works correctly. Documented comprehensively following Toyota Way (Genchi Genbutsu - identified root cause through testing)."
 
 quality_gates:
   mandatory:
