@@ -1,0 +1,36 @@
+{
+  "timestamp": "2025-10-14 11:06:55 UTC",
+  "ruchy_version": "3.78.0",
+  "mode": "quick",
+  "total_files": 145,
+  "total_tests": 435,
+  "total_pass": 411,
+  "total_fail": 24,
+  "overall_pass_rate": 94.5,
+  "tools": {
+    "check": {
+      "pass": 137,
+      "fail": 8,
+      "skip": 0,
+      "tested": 145,
+      "pass_rate": 0.945
+    }
+,
+    "lint": {
+      "pass": 137,
+      "fail": 8,
+      "skip": 0,
+      "tested": 145,
+      "pass_rate": 0.945
+    }
+,
+    "score": {
+      "pass": 137,
+      "fail": 8,
+      "skip": 0,
+      "tested": 145,
+      "pass_rate": 0.945
+    }
+
+  }
+}

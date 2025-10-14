@@ -40,8 +40,12 @@ echo -e "Ruchy Version: ${GREEN}${RUCHY_VERSION}${NC}"
 echo -e "Timestamp: ${TIMESTAMP}"
 echo ""
 
-# Find all .ruchy files
-RUCHY_FILES=$(find "${PROJECT_ROOT}/examples" -name "*.ruchy" -type f | sort)
+# Find all .ruchy files in validated categories only (algorithms, data-science, advanced-ai)
+# Excludes experimental directories: blockchain, compiler, quantum, OS, deep-learning
+RUCHY_FILES=$(find "${PROJECT_ROOT}/examples/algorithms" \
+                   "${PROJECT_ROOT}/examples/data-science" \
+                   "${PROJECT_ROOT}/examples/advanced-ai" \
+                   -name "*.ruchy" -type f 2>/dev/null | sort)
 TOTAL_FILES=$(echo "$RUCHY_FILES" | wc -l)
 
 echo -e "Total Examples: ${GREEN}${TOTAL_FILES}${NC}"
