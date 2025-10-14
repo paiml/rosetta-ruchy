@@ -647,4 +647,216 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn test_detector_builder_pattern() {
+        let detector = RegressionDetector::new()
+            .with_threshold(10.0)
+            .with_history_retention_days(30);
+
+        assert_eq!(detector.threshold_percent, 10.0);
+        assert_eq!(detector.history_retention_days, 30);
+    }
+
+    #[test]
+    fn test_regression_severity_minor() {
+        let detector = RegressionDetector::new();
+        let comparison = ComparisonResult {
+            percent_change: 3.0,
+            absolute_change: 30000.0,
+            significance: SignificanceLevel::SignificantRegression,
+            baseline_mean: 1000000.0,
+            current_mean: 1030000.0,
+        };
+
+        let severity = detector.classify_regression_severity(&comparison);
+        assert!(matches!(severity, RegressionSeverity::Minor));
+    }
+
+    #[test]
+    fn test_regression_severity_moderate() {
+        let detector = RegressionDetector::new();
+        let comparison = ComparisonResult {
+            percent_change: 7.0,
+            absolute_change: 70000.0,
+            significance: SignificanceLevel::SignificantRegression,
+            baseline_mean: 1000000.0,
+            current_mean: 1070000.0,
+        };
+
+        let severity = detector.classify_regression_severity(&comparison);
+        assert!(matches!(severity, RegressionSeverity::Moderate));
+    }
+
+    #[test]
+    fn test_regression_severity_major() {
+        let detector = RegressionDetector::new();
+        let comparison = ComparisonResult {
+            percent_change: 20.0,
+            absolute_change: 200000.0,
+            significance: SignificanceLevel::SignificantRegression,
+            baseline_mean: 1000000.0,
+            current_mean: 1200000.0,
+        };
+
+        let severity = detector.classify_regression_severity(&comparison);
+        assert!(matches!(severity, RegressionSeverity::Major));
+    }
+
+    #[test]
+    fn test_regression_severity_critical() {
+        let detector = RegressionDetector::new();
+        let comparison = ComparisonResult {
+            percent_change: 35.0,
+            absolute_change: 350000.0,
+            significance: SignificanceLevel::SignificantRegression,
+            baseline_mean: 1000000.0,
+            current_mean: 1350000.0,
+        };
+
+        let severity = detector.classify_regression_severity(&comparison);
+        assert!(matches!(severity, RegressionSeverity::Critical));
+    }
+
+    #[test]
+    fn test_no_regression_when_improvement() {
+        let detector = RegressionDetector::new();
+        let comparison = ComparisonResult {
+            percent_change: -5.0,
+            absolute_change: -50000.0,
+            significance: SignificanceLevel::SignificantImprovement,
+            baseline_mean: 1000000.0,
+            current_mean: 950000.0,
+        };
+
+        let severity = detector.classify_regression_severity(&comparison);
+        assert!(matches!(severity, RegressionSeverity::None));
+    }
+
+    #[test]
+    fn test_no_regression_when_not_significant() {
+        let detector = RegressionDetector::new();
+        let comparison = ComparisonResult {
+            percent_change: 1.0,
+            absolute_change: 10000.0,
+            significance: SignificanceLevel::NotSignificant,
+            baseline_mean: 1000000.0,
+            current_mean: 1010000.0,
+        };
+
+        let severity = detector.classify_regression_severity(&comparison);
+        assert!(matches!(severity, RegressionSeverity::None));
+    }
+
+    #[test]
+    fn test_performance_baseline_creation() {
+        use crate::statistics::{SampleStatistics, OutlierAnalysis, Quartiles, DistributionMetrics, ConfidenceIntervals, Percentiles};
+
+        let baseline = PerformanceBaseline {
+            implementation: "rust".to_string(),
+            example: "fibonacci".to_string(),
+            statistics: StatisticalAnalysis {
+                sample_stats: SampleStatistics {
+                    count: 1000,
+                    mean: 5000000.0,
+                    median: 4900000.0,
+                    std_dev: 500000.0,
+                    std_error: 15811.0,
+                    min: 4000000.0,
+                    max: 6500000.0,
+                },
+                confidence_intervals: ConfidenceIntervals {
+                    ci_95: (4968622.0, 5031378.0),
+                    ci_99: (4959271.0, 5040729.0),
+                },
+                outliers: OutlierAnalysis {
+                    outlier_count: 5,
+                    outlier_percentage: 0.5,
+                    outlier_values: vec![],
+                    quartiles: Quartiles {
+                        q1: 4500000.0,
+                        q3: 5500000.0,
+                        iqr: 1000000.0,
+                        lower_fence: 3000000.0,
+                        upper_fence: 7000000.0,
+                    },
+                },
+                distribution: DistributionMetrics {
+                    skewness: 0.1,
+                    kurtosis: 0.0,
+                    coefficient_of_variation: 0.1,
+                    percentiles: Percentiles {
+                        p5: 4200000.0,
+                        p25: 4500000.0,
+                        p50: 4900000.0,
+                        p75: 5500000.0,
+                        p95: 6000000.0,
+                        p99: 6400000.0,
+                    },
+                },
+            },
+            timestamp: Utc::now(),
+            configuration: BaselineConfiguration {
+                iterations: 1000,
+                warmup_iterations: 100,
+                confidence_level: 0.95,
+            },
+            git_commit: Some("abc123".to_string()),
+            environment_fingerprint: "test_env".to_string(),
+        };
+
+        assert_eq!(baseline.implementation, "rust");
+        assert_eq!(baseline.example, "fibonacci");
+        assert_eq!(baseline.configuration.iterations, 1000);
+    }
+
+    #[test]
+    fn test_implementation_regression_structure() {
+        let regression = ImplementationRegression {
+            implementation: "python".to_string(),
+            comparison: ComparisonResult {
+                percent_change: 15.0,
+                absolute_change: 750000.0,
+                significance: SignificanceLevel::SignificantRegression,
+                baseline_mean: 5000000.0,
+                current_mean: 5750000.0,
+            },
+            severity: RegressionSeverity::Critical,
+            quality_gate_violation: true,
+            recommendations: vec!["Investigate performance drop".to_string()],
+        };
+
+        assert_eq!(regression.implementation, "python");
+        assert_eq!(regression.comparison.percent_change, 15.0);
+        assert!(regression.quality_gate_violation);
+        assert!(matches!(regression.severity, RegressionSeverity::Critical));
+    }
+
+    #[test]
+    fn test_regression_analysis_structure() {
+        let analysis = RegressionAnalysis {
+            regression_detected: true,
+            comparisons: vec![],
+            overall_status: RegressionStatus::Warning,
+            recommendations: vec!["Monitor performance".to_string()],
+            analyzed_at: Utc::now(),
+        };
+
+        assert!(analysis.regression_detected);
+        assert!(matches!(analysis.overall_status, RegressionStatus::Warning));
+        assert_eq!(analysis.recommendations.len(), 1);
+    }
+
+    #[test]
+    fn test_baseline_configuration() {
+        let config = BaselineConfiguration {
+            iterations: 1000,
+            warmup_iterations: 100,
+            confidence_level: 0.95,
+        };
+
+        assert_eq!(config.iterations, 1000);
+        assert_eq!(config.warmup_iterations, 100);
+        assert_eq!(config.confidence_level, 0.95);
+    }
 }
