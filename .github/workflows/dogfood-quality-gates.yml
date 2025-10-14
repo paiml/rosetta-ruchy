@@ -1,0 +1,58 @@
+name: Dogfood Quality Gates (v3.78.0)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  quality-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Cache Ruchy binary
+        uses: actions/cache@v3
+        id: cache-ruchy
+        with:
+          path: ~/.cargo/bin/ruchy
+          key: ruchy-3-78-0
+
+      - name: Install Ruchy 3.78.0
+        if: steps.cache-ruchy.outputs.cache-hit != 'true'
+        run: cargo install ruchy --version 3.78.0 --locked
+
+      - name: Verify Ruchy installation
+        run: ruchy --version
+
+      - name: Run test-all-examples
+        run: make test-all-examples
+
+      - name: Check success rate threshold
+        run: |
+          SUCCESS_RATE=$(jq -r '.summary.success_rate' test-results.json)
+          if (( $(echo "$SUCCESS_RATE < 0.90" | bc -l) )); then
+            echo "Failed: Success rate $SUCCESS_RATE below 90%"
+            exit 1
+          fi
+
+      - name: Run dogfood-quality
+        run: make dogfood-quality
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results
+          path: |
+            test-results.json
+            reports/
