@@ -708,6 +708,7 @@ impl BenchmarkRunner {
     /// Perform regression detection analysis
     ///
     /// Extracted from run_benchmark() for complexity reduction (Sprint 43 Ticket 4)
+    /// Refactored in Sprint 44 Ticket 5 for second-level complexity reduction
     async fn perform_regression_analysis(
         &self,
         results: &[BenchmarkResult],
@@ -726,45 +727,9 @@ impl BenchmarkRunner {
             .await
         {
             Ok(analysis) => {
-                match analysis.overall_status {
-                    RegressionStatus::Critical => {
-                        warn!("🚨 CRITICAL REGRESSION DETECTED - Toyota Way quality gate violated!");
-                        for rec in &analysis.recommendations {
-                            warn!("   Action required: {}", rec);
-                        }
-                    }
-                    RegressionStatus::Warning => {
-                        warn!("⚠️ Performance degradation detected");
-                        for rec in &analysis.recommendations {
-                            info!("   Recommendation: {}", rec);
-                        }
-                    }
-                    RegressionStatus::Healthy => {
-                        info!("✅ No performance regressions detected");
-                    }
-                    RegressionStatus::Inconclusive => {
-                        info!("❓ Insufficient baseline data for regression analysis");
-                        // Establish baselines for future comparisons
-                        self.establish_baselines(
-                            results,
-                            example_path.to_str().unwrap_or("unknown"),
-                            &regression_detector,
-                        )
-                        .await?;
-                    }
-                }
-
-                // Generate regression report
-                if let Ok(report) = regression_detector
-                    .generate_regression_report(&analysis)
-                    .await
-                {
-                    if let Err(e) = std::fs::write("results/regression_report.md", report) {
-                        warn!("Failed to write regression report: {}", e);
-                    } else {
-                        info!("📊 Regression analysis report: results/regression_report.md");
-                    }
-                }
+                self.handle_regression_status(&analysis, results, example_path, &regression_detector)
+                    .await?;
+                self.write_regression_report(&regression_detector, &analysis).await;
             }
             Err(e) => {
                 warn!("Failed to perform regression analysis: {}", e);
@@ -772,6 +737,95 @@ impl BenchmarkRunner {
         }
 
         Ok(())
+    }
+
+    /// Handle regression analysis status and take appropriate action
+    ///
+    /// Extracted from perform_regression_analysis() for complexity reduction (Sprint 44 Ticket 5)
+    async fn handle_regression_status(
+        &self,
+        analysis: &regression::RegressionAnalysis,
+        results: &[BenchmarkResult],
+        example_path: &Path,
+        regression_detector: &RegressionDetector,
+    ) -> Result<()> {
+        match analysis.overall_status {
+            RegressionStatus::Critical => {
+                self.handle_critical_regression(&analysis.recommendations);
+            }
+            RegressionStatus::Warning => {
+                self.handle_warning_regression(&analysis.recommendations);
+            }
+            RegressionStatus::Healthy => {
+                info!("✅ No performance regressions detected");
+            }
+            RegressionStatus::Inconclusive => {
+                self.handle_inconclusive_regression(results, example_path, regression_detector)
+                    .await?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Handle critical regression status
+    ///
+    /// Extracted from handle_regression_status() for complexity reduction
+    fn handle_critical_regression(&self, recommendations: &[String]) {
+        warn!("🚨 CRITICAL REGRESSION DETECTED - Toyota Way quality gate violated!");
+        for rec in recommendations {
+            warn!("   Action required: {}", rec);
+        }
+    }
+
+    /// Handle warning regression status
+    ///
+    /// Extracted from handle_regression_status() for complexity reduction
+    fn handle_warning_regression(&self, recommendations: &[String]) {
+        warn!("⚠️ Performance degradation detected");
+        for rec in recommendations {
+            info!("   Recommendation: {}", rec);
+        }
+    }
+
+    /// Handle inconclusive regression status
+    ///
+    /// Extracted from handle_regression_status() for complexity reduction
+    async fn handle_inconclusive_regression(
+        &self,
+        results: &[BenchmarkResult],
+        example_path: &Path,
+        regression_detector: &RegressionDetector,
+    ) -> Result<()> {
+        info!("❓ Insufficient baseline data for regression analysis");
+        self.establish_baselines(
+            results,
+            example_path.to_str().unwrap_or("unknown"),
+            regression_detector,
+        )
+        .await?;
+        Ok(())
+    }
+
+    /// Write regression analysis report to file
+    ///
+    /// Extracted from perform_regression_analysis() for complexity reduction (Sprint 44 Ticket 5)
+    async fn write_regression_report(
+        &self,
+        regression_detector: &RegressionDetector,
+        analysis: &regression::RegressionAnalysis,
+    ) {
+        match regression_detector.generate_regression_report(analysis).await {
+            Ok(report) => {
+                if let Err(e) = std::fs::write("results/regression_report.md", report) {
+                    warn!("Failed to write regression report: {}", e);
+                } else {
+                    info!("📊 Regression analysis report: results/regression_report.md");
+                }
+            }
+            Err(e) => {
+                warn!("Failed to generate regression report: {}", e);
+            }
+        }
     }
 
     /// Benchmark a single language implementation
