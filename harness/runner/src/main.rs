@@ -1003,199 +1003,267 @@ pub async fn run_app(cli: Cli) -> Result<()> {
             languages,
             iterations,
         } => {
-            let config = BenchmarkConfig {
-                iterations,
-                warmup_iterations: iterations / 10, // 10% warmup
-                cpu_affinity: vec![0],              // Fixed CPU affinity (configuration not yet implemented)
-                memory_profiling: true,
-                cpu_profiling: false,
-            };
-
-            let runner = BenchmarkRunner::new(config)?;
-            let default_languages = vec!["rust".to_string(), "python".to_string()];
-            let target_languages = if languages.is_empty() {
-                &default_languages
-            } else {
-                &languages
-            };
-
-            let results = runner.run_benchmark(&example, target_languages).await?;
-
-            // Output results in requested format
-            match cli.format {
-                OutputFormat::Json => {
-                    println!("{}", serde_json::to_string_pretty(&results)?);
-                }
-                OutputFormat::Yaml => {
-                    for result in &results {
-                        println!("{}", serde_yaml::to_string(result)?);
-                    }
-                }
-                OutputFormat::Markdown => {
-                    println!("# Benchmark Results\n");
-                    for result in &results {
-                        println!("## {} Implementation", result.language);
-                        println!(
-                            "- Mean time: {:.2}ms",
-                            result.metrics.execution_time.mean_ns as f64 / 1_000_000.0
-                        );
-                        println!(
-                            "- Peak memory: {:.2}MB",
-                            result.metrics.memory_usage.peak_memory_bytes as f64 / 1_048_576.0
-                        );
-                        println!();
-                    }
-                }
-                OutputFormat::Html => {
-                    println!("<html><body><h1>Benchmark Results</h1>");
-                    for result in &results {
-                        println!("<h2>{} Implementation</h2>", result.language);
-                        println!(
-                            "<p>Mean time: {:.2}ms</p>",
-                            result.metrics.execution_time.mean_ns as f64 / 1_000_000.0
-                        );
-                    }
-                    println!("</body></html>");
-                }
-            }
+            handle_run_command(example, languages, iterations, cli.format).await?;
         }
         Commands::Compare { results_dir, html } => {
-            info!(
-                "📊 Comparing benchmark results from {}",
-                results_dir.display()
-            );
-
-            // Load all JSON results from directory
-            let results = load_benchmark_results(&results_dir)?;
-
-            if results.is_empty() {
-                warn!("No benchmark results found in {}", results_dir.display());
-                return Ok(());
-            }
-
-            // Generate comparison report
-            generate_comparison_report(&results, html)?;
-
-            info!("✅ Comparison report generated successfully");
+            handle_compare_command(results_dir, html)?;
         }
         Commands::Validate => {
-            info!("🔍 Validating benchmark environment");
-
-            let mut env_controller = EnvironmentController::new();
-
-            match env_controller.detect_environment().await {
-                Ok(()) => {
-                    // Clone state to avoid borrowing issues
-                    let state = env_controller.current_state.clone();
-                    println!("## 🖥️  System Environment Report");
-                    println!();
-                    println!("**CPU Cores**: {} available", state.available_cores.len());
-                    println!(
-                        "**CPU Governors**: {:?}",
-                        state
-                            .cpu_governors
-                            .iter()
-                            .collect::<std::collections::HashSet<_>>()
-                    );
-                    println!("**CPU Frequencies**: {:?} MHz", state.cpu_frequencies);
-                    println!(
-                        "**Load Average**: {:.2}, {:.2}, {:.2}",
-                        state.load_average.0, state.load_average.1, state.load_average.2
-                    );
-                    println!(
-                        "**Memory**: {:.1} GB total, {:.1}% used",
-                        state.memory_info.total_bytes as f64 / 1e9,
-                        state.memory_info.usage_percent
-                    );
-                    println!(
-                        "**IRQ Balance**: {}",
-                        if state.irq_balance_active {
-                            "active"
-                        } else {
-                            "inactive"
-                        }
-                    );
-                    println!();
-
-                    // Test isolation capabilities
-                    match env_controller.apply_isolation().await {
-                        Ok(isolation) => {
-                            if isolation.success {
-                                println!("✅ **Environment isolation**: Fully supported");
-                                println!(
-                                    "   - CPU affinity: ✅ Applied to cores {:?}",
-                                    isolation.isolated_cores
-                                );
-                                if let Some(governor) = &isolation.applied_governor {
-                                    println!("   - CPU governor: ✅ Set to '{}'", governor);
-                                } else {
-                                    println!("   - CPU governor: ⚠️ Could not set (requires root)");
-                                }
-                            } else {
-                                println!("⚠️ **Environment isolation**: Partially supported");
-                                for error in &isolation.errors {
-                                    println!("   - ❌ {}", error);
-                                }
-                            }
-
-                            for warning in &isolation.warnings {
-                                println!("   - ⚠️ {}", warning);
-                            }
-                        }
-                        Err(e) => {
-                            println!("❌ **Environment isolation**: Failed - {}", e);
-                        }
-                    }
-
-                    println!();
-                    println!("**Recommendations**:");
-
-                    if state.load_average.0 > 0.5 {
-                        println!(
-                            "- ⚠️ High system load ({:.2}) may affect benchmark reliability",
-                            state.load_average.0
-                        );
-                    }
-
-                    if state.memory_info.usage_percent > 80.0 {
-                        println!(
-                            "- ⚠️ High memory usage ({:.1}%) may cause swapping",
-                            state.memory_info.usage_percent
-                        );
-                    }
-
-                    if state.irq_balance_active {
-                        println!("- 💡 Consider disabling IRQ balancing: `sudo systemctl stop irqbalance`");
-                    }
-
-                    if !state.cpu_governors.iter().any(|g| g == "performance") {
-                        println!("- 💡 Consider performance governor: `sudo cpupower frequency-set -g performance`");
-                    }
-
-                    println!(
-                        "- 💡 Run benchmarks with elevated privileges for full isolation control"
-                    );
-                }
-                Err(e) => {
-                    println!("❌ Environment validation failed: {}", e);
-                }
-            }
+            handle_validate_command().await?;
         }
         Commands::Regression {
             baseline: _,
             current: _,
             threshold,
         } => {
-            info!(
-                "🚨 Checking for performance regressions (threshold: {}%)",
-                threshold
-            );
-            // Note: Regression detection tracked in GitHub issue
-            println!("Regression detection not yet implemented - coming in ROSETTA-009");
+            handle_regression_command(threshold)?;
         }
     }
 
     info!("🎯 Toyota Way: Quality measurement completed");
+    Ok(())
+}
+
+/// Handle the 'run' command - execute benchmarks
+///
+/// Extracted from run_app() for complexity reduction (Sprint 43 Ticket 4)
+async fn handle_run_command(
+    example: PathBuf,
+    languages: Vec<String>,
+    iterations: usize,
+    format: OutputFormat,
+) -> Result<()> {
+    let config = BenchmarkConfig {
+        iterations,
+        warmup_iterations: iterations / 10, // 10% warmup
+        cpu_affinity: vec![0],              // Fixed CPU affinity (configuration not yet implemented)
+        memory_profiling: true,
+        cpu_profiling: false,
+    };
+
+    let runner = BenchmarkRunner::new(config)?;
+    let default_languages = vec!["rust".to_string(), "python".to_string()];
+    let target_languages = if languages.is_empty() {
+        &default_languages
+    } else {
+        &languages
+    };
+
+    let results = runner.run_benchmark(&example, target_languages).await?;
+
+    // Output results in requested format
+    output_benchmark_results(&results, format)?;
+
+    Ok(())
+}
+
+/// Output benchmark results in the requested format
+///
+/// Extracted from handle_run_command() for complexity reduction
+fn output_benchmark_results(results: &[BenchmarkResult], format: OutputFormat) -> Result<()> {
+    match format {
+        OutputFormat::Json => {
+            println!("{}", serde_json::to_string_pretty(&results)?);
+        }
+        OutputFormat::Yaml => {
+            for result in results {
+                println!("{}", serde_yaml::to_string(result)?);
+            }
+        }
+        OutputFormat::Markdown => {
+            println!("# Benchmark Results\n");
+            for result in results {
+                println!("## {} Implementation", result.language);
+                println!(
+                    "- Mean time: {:.2}ms",
+                    result.metrics.execution_time.mean_ns as f64 / 1_000_000.0
+                );
+                println!(
+                    "- Peak memory: {:.2}MB",
+                    result.metrics.memory_usage.peak_memory_bytes as f64 / 1_048_576.0
+                );
+                println!();
+            }
+        }
+        OutputFormat::Html => {
+            println!("<html><body><h1>Benchmark Results</h1>");
+            for result in results {
+                println!("<h2>{} Implementation</h2>", result.language);
+                println!(
+                    "<p>Mean time: {:.2}ms</p>",
+                    result.metrics.execution_time.mean_ns as f64 / 1_000_000.0
+                );
+            }
+            println!("</body></html>");
+        }
+    }
+    Ok(())
+}
+
+/// Handle the 'compare' command - compare benchmark results
+///
+/// Extracted from run_app() for complexity reduction (Sprint 43 Ticket 4)
+fn handle_compare_command(results_dir: PathBuf, html: bool) -> Result<()> {
+    info!(
+        "📊 Comparing benchmark results from {}",
+        results_dir.display()
+    );
+
+    // Load all JSON results from directory
+    let results = load_benchmark_results(&results_dir)?;
+
+    if results.is_empty() {
+        warn!("No benchmark results found in {}", results_dir.display());
+        return Ok(());
+    }
+
+    // Generate comparison report
+    generate_comparison_report(&results, html)?;
+
+    info!("✅ Comparison report generated successfully");
+    Ok(())
+}
+
+/// Handle the 'validate' command - validate benchmark environment
+///
+/// Extracted from run_app() for complexity reduction (Sprint 43 Ticket 4)
+async fn handle_validate_command() -> Result<()> {
+    info!("🔍 Validating benchmark environment");
+
+    let mut env_controller = EnvironmentController::new();
+
+    match env_controller.detect_environment().await {
+        Ok(()) => {
+            print_environment_report(&env_controller)?;
+            test_isolation_capabilities(&mut env_controller).await?;
+            print_recommendations(&env_controller.current_state)?;
+        }
+        Err(e) => {
+            println!("❌ Environment validation failed: {}", e);
+        }
+    }
+
+    Ok(())
+}
+
+/// Print system environment report
+///
+/// Extracted from handle_validate_command() for complexity reduction
+fn print_environment_report(env_controller: &EnvironmentController) -> Result<()> {
+    let state = &env_controller.current_state;
+    println!("## 🖥️  System Environment Report");
+    println!();
+    println!("**CPU Cores**: {} available", state.available_cores.len());
+    println!(
+        "**CPU Governors**: {:?}",
+        state
+            .cpu_governors
+            .iter()
+            .collect::<std::collections::HashSet<_>>()
+    );
+    println!("**CPU Frequencies**: {:?} MHz", state.cpu_frequencies);
+    println!(
+        "**Load Average**: {:.2}, {:.2}, {:.2}",
+        state.load_average.0, state.load_average.1, state.load_average.2
+    );
+    println!(
+        "**Memory**: {:.1} GB total, {:.1}% used",
+        state.memory_info.total_bytes as f64 / 1e9,
+        state.memory_info.usage_percent
+    );
+    println!(
+        "**IRQ Balance**: {}",
+        if state.irq_balance_active {
+            "active"
+        } else {
+            "inactive"
+        }
+    );
+    println!();
+    Ok(())
+}
+
+/// Test isolation capabilities
+///
+/// Extracted from handle_validate_command() for complexity reduction
+async fn test_isolation_capabilities(env_controller: &mut EnvironmentController) -> Result<()> {
+    match env_controller.apply_isolation().await {
+        Ok(isolation) => {
+            if isolation.success {
+                println!("✅ **Environment isolation**: Fully supported");
+                println!(
+                    "   - CPU affinity: ✅ Applied to cores {:?}",
+                    isolation.isolated_cores
+                );
+                if let Some(governor) = &isolation.applied_governor {
+                    println!("   - CPU governor: ✅ Set to '{}'", governor);
+                } else {
+                    println!("   - CPU governor: ⚠️ Could not set (requires root)");
+                }
+            } else {
+                println!("⚠️ **Environment isolation**: Partially supported");
+                for error in &isolation.errors {
+                    println!("   - ❌ {}", error);
+                }
+            }
+
+            for warning in &isolation.warnings {
+                println!("   - ⚠️ {}", warning);
+            }
+        }
+        Err(e) => {
+            println!("❌ **Environment isolation**: Failed - {}", e);
+        }
+    }
+    Ok(())
+}
+
+/// Print recommendations based on system state
+///
+/// Extracted from handle_validate_command() for complexity reduction
+fn print_recommendations(state: &isolation::EnvironmentState) -> Result<()> {
+    println!();
+    println!("**Recommendations**:");
+
+    if state.load_average.0 > 0.5 {
+        println!(
+            "- ⚠️ High system load ({:.2}) may affect benchmark reliability",
+            state.load_average.0
+        );
+    }
+
+    if state.memory_info.usage_percent > 80.0 {
+        println!(
+            "- ⚠️ High memory usage ({:.1}%) may cause swapping",
+            state.memory_info.usage_percent
+        );
+    }
+
+    if state.irq_balance_active {
+        println!("- 💡 Consider disabling IRQ balancing: `sudo systemctl stop irqbalance`");
+    }
+
+    if !state.cpu_governors.iter().any(|g| g == "performance") {
+        println!("- 💡 Consider performance governor: `sudo cpupower frequency-set -g performance`");
+    }
+
+    println!(
+        "- 💡 Run benchmarks with elevated privileges for full isolation control"
+    );
+
+    Ok(())
+}
+
+/// Handle the 'regression' command - check for performance regressions
+///
+/// Extracted from run_app() for complexity reduction (Sprint 43 Ticket 4)
+fn handle_regression_command(threshold: f64) -> Result<()> {
+    info!(
+        "🚨 Checking for performance regressions (threshold: {}%)",
+        threshold
+    );
+    // Note: Regression detection tracked in GitHub issue
+    println!("Regression detection not yet implemented - coming in ROSETTA-009");
     Ok(())
 }
 
