@@ -977,58 +977,58 @@ impl BenchmarkRunner {
 
     /// Collect memory profiling data for a language
     ///
-    /// Extracted from benchmark_single_language() for complexity reduction
+    /// Refactored in Sprint 44 Ticket 10 for complexity reduction
     async fn collect_memory_profile(
         &self,
         memory_profiler: Option<MemoryProfiler>,
         language: &str,
     ) -> Option<MemoryProfile> {
-        if let Some(mut profiler) = memory_profiler {
-            // Allow some time for memory sampling during simulation
-            tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+        let mut profiler = memory_profiler?;
 
-            match profiler.stop_profiling().await {
-                Ok(profile) => {
-                    info!(
-                        "🧠 {} memory profile: peak={:.2}MB, avg={:.2}MB, leak={}KB",
-                        language,
-                        profile.peak_usage_bytes as f64 / 1_048_576.0,
-                        profile.average_usage_bytes as f64 / 1_048_576.0,
-                        profile.memory_leak_bytes / 1024
-                    );
+        // Allow some time for memory sampling during simulation
+        tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
-                    // Generate memory report if significant usage
-                    if profile.peak_usage_bytes > 10 * 1024 * 1024 {
-                        // > 10MB
-                        let memory_report = MemoryProfiler::generate_memory_report(&profile);
-                        if let Err(e) = std::fs::write(
-                            format!("results/{}_memory_profile.md", language),
-                            memory_report,
-                        ) {
-                            warn!(
-                                "Failed to write memory profile report for {}: {}",
-                                language, e
-                            );
-                        } else {
-                            info!(
-                                "📊 Memory profile report: results/{}_memory_profile.md",
-                                language
-                            );
-                        }
-                    }
-
-                    Some(profile)
-                }
-                Err(e) => {
-                    warn!(
-                        "Failed to complete memory profiling for {}: {}",
-                        language, e
-                    );
-                    None
-                }
+        match profiler.stop_profiling().await {
+            Ok(profile) => {
+                self.log_memory_profile_summary(language, &profile);
+                self.write_memory_report_if_significant(language, &profile);
+                Some(profile)
             }
-        } else {
-            None
+            Err(e) => {
+                warn!(
+                    "Failed to complete memory profiling for {}: {}",
+                    language, e
+                );
+                None
+            }
+        }
+    }
+
+    /// Log memory profile summary
+    fn log_memory_profile_summary(&self, language: &str, profile: &MemoryProfile) {
+        info!(
+            "🧠 {} memory profile: peak={:.2}MB, avg={:.2}MB, leak={}KB",
+            language,
+            profile.peak_usage_bytes as f64 / 1_048_576.0,
+            profile.average_usage_bytes as f64 / 1_048_576.0,
+            profile.memory_leak_bytes / 1024
+        );
+    }
+
+    /// Write memory report to file if memory usage is significant
+    fn write_memory_report_if_significant(&self, language: &str, profile: &MemoryProfile) {
+        const SIGNIFICANT_MEMORY_THRESHOLD: u64 = 10 * 1024 * 1024; // 10MB
+
+        if profile.peak_usage_bytes <= SIGNIFICANT_MEMORY_THRESHOLD {
+            return;
+        }
+
+        let memory_report = MemoryProfiler::generate_memory_report(profile);
+        let report_path = format!("results/{}_memory_profile.md", language);
+
+        match std::fs::write(&report_path, memory_report) {
+            Ok(_) => info!("📊 Memory profile report: {}", report_path),
+            Err(e) => warn!("Failed to write memory profile report for {}: {}", language, e),
         }
     }
 
