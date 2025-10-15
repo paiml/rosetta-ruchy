@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2025-10-15T08:55:01.657663093Z",
+    "generated_at": "2025-10-15T08:56:14.623935276Z",
     "format_version": "1.0.0",
     "generator": "Rosetta Ruchy Benchmark Harness",
     "suite_version": "1.6.0",
@@ -28,7 +28,7 @@
       "applied_governor": null,
       "warnings": [
         "Frequency lock failed for core 0: Failed to lock frequency",
-        "High system load: 5.21",
+        "High system load: 6.66",
         "IRQ balancing is active - may affect benchmark consistency"
       ],
       "errors": []
@@ -141,195 +141,119 @@
         4792,
         4792,
         4792,
-        4789,
-        4791,
-        4787,
+        4783,
+        4779,
+        4782,
         4789,
         4788,
-        4789,
-        4769,
-        4770,
-        4773,
-        4767,
+        4783,
+        4759,
+        4760,
+        4763,
         4772,
-        4768,
-        4768,
-        4770,
-        4772,
-        4767,
-        4766,
-        4767,
+        4760,
+        4763,
+        4733,
+        4743,
+        4737,
+        4727,
+        4740,
+        4730,
         4792,
         4792,
         4792,
         4792,
         4792,
         4792,
-        4788,
-        4789,
-        4789,
-        4789,
-        4789,
-        4788,
-        4767,
-        4767,
-        4767,
-        4770,
-        4767,
-        4767,
+        4778,
+        4783,
+        4783,
+        4783,
+        4783,
+        4783,
+        4762,
+        4763,
         4771,
-        4767,
-        4772,
-        4771,
-        4774,
-        4774
+        4763,
+        4763,
+        4763,
+        4735,
+        4736,
+        4733,
+        4737,
+        4730,
+        4736
       ],
       "load_average": [
-        5.21,
-        5.51,
-        6.53
+        6.66,
+        5.93,
+        6.59
       ],
       "memory_info": {
         "total_bytes": 137771083628544,
-        "available_bytes": 106183343996928,
-        "usage_percent": 22.927699194689005,
+        "available_bytes": 105459155468288,
+        "usage_percent": 23.453345440306514,
         "swap_used_bytes": 4760971247616
       },
       "irq_balance_active": true
     }
   },
   "configuration": {
-    "iterations": 1000,
-    "warmup_iterations": 100,
+    "iterations": 100,
+    "warmup_iterations": 10,
     "confidence_level": 0.95,
     "outlier_removal": false,
-    "min_sample_size": 1000
+    "min_sample_size": 30
   },
   "results": {
-    "rust": {
-      "language": "rust",
-      "version": "Unknown",
-      "statistics": {
-        "sample_stats": {
-          "count": 1000,
-          "mean": 500800.8851578564,
-          "median": 500216.4783232646,
-          "std_dev": 24896.671979789313,
-          "std_error": 787.301896142278,
-          "min": 425958.6772998284,
-          "max": 569785.3405008506
-        },
-        "confidence_intervals": {
-          "ci_95": [
-            499255.9300046278,
-            502345.840311085
-          ],
-          "ci_99": [
-            498769.04820194806,
-            502832.7221137647
-          ]
-        },
-        "outliers": {
-          "outlier_count": 5,
-          "outlier_percentage": 0.5,
-          "outlier_values": [
-            425958.6772998284,
-            430446.1007054072,
-            433317.25042156095,
-            569586.5635904123,
-            569785.3405008506
-          ],
-          "quartiles": {
-            "q1": 484557.0284083532,
-            "q3": 517119.34142173256,
-            "iqr": 32562.313013379346,
-            "lower_fence": 435713.5588882842,
-            "upper_fence": 565962.8109418016
-          }
-        },
-        "distribution": {
-          "skewness": 0.05407572596837988,
-          "kurtosis": -0.07774471086552648,
-          "coefficient_of_variation": 0.04971371400819646,
-          "percentiles": {
-            "p5": 460964.0623118948,
-            "p25": 484557.0284083532,
-            "p50": 500216.4783232646,
-            "p75": 517119.34142173256,
-            "p95": 545144.1280426548,
-            "p99": 558461.8572704669
-          }
-        }
-      },
-      "raw_times_ns": null,
-      "memory_usage": {
-        "peak_usage_bytes": 614400,
-        "average_usage_bytes": 512000,
-        "allocations": 512,
-        "deallocations": 512
-      },
-      "binary_size": {
-        "total_size_bytes": 2500000,
-        "debug_size_bytes": 0,
-        "stripped_size_bytes": 2500000,
-        "compression_ratio": null
-      },
-      "compilation": null
-    },
     "python": {
       "language": "python",
       "version": "Unknown",
       "statistics": {
         "sample_stats": {
-          "count": 1000,
-          "mean": 5061311.317428154,
-          "median": 5006497.165834886,
-          "std_dev": 754860.5856641714,
-          "std_error": 23870.787665874283,
-          "min": 3091451.237887574,
-          "max": 7399354.006834662
+          "count": 100,
+          "mean": 5020844.4334555045,
+          "median": 4981109.317552194,
+          "std_dev": 668074.2549055517,
+          "std_error": 66807.42549055516,
+          "min": 3482689.343030099,
+          "max": 6767927.008354659
         },
         "confidence_intervals": {
           "ci_95": [
-            5014468.681081506,
-            5108153.953774801
+            4888284.007305332,
+            5153404.8596056765
           ],
           "ci_99": [
-            4999706.552110278,
-            5122916.08274603
+            4845381.046560231,
+            5196307.820350778
           ]
         },
         "outliers": {
-          "outlier_count": 7,
-          "outlier_percentage": 0.7000000000000001,
+          "outlier_count": 1,
+          "outlier_percentage": 1.0,
           "outlier_values": [
-            7010930.437950878,
-            7073703.667834582,
-            7093046.443362123,
-            7172016.525616075,
-            7245568.715773085,
-            7391612.6300253365,
-            7399354.006834662
+            6767927.008354659
           ],
           "quartiles": {
-            "q1": 4550872.65779119,
-            "q3": 5531365.285918803,
-            "iqr": 980492.6281276131,
-            "lower_fence": 3080133.71559977,
-            "upper_fence": 7002104.228110222
+            "q1": 4549183.61998902,
+            "q3": 5417220.083157035,
+            "iqr": 868036.4631680148,
+            "lower_fence": 3247128.9252369977,
+            "upper_fence": 6719274.777909057
           }
         },
         "distribution": {
-          "skewness": 0.3358560601036106,
-          "kurtosis": 0.0001814545195926165,
-          "coefficient_of_variation": 0.1491432829007928,
+          "skewness": 0.41605160367868066,
+          "kurtosis": 0.15576747444214423,
+          "coefficient_of_variation": 0.1330601383412634,
           "percentiles": {
-            "p5": 3917970.810936718,
-            "p25": 4550872.65779119,
-            "p50": 5006497.165834886,
-            "p75": 5531365.285918803,
-            "p95": 6480283.610518177,
-            "p99": 6966915.456793931
+            "p5": 4066768.295627936,
+            "p25": 4549183.61998902,
+            "p50": 4981109.317552194,
+            "p75": 5417220.083157035,
+            "p95": 6379454.545713185,
+            "p99": 6638200.5258600535
           }
         }
       },
@@ -347,6 +271,70 @@
         "compression_ratio": null
       },
       "compilation": null
+    },
+    "rust": {
+      "language": "rust",
+      "version": "Unknown",
+      "statistics": {
+        "sample_stats": {
+          "count": 100,
+          "mean": 499729.521213519,
+          "median": 499369.5158749883,
+          "std_dev": 22059.16902575995,
+          "std_error": 2205.916902575995,
+          "min": 443218.8765241315,
+          "max": 553093.5046638143
+        },
+        "confidence_intervals": {
+          "ci_95": [
+            495352.5035016378,
+            504106.5389254002
+          ],
+          "ci_99": [
+            493935.88902228547,
+            505523.1534047525
+          ]
+        },
+        "outliers": {
+          "outlier_count": 0,
+          "outlier_percentage": 0.0,
+          "outlier_values": [],
+          "quartiles": {
+            "q1": 484497.0720970485,
+            "q3": 513537.5003570523,
+            "iqr": 29040.4282600038,
+            "lower_fence": 440936.4297070428,
+            "upper_fence": 557098.1427470581
+          }
+        },
+        "distribution": {
+          "skewness": 0.15745772732252553,
+          "kurtosis": 0.047812021836038276,
+          "coefficient_of_variation": 0.0441422171181573,
+          "percentiles": {
+            "p5": 466726.6398041609,
+            "p25": 484497.0720970485,
+            "p50": 499369.5158749883,
+            "p75": 513537.5003570523,
+            "p95": 542301.9619606922,
+            "p99": 549536.5815576296
+          }
+        }
+      },
+      "raw_times_ns": null,
+      "memory_usage": {
+        "peak_usage_bytes": 614400,
+        "average_usage_bytes": 512000,
+        "allocations": 512,
+        "deallocations": 512
+      },
+      "binary_size": {
+        "total_size_bytes": 2500000,
+        "debug_size_bytes": 0,
+        "stripped_size_bytes": 2500000,
+        "compression_ratio": null
+      },
+      "compilation": null
     }
   },
   "comparisons": [
@@ -354,13 +342,13 @@
       "baseline": "rust",
       "compared": "python",
       "result": {
-        "percent_change": 910.6434448159549,
-        "absolute_change": 4560510.432270298,
+        "percent_change": 904.7123934689968,
+        "absolute_change": 4521114.912241985,
         "significance": "SignificantRegression",
-        "baseline_mean": 500800.8851578564,
-        "current_mean": 5061311.317428154
+        "baseline_mean": 499729.521213519,
+        "current_mean": 5020844.4334555045
       },
-      "interpretation": "Significantly slower by 910.6%"
+      "interpretation": "Significantly slower by 904.7%"
     }
   ],
   "summary": {
@@ -372,13 +360,13 @@
       {
         "rank": 1,
         "implementation": "rust",
-        "score": 500800.8851578564,
+        "score": 499729.521213519,
         "score_type": "execution_time_ns"
       },
       {
         "rank": 2,
         "implementation": "python",
-        "score": 5061311.317428154,
+        "score": 5020844.4334555045,
         "score_type": "execution_time_ns"
       }
     ],
