@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2025-10-15T08:29:43.281187932Z",
+    "generated_at": "2025-10-15T08:34:14.380649997Z",
     "format_version": "1.0.0",
     "generator": "Rosetta Ruchy Benchmark Harness",
     "suite_version": "1.6.0",
@@ -28,7 +28,7 @@
       "applied_governor": null,
       "warnings": [
         "Frequency lock failed for core 0: Failed to lock frequency",
-        "High system load: 49.71",
+        "High system load: 5.69",
         "IRQ balancing is active - may affect benchmark consistency"
       ],
       "errors": []
@@ -142,57 +142,57 @@
         4792,
         4792,
         4781,
+        4781,
         4780,
         4781,
-        4776,
         4781,
         4781,
-        4755,
-        4755,
-        4774,
         4753,
-        4753,
-        4754,
-        4717,
-        4721,
-        4717,
-        4718,
-        4718,
-        4718,
-        4792,
-        4792,
-        4792,
-        4792,
-        4792,
-        4792,
-        4781,
-        4781,
-        4781,
-        4781,
-        4779,
-        4780,
-        4754,
-        4753,
-        4753,
-        4758,
-        4754,
-        4753,
-        4717,
+        4734,
+        4735,
+        4734,
+        4733,
+        4732,
+        4723,
+        4711,
+        4722,
+        4724,
         4719,
+        4709,
+        4792,
+        4792,
+        4792,
+        4792,
+        4792,
+        4792,
+        4782,
+        4781,
+        4782,
+        4782,
+        4782,
+        4782,
+        4735,
+        4735,
+        4735,
+        4735,
+        4735,
+        4735,
+        4723,
+        4720,
         4719,
-        4721,
-        4721,
-        4719
+        4722,
+        4714,
+        4722
       ],
       "load_average": [
-        49.71,
-        16.91,
-        10.13
+        5.69,
+        10.21,
+        9.1
       ],
       "memory_info": {
         "total_bytes": 137771083628544,
-        "available_bytes": 105726693343232,
-        "usage_percent": 23.25915528958858,
+        "available_bytes": 105525731655680,
+        "usage_percent": 23.40502166608732,
         "swap_used_bytes": 4760971247616
       },
       "irq_balance_active": true
@@ -206,6 +206,76 @@
     "min_sample_size": 1000
   },
   "results": {
+    "rust": {
+      "language": "rust",
+      "version": "Unknown",
+      "statistics": {
+        "sample_stats": {
+          "count": 1000,
+          "mean": 500800.8851578564,
+          "median": 500216.4783232646,
+          "std_dev": 24896.671979789313,
+          "std_error": 787.301896142278,
+          "min": 425958.6772998284,
+          "max": 569785.3405008506
+        },
+        "confidence_intervals": {
+          "ci_95": [
+            499255.9300046278,
+            502345.840311085
+          ],
+          "ci_99": [
+            498769.04820194806,
+            502832.7221137647
+          ]
+        },
+        "outliers": {
+          "outlier_count": 5,
+          "outlier_percentage": 0.5,
+          "outlier_values": [
+            425958.6772998284,
+            430446.1007054072,
+            433317.25042156095,
+            569586.5635904123,
+            569785.3405008506
+          ],
+          "quartiles": {
+            "q1": 484557.0284083532,
+            "q3": 517119.34142173256,
+            "iqr": 32562.313013379346,
+            "lower_fence": 435713.5588882842,
+            "upper_fence": 565962.8109418016
+          }
+        },
+        "distribution": {
+          "skewness": 0.05407572596837988,
+          "kurtosis": -0.07774471086552648,
+          "coefficient_of_variation": 0.04971371400819646,
+          "percentiles": {
+            "p5": 460964.0623118948,
+            "p25": 484557.0284083532,
+            "p50": 500216.4783232646,
+            "p75": 517119.34142173256,
+            "p95": 545144.1280426548,
+            "p99": 558461.8572704669
+          }
+        }
+      },
+      "raw_times_ns": null,
+      "memory_usage": {
+        "peak_usage_bytes": 614400,
+        "average_usage_bytes": 512000,
+        "allocations": 512,
+        "deallocations": 512
+      },
+      "binary_size": {
+        "total_size_bytes": 2500000,
+        "debug_size_bytes": 0,
+        "stripped_size_bytes": 2500000,
+        "compression_ratio": null
+      },
+      "compilation": null
+    },
     "python": {
       "language": "python",
       "version": "Unknown",
@@ -274,76 +344,6 @@
         "total_size_bytes": 0,
         "debug_size_bytes": 0,
         "stripped_size_bytes": 0,
-        "compression_ratio": null
-      },
-      "compilation": null
-    },
-    "rust": {
-      "language": "rust",
-      "version": "Unknown",
-      "statistics": {
-        "sample_stats": {
-          "count": 1000,
-          "mean": 500800.8851578564,
-          "median": 500216.4783232646,
-          "std_dev": 24896.671979789313,
-          "std_error": 787.301896142278,
-          "min": 425958.6772998284,
-          "max": 569785.3405008506
-        },
-        "confidence_intervals": {
-          "ci_95": [
-            499255.9300046278,
-            502345.840311085
-          ],
-          "ci_99": [
-            498769.04820194806,
-            502832.7221137647
-          ]
-        },
-        "outliers": {
-          "outlier_count": 5,
-          "outlier_percentage": 0.5,
-          "outlier_values": [
-            425958.6772998284,
-            430446.1007054072,
-            433317.25042156095,
-            569586.5635904123,
-            569785.3405008506
-          ],
-          "quartiles": {
-            "q1": 484557.0284083532,
-            "q3": 517119.34142173256,
-            "iqr": 32562.313013379346,
-            "lower_fence": 435713.5588882842,
-            "upper_fence": 565962.8109418016
-          }
-        },
-        "distribution": {
-          "skewness": 0.05407572596837988,
-          "kurtosis": -0.07774471086552648,
-          "coefficient_of_variation": 0.04971371400819646,
-          "percentiles": {
-            "p5": 460964.0623118948,
-            "p25": 484557.0284083532,
-            "p50": 500216.4783232646,
-            "p75": 517119.34142173256,
-            "p95": 545144.1280426548,
-            "p99": 558461.8572704669
-          }
-        }
-      },
-      "raw_times_ns": null,
-      "memory_usage": {
-        "peak_usage_bytes": 614400,
-        "average_usage_bytes": 512000,
-        "allocations": 512,
-        "deallocations": 512
-      },
-      "binary_size": {
-        "total_size_bytes": 2500000,
-        "debug_size_bytes": 0,
-        "stripped_size_bytes": 2500000,
         "compression_ratio": null
       },
       "compilation": null
