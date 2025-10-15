@@ -1,0 +1,453 @@
+name: Transpiler Performance Tracking
+
+on:
+  schedule:
+    - cron: '0 6 * * 0'  # Weekly on Sunday at 6am UTC
+  workflow_dispatch:  # Manual trigger
+    inputs:
+      baseline_only:
+        description: 'Only establish baseline (skip regression detection)'
+        required: false
+        default: 'false'
+
+env:
+  RUST_BACKTRACE: 1
+  BASHRS_VERSION: '1.0.0-rc1'
+
+jobs:
+  establish-baseline:
+    name: Establish Performance Baseline
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-perf-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            llvm-14-dev \
+            libclang-14-dev \
+            clang-14 \
+            gcc \
+            make \
+            bash \
+            jq
+
+      - name: Install transpilers
+        run: |
+          # Install decy from source
+          cd /tmp
+          git clone https://github.com/paiml/decy.git
+          cd decy
+          cargo install --path .
+
+          # Install bashrs from crates.io
+          cargo install bashrs --version ${{ env.BASHRS_VERSION }}
+
+          # Verify installations
+          decy --version || echo "decy not available"
+          bashrs --version
+
+      - name: Install benchmarking tools
+        run: |
+          cargo install hyperfine
+
+      - name: Benchmark decy performance
+        continue-on-error: true
+        run: |
+          echo "Benchmarking decy transpiler performance..."
+          mkdir -p performance-results/decy
+
+          for algo in 001-fibonacci 004-binary-search 022-selection-sort 021-counting-sort \
+                      002-quicksort 003-mergesort 018-heap-sort 019-radix-sort; do
+            echo "Benchmarking $algo..."
+            cd examples/algorithms/$algo/implementations/c/
+
+            # Get C source file
+            C_FILE=$(ls *.c | head -1)
+
+            # Build original C version
+            make clean && make all
+
+            # Get C binary name
+            C_BINARY=$(ls -1 | grep -v '\.c$\|\.h$\|\.txt$\|\.rs$\|Makefile' | head -1)
+
+            # Benchmark original C execution
+            hyperfine --warmup 5 --runs 20 \
+              --export-json "../../../../performance-results/decy/${algo}-original.json" \
+              "./$C_BINARY" || echo "C benchmark failed"
+
+            # Transpile with decy
+            decy "$C_FILE" -o transpiled.rs 2>&1 | tee transpile-output.txt
+
+            if [ -f transpiled.rs ]; then
+              # Benchmark transpilation time
+              hyperfine --warmup 1 --runs 10 \
+                --export-json "../../../../performance-results/decy/${algo}-transpile.json" \
+                "decy $C_FILE -o transpiled_tmp.rs && rm -f transpiled_tmp.rs" || echo "Transpile benchmark failed"
+
+              # Compile transpiled Rust
+              rustc -C opt-level=3 transpiled.rs -o transpiled_bin
+
+              if [ -f transpiled_bin ]; then
+                # Benchmark transpiled execution
+                hyperfine --warmup 5 --runs 20 \
+                  --export-json "../../../../performance-results/decy/${algo}-transpiled.json" \
+                  "./transpiled_bin" || echo "Transpiled benchmark failed"
+              fi
+            fi
+
+            cd ../../../../..
+          done
+
+      - name: Benchmark bashrs performance
+        continue-on-error: true
+        run: |
+          echo "Benchmarking bashrs transpiler performance..."
+          mkdir -p performance-results/bashrs
+
+          for algo in 001-fibonacci 004-binary-search 022-selection-sort 021-counting-sort \
+                      002-quicksort 003-mergesort 018-heap-sort 019-radix-sort; do
+            echo "Benchmarking $algo..."
+            cd examples/algorithms/$algo/implementations/bash/
+
+            # Get Bash source file
+            BASH_FILE=$(ls *.sh | head -1)
+
+            # Benchmark original Bash execution
+            hyperfine --warmup 2 --runs 10 \
+              --export-json "../../../../performance-results/bashrs/${algo}-original.json" \
+              "bash $BASH_FILE" || echo "Bash benchmark failed"
+
+            # Benchmark transpilation time (Bash → Rust)
+            hyperfine --warmup 1 --runs 10 \
+              --export-json "../../../../performance-results/bashrs/${algo}-transpile.json" \
+              "bashrs $BASH_FILE -o transpiled_tmp.rs && rm -f transpiled_tmp.rs" || echo "Transpile benchmark failed"
+
+            # Transpile Bash → Rust
+            bashrs "$BASH_FILE" -o transpiled.rs 2>&1 | tee transpile-output.txt
+
+            if [ -f transpiled.rs ]; then
+              # Compile transpiled Rust
+              rustc -C opt-level=3 transpiled.rs -o transpiled_bin
+
+              if [ -f transpiled_bin ]; then
+                # Benchmark transpiled execution
+                hyperfine --warmup 2 --runs 10 \
+                  --export-json "../../../../performance-results/bashrs/${algo}-transpiled.json" \
+                  "./transpiled_bin" || echo "Transpiled benchmark failed"
+
+                # Benchmark Rust → Bash purification
+                hyperfine --warmup 1 --runs 10 \
+                  --export-json "../../../../performance-results/bashrs/${algo}-purify.json" \
+                  "bashrs --to-bash transpiled.rs -o purified_tmp.sh && rm -f purified_tmp.sh" || echo "Purify benchmark failed"
+
+                # Generate purified Bash
+                bashrs --to-bash transpiled.rs -o purified.sh
+
+                if [ -f purified.sh ]; then
+                  chmod +x purified.sh
+                  # Benchmark purified Bash execution
+                  hyperfine --warmup 2 --runs 10 \
+                    --export-json "../../../../performance-results/bashrs/${algo}-purified.json" \
+                    "bash purified.sh" || echo "Purified benchmark failed"
+                fi
+              fi
+            fi
+
+            cd ../../../../..
+          done
+
+      - name: Generate baseline summary
+        run: |
+          echo "Generating performance baseline summary..."
+
+          cat > performance-results/baseline-summary.json << 'EOF'
+          {
+            "date": "$(date -u +"%Y-%m-%d %H:%M:%S UTC")",
+            "commit": "${{ github.sha }}",
+            "workflow_run": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            "decy": {},
+            "bashrs": {}
+          }
+          EOF
+
+          # Parse decy results
+          if [ -d "performance-results/decy" ]; then
+            for json_file in performance-results/decy/*.json; do
+              if [ -f "$json_file" ]; then
+                algo=$(basename "$json_file" .json)
+                mean=$(jq -r '.results[0].mean // "N/A"' "$json_file")
+                echo "  decy/$algo: ${mean}s"
+              fi
+            done
+          fi
+
+          # Parse bashrs results
+          if [ -d "performance-results/bashrs" ]; then
+            for json_file in performance-results/bashrs/*.json; do
+              if [ -f "$json_file" ]; then
+                algo=$(basename "$json_file" .json)
+                mean=$(jq -r '.results[0].mean // "N/A"' "$json_file")
+                echo "  bashrs/$algo: ${mean}s"
+              fi
+            done
+          fi
+
+      - name: Upload baseline artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-baseline-${{ github.sha }}
+          path: performance-results/
+          retention-days: 90
+
+      - name: Save baseline to repository (optional)
+        if: github.event.inputs.baseline_only != 'true'
+        continue-on-error: true
+        run: |
+          # Create performance-baselines directory if it doesn't exist
+          mkdir -p .performance-baselines
+
+          # Copy current baseline
+          cp -r performance-results ".performance-baselines/baseline-$(date +%Y-%m-%d)"
+
+          # Keep only last 10 baselines
+          cd .performance-baselines
+          ls -t | tail -n +11 | xargs -r rm -rf
+
+  detect-regressions:
+    name: Detect Performance Regressions
+    needs: establish-baseline
+    runs-on: ubuntu-latest
+    if: github.event.inputs.baseline_only != 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download current baseline
+        uses: actions/download-artifact@v3
+        with:
+          name: performance-baseline-${{ github.sha }}
+          path: current-baseline/
+
+      - name: Download previous baseline
+        uses: actions/download-artifact@v3
+        with:
+          name: performance-baseline-${{ github.event.before }}
+          path: previous-baseline/
+        continue-on-error: true
+
+      - name: Install jq for JSON parsing
+        run: sudo apt-get install -y jq
+
+      - name: Compare performance
+        id: compare
+        run: |
+          echo "Comparing current vs previous performance..."
+
+          REGRESSIONS=""
+          IMPROVEMENTS=""
+          REGRESSION_COUNT=0
+          IMPROVEMENT_COUNT=0
+
+          # Compare decy performance
+          if [ -d "previous-baseline/decy" ] && [ -d "current-baseline/decy" ]; then
+            for current_file in current-baseline/decy/*.json; do
+              filename=$(basename "$current_file")
+              previous_file="previous-baseline/decy/$filename"
+
+              if [ -f "$previous_file" ]; then
+                current_mean=$(jq -r '.results[0].mean // 0' "$current_file")
+                previous_mean=$(jq -r '.results[0].mean // 0' "$previous_file")
+
+                if [ "$current_mean" != "0" ] && [ "$previous_mean" != "0" ]; then
+                  # Calculate percentage change
+                  change=$(echo "scale=2; (($current_mean - $previous_mean) / $previous_mean) * 100" | bc)
+
+                  algo=$(basename "$filename" .json)
+
+                  # Check for regression (>10% slower)
+                  if (( $(echo "$change > 10" | bc -l) )); then
+                    REGRESSIONS="$REGRESSIONS\n- decy/$algo: ${change}% slower"
+                    REGRESSION_COUNT=$((REGRESSION_COUNT + 1))
+                  # Check for improvement (>10% faster)
+                  elif (( $(echo "$change < -10" | bc -l) )); then
+                    IMPROVEMENTS="$IMPROVEMENTS\n- decy/$algo: ${change}% faster"
+                    IMPROVEMENT_COUNT=$((IMPROVEMENT_COUNT + 1))
+                  fi
+                fi
+              fi
+            done
+          fi
+
+          # Compare bashrs performance
+          if [ -d "previous-baseline/bashrs" ] && [ -d "current-baseline/bashrs" ]; then
+            for current_file in current-baseline/bashrs/*.json; do
+              filename=$(basename "$current_file")
+              previous_file="previous-baseline/bashrs/$filename"
+
+              if [ -f "$previous_file" ]; then
+                current_mean=$(jq -r '.results[0].mean // 0' "$current_file")
+                previous_mean=$(jq -r '.results[0].mean // 0' "$previous_file")
+
+                if [ "$current_mean" != "0" ] && [ "$previous_mean" != "0" ]; then
+                  change=$(echo "scale=2; (($current_mean - $previous_mean) / $previous_mean) * 100" | bc)
+
+                  algo=$(basename "$filename" .json)
+
+                  if (( $(echo "$change > 10" | bc -l) )); then
+                    REGRESSIONS="$REGRESSIONS\n- bashrs/$algo: ${change}% slower"
+                    REGRESSION_COUNT=$((REGRESSION_COUNT + 1))
+                  elif (( $(echo "$change < -10" | bc -l) )); then
+                    IMPROVEMENTS="$IMPROVEMENTS\n- bashrs/$algo: ${change}% faster"
+                    IMPROVEMENT_COUNT=$((IMPROVEMENT_COUNT + 1))
+                  fi
+                fi
+              fi
+            done
+          fi
+
+          echo "regression_count=$REGRESSION_COUNT" >> $GITHUB_OUTPUT
+          echo "improvement_count=$IMPROVEMENT_COUNT" >> $GITHUB_OUTPUT
+
+          if [ $REGRESSION_COUNT -gt 0 ]; then
+            echo "status=regression" >> $GITHUB_OUTPUT
+            echo "regressions<<EOF" >> $GITHUB_OUTPUT
+            echo -e "$REGRESSIONS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "status=ok" >> $GITHUB_OUTPUT
+          fi
+
+          if [ $IMPROVEMENT_COUNT -gt 0 ]; then
+            echo "improvements<<EOF" >> $GITHUB_OUTPUT
+            echo -e "$IMPROVEMENTS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create regression alert issue
+        if: steps.compare.outputs.status == 'regression'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const regressions = `${{ steps.compare.outputs.regressions }}`;
+            const regressionCount = ${{ steps.compare.outputs.regression_count }};
+
+            const title = `⚠️ Performance Regression Detected (${regressionCount} benchmark${regressionCount > 1 ? 's' : ''})`;
+
+            const body = `## Performance Regression Alert
+
+**Date**: ${new Date().toUTCString()}
+**Workflow Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+**Regressions Detected**: ${regressionCount}
+
+### Regressions (>10% slower)
+
+${regressions}
+
+### Details
+
+Performance benchmarks show that ${regressionCount} transpiler benchmark${regressionCount > 1 ? 's have' : ' has'} regressed by more than 10% compared to the previous baseline.
+
+### Baseline Comparison
+
+- **Previous Baseline**: Commit ${{ github.event.before }}
+- **Current Baseline**: Commit ${{ github.sha }}
+- **Threshold**: 10% performance degradation
+
+### Next Steps
+
+1. **Review Changes**: Check commits between previous and current baseline
+2. **Download Artifacts**: Compare detailed benchmark results
+3. **Investigate Root Cause**: Determine if regression is in transpiler or test corpus
+4. **Optimize**: Address performance bottlenecks
+5. **Re-benchmark**: Verify fix with \`gh workflow run transpiler-performance.yml\`
+
+### Artifacts
+
+Download performance baseline artifacts from this workflow run to analyze detailed results.
+
+---
+
+*Automated by rosetta-ruchy transpiler performance tracking*
+`;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['performance', 'regression', 'automated', 'transpiler-validation']
+            });
+
+      - name: Comment on improvements
+        if: steps.compare.outputs.improvement_count > 0
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const improvements = `${{ steps.compare.outputs.improvements }}`;
+            const improvementCount = ${{ steps.compare.outputs.improvement_count }};
+
+            console.log(`✅ Performance improvements detected (${improvementCount}):`);
+            console.log(improvements);
+
+      - name: Generate performance report
+        run: |
+          cat > performance-report.md << 'EOF'
+          # Transpiler Performance Report
+
+          **Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Workflow Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          ## Summary
+
+          - **Regressions**: ${{ steps.compare.outputs.regression_count }}
+          - **Improvements**: ${{ steps.compare.outputs.improvement_count }}
+          - **Status**: ${{ steps.compare.outputs.status }}
+
+          ## Regressions
+
+          ${{ steps.compare.outputs.regressions }}
+
+          ## Improvements
+
+          ${{ steps.compare.outputs.improvements }}
+
+          ## Baseline Information
+
+          - **Previous**: ${{ github.event.before }}
+          - **Current**: ${{ github.sha }}
+
+          ---
+
+          *Generated by rosetta-ruchy transpiler performance tracking*
+          EOF
+
+          cat performance-report.md
+
+      - name: Upload performance report
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-report
+          path: performance-report.md
