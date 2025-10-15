@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2025-10-14T21:03:30.774692484Z",
+    "generated_at": "2025-10-15T08:18:47.687273795Z",
     "format_version": "1.0.0",
     "generator": "Rosetta Ruchy Benchmark Harness",
     "suite_version": "1.6.0",
@@ -28,7 +28,7 @@
       "applied_governor": null,
       "warnings": [
         "Frequency lock failed for core 0: Failed to lock frequency",
-        "High system load: 6.10",
+        "High system load: 6.00",
         "IRQ balancing is active - may affect benchmark consistency"
       ],
       "errors": []
@@ -141,59 +141,59 @@
         4792,
         4792,
         4792,
-        4780,
-        4779,
-        4781,
-        4781,
-        4782,
         4787,
-        4751,
-        4752,
+        4786,
+        4785,
+        4787,
+        4786,
+        4786,
+        4771,
+        4770,
+        4769,
+        4768,
+        4768,
+        4768,
+        4756,
         4754,
-        4753,
-        4753,
-        4752,
-        4752,
+        4758,
+        4754,
+        4758,
+        4759,
+        4792,
+        4792,
+        4792,
+        4792,
+        4792,
+        4792,
+        4788,
+        4788,
+        4789,
+        4788,
+        4788,
+        4788,
+        4775,
+        4777,
+        4777,
+        4777,
+        4776,
+        4775,
         4748,
-        4744,
-        4744,
-        4741,
-        4748,
-        4792,
-        4792,
-        4792,
-        4792,
-        4792,
-        4792,
-        4787,
-        4787,
-        4787,
-        4787,
-        4787,
-        4787,
         4752,
-        4752,
-        4752,
-        4752,
-        4750,
-        4751,
-        4747,
-        4743,
-        4749,
-        4748,
-        4749,
-        4743
+        4766,
+        4760,
+        4761,
+        4764
       ],
       "load_average": [
-        6.1,
-        6.99,
-        7.08
+        6.0,
+        5.51,
+        6.83
       ],
       "memory_info": {
         "total_bytes": 137771083628544,
-        "available_bytes": 105405464182784,
-        "usage_percent": 23.492316815206028,
-        "swap_used_bytes": 702764023808
+        "available_bytes": 105261574389760,
+        "usage_percent": 23.596758029744162,
+        "swap_used_bytes": 4588904120320
       },
       "irq_balance_active": true
     }
@@ -206,70 +206,6 @@
     "min_sample_size": 30
   },
   "results": {
-    "rust": {
-      "language": "rust",
-      "version": "Unknown",
-      "statistics": {
-        "sample_stats": {
-          "count": 100,
-          "mean": 499729.521213519,
-          "median": 499369.5158749883,
-          "std_dev": 22059.16902575995,
-          "std_error": 2205.916902575995,
-          "min": 443218.8765241315,
-          "max": 553093.5046638143
-        },
-        "confidence_intervals": {
-          "ci_95": [
-            495352.5035016378,
-            504106.5389254002
-          ],
-          "ci_99": [
-            493935.88902228547,
-            505523.1534047525
-          ]
-        },
-        "outliers": {
-          "outlier_count": 0,
-          "outlier_percentage": 0.0,
-          "outlier_values": [],
-          "quartiles": {
-            "q1": 484497.0720970485,
-            "q3": 513537.5003570523,
-            "iqr": 29040.4282600038,
-            "lower_fence": 440936.4297070428,
-            "upper_fence": 557098.1427470581
-          }
-        },
-        "distribution": {
-          "skewness": 0.15745772732252553,
-          "kurtosis": 0.047812021836038276,
-          "coefficient_of_variation": 0.0441422171181573,
-          "percentiles": {
-            "p5": 466726.6398041609,
-            "p25": 484497.0720970485,
-            "p50": 499369.5158749883,
-            "p75": 513537.5003570523,
-            "p95": 542301.9619606922,
-            "p99": 549536.5815576296
-          }
-        }
-      },
-      "raw_times_ns": null,
-      "memory_usage": {
-        "peak_usage_bytes": 614400,
-        "average_usage_bytes": 512000,
-        "allocations": 512,
-        "deallocations": 512
-      },
-      "binary_size": {
-        "total_size_bytes": 2500000,
-        "debug_size_bytes": 0,
-        "stripped_size_bytes": 2500000,
-        "compression_ratio": null
-      },
-      "compilation": null
-    },
     "python": {
       "language": "python",
       "version": "Unknown",
@@ -332,6 +268,70 @@
         "total_size_bytes": 0,
         "debug_size_bytes": 0,
         "stripped_size_bytes": 0,
+        "compression_ratio": null
+      },
+      "compilation": null
+    },
+    "rust": {
+      "language": "rust",
+      "version": "Unknown",
+      "statistics": {
+        "sample_stats": {
+          "count": 100,
+          "mean": 499729.521213519,
+          "median": 499369.5158749883,
+          "std_dev": 22059.16902575995,
+          "std_error": 2205.916902575995,
+          "min": 443218.8765241315,
+          "max": 553093.5046638143
+        },
+        "confidence_intervals": {
+          "ci_95": [
+            495352.5035016378,
+            504106.5389254002
+          ],
+          "ci_99": [
+            493935.88902228547,
+            505523.1534047525
+          ]
+        },
+        "outliers": {
+          "outlier_count": 0,
+          "outlier_percentage": 0.0,
+          "outlier_values": [],
+          "quartiles": {
+            "q1": 484497.0720970485,
+            "q3": 513537.5003570523,
+            "iqr": 29040.4282600038,
+            "lower_fence": 440936.4297070428,
+            "upper_fence": 557098.1427470581
+          }
+        },
+        "distribution": {
+          "skewness": 0.15745772732252553,
+          "kurtosis": 0.047812021836038276,
+          "coefficient_of_variation": 0.0441422171181573,
+          "percentiles": {
+            "p5": 466726.6398041609,
+            "p25": 484497.0720970485,
+            "p50": 499369.5158749883,
+            "p75": 513537.5003570523,
+            "p95": 542301.9619606922,
+            "p99": 549536.5815576296
+          }
+        }
+      },
+      "raw_times_ns": null,
+      "memory_usage": {
+        "peak_usage_bytes": 614400,
+        "average_usage_bytes": 512000,
+        "allocations": 512,
+        "deallocations": 512
+      },
+      "binary_size": {
+        "total_size_bytes": 2500000,
+        "debug_size_bytes": 0,
+        "stripped_size_bytes": 2500000,
         "compression_ratio": null
       },
       "compilation": null
