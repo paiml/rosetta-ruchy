@@ -1,6 +1,6 @@
 # Benchmark Report
 
-Generated: 2025-10-14 21:03:30 UTC
+Generated: 2025-10-15 08:18:47 UTC
 Generator: Rosetta Ruchy Benchmark Harness
 Suite Version: 1.6.0
 
@@ -22,8 +22,8 @@ Suite Version: 1.6.0
 
 | Implementation | Mean (ns) | Std Dev (ns) | 95% CI | Outliers |
 |---|---|---|---|---|
-| rust | 499730 | 22059 | (495353, 504107) | 0.0% |
 | python | 5020844 | 668074 | (4888284, 5153405) | 1.0% |
+| rust | 499730 | 22059 | (495353, 504107) | 0.0% |
 
 ## Performance Comparisons
 

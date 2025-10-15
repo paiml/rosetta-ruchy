@@ -15,7 +15,7 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tracing::{debug, info, warn};
 
 mod binary_analyzer;
@@ -468,78 +468,10 @@ impl BenchmarkRunner {
         self.cleanup_environment(&mut env_controller).await;
 
         // Step 4: Generate comprehensive reports
-        if !results.is_empty() {
-            info!("📊 Generating comprehensive benchmark reports");
-            let report_generator = self.create_report_generator();
-            let report_results = self.convert_to_report_format(&results)?;
-            let environment_report =
-                self.create_environment_report(&env_controller, &isolation_result)?;
-            let config = self.create_benchmark_config();
-
-            if let Err(e) = report_generator
-                .generate_report(report_results, environment_report, config)
-                .await
-            {
-                warn!("Failed to generate reports: {}", e);
-            }
-        }
+        self.generate_benchmark_reports(&results, &env_controller, &isolation_result).await;
 
         // Step 5: Perform regression detection (Toyota Way Jidoka)
-        if !results.is_empty() {
-            info!("🔍 Performing regression analysis with 5% threshold");
-            let regression_detector = self.create_regression_detector();
-            let current_stats = self.extract_statistical_analysis(&results);
-
-            match regression_detector
-                .detect_regressions(&current_stats, example_path.to_str().unwrap_or("unknown"))
-                .await
-            {
-                Ok(analysis) => {
-                    match analysis.overall_status {
-                        RegressionStatus::Critical => {
-                            warn!("🚨 CRITICAL REGRESSION DETECTED - Toyota Way quality gate violated!");
-                            for rec in &analysis.recommendations {
-                                warn!("   Action required: {}", rec);
-                            }
-                        }
-                        RegressionStatus::Warning => {
-                            warn!("⚠️ Performance degradation detected");
-                            for rec in &analysis.recommendations {
-                                info!("   Recommendation: {}", rec);
-                            }
-                        }
-                        RegressionStatus::Healthy => {
-                            info!("✅ No performance regressions detected");
-                        }
-                        RegressionStatus::Inconclusive => {
-                            info!("❓ Insufficient baseline data for regression analysis");
-                            // Establish baselines for future comparisons
-                            self.establish_baselines(
-                                &results,
-                                example_path.to_str().unwrap_or("unknown"),
-                                &regression_detector,
-                            )
-                            .await?;
-                        }
-                    }
-
-                    // Generate regression report
-                    if let Ok(report) = regression_detector
-                        .generate_regression_report(&analysis)
-                        .await
-                    {
-                        if let Err(e) = std::fs::write("results/regression_report.md", report) {
-                            warn!("Failed to write regression report: {}", e);
-                        } else {
-                            info!("📊 Regression analysis report: results/regression_report.md");
-                        }
-                    }
-                }
-                Err(e) => {
-                    warn!("Failed to perform regression analysis: {}", e);
-                }
-            }
-        }
+        self.perform_regression_analysis(&results, &example_path).await?;
 
         info!("✅ Benchmark run completed for {} languages", results.len());
         Ok(results)
@@ -899,6 +831,117 @@ impl BenchmarkRunner {
         if let Err(e) = env_controller.restore_environment().await {
             warn!("Failed to restore environment: {}", e);
         }
+    }
+
+    /// Generate comprehensive benchmark reports
+    ///
+    /// Extracted from run_benchmark() for complexity reduction (Sprint 43 Ticket 4)
+    async fn generate_benchmark_reports(
+        &self,
+        results: &[BenchmarkResult],
+        env_controller: &EnvironmentController,
+        isolation_result: &IsolationResult,
+    ) {
+        if results.is_empty() {
+            return;
+        }
+
+        info!("📊 Generating comprehensive benchmark reports");
+        let report_generator = self.create_report_generator();
+
+        let report_results = match self.convert_to_report_format(results) {
+            Ok(r) => r,
+            Err(e) => {
+                warn!("Failed to convert results to report format: {}", e);
+                return;
+            }
+        };
+
+        let environment_report = match self.create_environment_report(env_controller, isolation_result) {
+            Ok(r) => r,
+            Err(e) => {
+                warn!("Failed to create environment report: {}", e);
+                return;
+            }
+        };
+
+        let config = self.create_benchmark_config();
+
+        if let Err(e) = report_generator
+            .generate_report(report_results, environment_report, config)
+            .await
+        {
+            warn!("Failed to generate reports: {}", e);
+        }
+    }
+
+    /// Perform regression detection analysis
+    ///
+    /// Extracted from run_benchmark() for complexity reduction (Sprint 43 Ticket 4)
+    async fn perform_regression_analysis(
+        &self,
+        results: &[BenchmarkResult],
+        example_path: &Path,
+    ) -> Result<()> {
+        if results.is_empty() {
+            return Ok(());
+        }
+
+        info!("🔍 Performing regression analysis with 5% threshold");
+        let regression_detector = self.create_regression_detector();
+        let current_stats = self.extract_statistical_analysis(results);
+
+        match regression_detector
+            .detect_regressions(&current_stats, example_path.to_str().unwrap_or("unknown"))
+            .await
+        {
+            Ok(analysis) => {
+                match analysis.overall_status {
+                    RegressionStatus::Critical => {
+                        warn!("🚨 CRITICAL REGRESSION DETECTED - Toyota Way quality gate violated!");
+                        for rec in &analysis.recommendations {
+                            warn!("   Action required: {}", rec);
+                        }
+                    }
+                    RegressionStatus::Warning => {
+                        warn!("⚠️ Performance degradation detected");
+                        for rec in &analysis.recommendations {
+                            info!("   Recommendation: {}", rec);
+                        }
+                    }
+                    RegressionStatus::Healthy => {
+                        info!("✅ No performance regressions detected");
+                    }
+                    RegressionStatus::Inconclusive => {
+                        info!("❓ Insufficient baseline data for regression analysis");
+                        // Establish baselines for future comparisons
+                        self.establish_baselines(
+                            results,
+                            example_path.to_str().unwrap_or("unknown"),
+                            &regression_detector,
+                        )
+                        .await?;
+                    }
+                }
+
+                // Generate regression report
+                if let Ok(report) = regression_detector
+                    .generate_regression_report(&analysis)
+                    .await
+                {
+                    if let Err(e) = std::fs::write("results/regression_report.md", report) {
+                        warn!("Failed to write regression report: {}", e);
+                    } else {
+                        info!("📊 Regression analysis report: results/regression_report.md");
+                    }
+                }
+            }
+            Err(e) => {
+                warn!("Failed to perform regression analysis: {}", e);
+            }
+        }
+
+        Ok(())
     }
 }
 
