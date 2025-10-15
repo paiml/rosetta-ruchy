@@ -1,0 +1,270 @@
+name: decy Transpiler Validation
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Daily at 6am UTC
+  push:
+    paths:
+      - 'examples/algorithms/*/implementations/c/**'
+      - '.github/workflows/decy-validation.yml'
+  pull_request:
+    paths:
+      - 'examples/algorithms/*/implementations/c/**'
+  workflow_dispatch:  # Manual trigger
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  validate-decy:
+    name: Validate ${{ matrix.algorithm }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false  # Continue testing all algorithms even if one fails
+      matrix:
+        algorithm:
+          - 001-fibonacci
+          - 004-binary-search
+          - 022-selection-sort
+          - 021-counting-sort
+          - 002-quicksort
+          - 003-mergesort
+          - 018-heap-sort
+          - 019-radix-sort
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+          components: rustfmt, clippy
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            llvm-14-dev \
+            libclang-14-dev \
+            clang-14 \
+            valgrind \
+            gcc \
+            make
+
+      - name: Install decy transpiler
+        run: |
+          # Clone and install decy from source
+          cd /tmp
+          git clone https://github.com/paiml/decy.git
+          cd decy
+          cargo install --path .
+          decy --version
+
+      - name: Install validation tools
+        run: |
+          cargo install hyperfine || true
+
+      - name: Build original C version
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/c/
+          make clean && make all
+
+      - name: Run C tests (baseline)
+        id: c-baseline
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/c/
+          make test 2>&1 | tee c-test-output.txt
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Transpile C to Rust with decy
+        id: transpile
+        continue-on-error: true
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/c/
+
+          # Get the C source file name
+          C_FILE=$(ls *.c | head -1)
+
+          # Transpile with decy
+          decy "$C_FILE" -o transpiled.rs 2>&1 | tee transpile-output.txt
+
+          if [ -f transpiled.rs ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Compile transpiled Rust
+        if: steps.transpile.outputs.status == 'success'
+        id: compile
+        continue-on-error: true
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/c/
+          rustc -C opt-level=3 transpiled.rs -o transpiled_bin 2>&1 | tee compile-output.txt
+
+          if [ -f transpiled_bin ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run transpiled tests
+        if: steps.compile.outputs.status == 'success'
+        id: test
+        continue-on-error: true
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/c/
+          ./transpiled_bin test 2>&1 | tee rust-test-output.txt
+          echo "status=$?" >> $GITHUB_OUTPUT
+
+      - name: Compare outputs (correctness)
+        if: steps.test.outputs.status == '0'
+        id: correctness
+        continue-on-error: true
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/c/
+          diff c-test-output.txt rust-test-output.txt > correctness-diff.txt 2>&1 || true
+
+          if [ -s correctness-diff.txt ]; then
+            echo "status=different" >> $GITHUB_OUTPUT
+          else
+            echo "status=identical" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Performance benchmark
+        if: steps.test.outputs.status == '0'
+        id: benchmark
+        continue-on-error: true
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/c/
+
+          # Get the binary name from Makefile or use default
+          C_BINARY=$(ls -1 | grep -v '\.c$\|\.h$\|\.txt$\|\.rs$\|transpiled' | head -1)
+
+          if command -v hyperfine &> /dev/null; then
+            hyperfine --warmup 3 --runs 10 \
+              --export-json benchmark-results.json \
+              "./$C_BINARY" \
+              "./transpiled_bin" || echo "Benchmark failed but continuing"
+          else
+            echo "hyperfine not available, skipping benchmark"
+          fi
+
+      - name: Safety analysis (count unsafe blocks)
+        if: steps.transpile.outputs.status == 'success'
+        id: safety
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/c/
+          unsafe_count=$(grep -c "unsafe" transpiled.rs || echo 0)
+          echo "Unsafe blocks: $unsafe_count"
+          echo "unsafe_count=$unsafe_count" >> $GITHUB_OUTPUT
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.algorithm }}-decy-validation
+          path: |
+            examples/algorithms/${{ matrix.algorithm }}/implementations/c/transpiled.rs
+            examples/algorithms/${{ matrix.algorithm }}/implementations/c/*-output.txt
+            examples/algorithms/${{ matrix.algorithm }}/implementations/c/benchmark-results.json
+            examples/algorithms/${{ matrix.algorithm }}/implementations/c/correctness-diff.txt
+          if-no-files-found: ignore
+
+      - name: Generate validation report
+        if: always()
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/c/
+          cat > validation-report.md << EOF
+          # decy Validation Report: ${{ matrix.algorithm }}
+
+          **Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Algorithm**: ${{ matrix.algorithm }}
+          **Workflow Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          ## Results Summary
+
+          | Stage | Status |
+          |-------|--------|
+          | C Baseline | ${{ steps.c-baseline.outputs.status }} |
+          | Transpilation | ${{ steps.transpile.outputs.status }} |
+          | Compilation | ${{ steps.compile.outputs.status }} |
+          | Testing | ${{ steps.test.outputs.status == '0' && 'success' || 'failed' }} |
+          | Correctness | ${{ steps.correctness.outputs.status || 'not-tested' }} |
+          | Unsafe Blocks | ${{ steps.safety.outputs.unsafe_count || 'N/A' }} |
+
+          ## Detailed Information
+
+          ### C Baseline Tests
+          \`\`\`
+          $(cat c-test-output.txt 2>/dev/null || echo "Output not available")
+          \`\`\`
+
+          ### Transpilation Output
+          \`\`\`
+          $(tail -20 transpile-output.txt 2>/dev/null || echo "Output not available")
+          \`\`\`
+
+          ### Safety Analysis
+          - Unsafe blocks: ${{ steps.safety.outputs.unsafe_count || 0 }}
+          - Target: Minimize unsafe usage
+
+          ## Performance
+
+          See benchmark-results.json for detailed performance comparison (if available).
+
+          ## Artifacts
+
+          - Transpiled Rust code: transpiled.rs
+          - Test outputs: c-test-output.txt, rust-test-output.txt
+          - Benchmark results: benchmark-results.json
+          - Correctness diff: correctness-diff.txt
+
+          ---
+
+          *Automated validation by rosetta-ruchy CI/CD*
+          EOF
+          cat validation-report.md
+
+  summary:
+    name: Validation Summary
+    needs: validate-decy
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Generate overall summary
+        run: |
+          echo "# decy Transpiler Validation Summary"
+          echo ""
+          echo "**Workflow Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "**Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo ""
+          echo "## Validation Results"
+          echo ""
+          echo "Check individual algorithm results in the artifacts."
+          echo ""
+          echo "Total algorithms tested: 8"
+          echo "- 001-fibonacci"
+          echo "- 004-binary-search"
+          echo "- 022-selection-sort"
+          echo "- 021-counting-sort"
+          echo "- 002-quicksort"
+          echo "- 003-mergesort"
+          echo "- 018-heap-sort"
+          echo "- 019-radix-sort"
