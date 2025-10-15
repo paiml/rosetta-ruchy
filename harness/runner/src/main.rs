@@ -666,6 +666,7 @@ impl BenchmarkRunner {
     /// Generate comprehensive benchmark reports
     ///
     /// Extracted from run_benchmark() for complexity reduction (Sprint 43 Ticket 4)
+    /// Refactored in Sprint 44 Ticket 11 for complexity reduction
     async fn generate_benchmark_reports(
         &self,
         results: &[BenchmarkResult],
@@ -677,32 +678,32 @@ impl BenchmarkRunner {
         }
 
         info!("📊 Generating comprehensive benchmark reports");
-        let report_generator = self.create_report_generator();
 
-        let report_results = match self.convert_to_report_format(results) {
-            Ok(r) => r,
-            Err(e) => {
-                warn!("Failed to convert results to report format: {}", e);
-                return;
-            }
-        };
-
-        let environment_report = match self.create_environment_report(env_controller, isolation_result) {
-            Ok(r) => r,
-            Err(e) => {
-                warn!("Failed to create environment report: {}", e);
-                return;
-            }
-        };
-
-        let config = self.create_benchmark_config();
-
-        if let Err(e) = report_generator
-            .generate_report(report_results, environment_report, config)
+        if let Err(e) = self
+            .generate_reports_internal(results, env_controller, isolation_result)
             .await
         {
-            warn!("Failed to generate reports: {}", e);
+            warn!("Report generation encountered errors: {}", e);
         }
+    }
+
+    /// Internal report generation logic with error propagation
+    async fn generate_reports_internal(
+        &self,
+        results: &[BenchmarkResult],
+        env_controller: &EnvironmentController,
+        isolation_result: &IsolationResult,
+    ) -> Result<()> {
+        let report_generator = self.create_report_generator();
+        let report_results = self.convert_to_report_format(results)?;
+        let environment_report = self.create_environment_report(env_controller, isolation_result)?;
+        let config = self.create_benchmark_config();
+
+        report_generator
+            .generate_report(report_results, environment_report, config)
+            .await?;
+
+        Ok(())
     }
 
     /// Perform regression detection analysis
