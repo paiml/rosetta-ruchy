@@ -140,6 +140,7 @@ ruchy quality-gate algorithm.ruchy  # Quality gate enforcement (100% success)
 - 📖 See [BENCHMARKING_PLAN.md](reports/performance/BENCHMARKING_PLAN.md) and [ROSETTA-414-STATUS.md](reports/performance/ROSETTA-414-STATUS.md)
 
 #### Language Tiers
+- **Tier 0** (Transpilation Source): C, Bash - Validation corpus for [decy](https://github.com/paiml/decy) (C→Rust) and [bashrs](https://github.com/paiml/bashrs) (Bash↔Rust) transpilers
 - **Tier 1** (Full CI): Ruchy, Rust, Python, JavaScript, Go
 - **Tier 2** (Community): TypeScript, Java, C++, C#, Swift
 - **Tier 3** (Reference): Single implementations

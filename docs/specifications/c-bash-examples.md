@@ -417,24 +417,24 @@ bash fibonacci_purified.sh 10
 - [ ] Update harness to support C/Bash benchmarking
 - [ ] Create quality gate scripts for C/Bash
 
-**Ticket 2: Simple Algorithms** (2 days - 4 algorithms)
-- [ ] `001-fibonacci` - C + Bash implementations
-- [ ] `004-binary-search` - C + Bash implementations
-- [ ] `022-selection-sort` - C + Bash implementations
-- [ ] `021-counting-sort` - C + Bash implementations
+**Ticket 2: Simple Algorithms** (2 days - 4 algorithms) ✅ COMPLETE
+- [x] `001-fibonacci` - C + Bash implementations
+- [x] `004-binary-search` - C + Bash implementations
+- [x] `022-selection-sort` - C + Bash implementations
+- [x] `021-counting-sort` - C + Bash implementations
 
-**Ticket 3: Array/Sorting Algorithms** (2 days - 4 algorithms)
-- [ ] `002-quicksort` - C + Bash implementations
-- [ ] `003-mergesort` - C + Bash implementations
-- [ ] `018-heap-sort` - C + Bash implementations
-- [ ] `019-radix-sort` - C + Bash implementations
+**Ticket 3: Array/Sorting Algorithms** (2 days - 4 algorithms) ✅ COMPLETE
+- [x] `002-quicksort` - C + Bash implementations (Bash added, C existed)
+- [x] `003-mergesort` - C + Bash implementations
+- [x] `018-heap-sort` - C + Bash implementations
+- [x] `019-radix-sort` - C + Bash implementations
 
-**Ticket 4: Documentation & Integration** (1 day)
+**Ticket 4: Documentation & Integration** (1 day) 🔄 IN PROGRESS
 - [ ] Update README.md with C/Bash tier
 - [ ] Document transpilation validation workflow
 - [ ] Create decy integration guide
 - [ ] Create bashrs integration guide
-- [ ] Add C/Bash to CI/CD pipeline
+- [ ] Add C/Bash to CI/CD pipeline (future work)
 
 ### Success Criteria
 
