@@ -1,6 +1,6 @@
 # Performance Regression Analysis Report
 
-Generated: 2025-10-15 08:21:52 UTC
+Generated: 2025-10-15 08:25:25 UTC
 
 ## Executive Summary
 
@@ -13,7 +13,7 @@ Generated: 2025-10-15 08:21:52 UTC
 
 ### rust Implementation
 
-✅ **Performance Change**: 0.5%
+✅ **Performance Change**: 0.3%
 - **Severity**: None
 - **Statistical Significance**: NotSignificant
 - **Quality Gate**: ✅ PASSED
