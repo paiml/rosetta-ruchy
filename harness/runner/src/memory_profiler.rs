@@ -528,8 +528,21 @@ impl MemoryProfiler {
     }
 
     /// Log memory analysis results
+    ///
+    /// Refactored in Sprint 44 Ticket 6 for complexity reduction
     fn log_memory_analysis(&self, profile: &MemoryProfile) {
         info!("🧠 Memory Profile Analysis:");
+        self.log_memory_usage(profile);
+        self.log_memory_leak_status(profile);
+        self.log_efficiency_metrics(profile);
+        self.log_swap_status(profile);
+        self.log_allocation_stats(profile);
+    }
+
+    /// Log basic memory usage statistics
+    ///
+    /// Extracted from log_memory_analysis() for complexity reduction (Sprint 44 Ticket 6)
+    fn log_memory_usage(&self, profile: &MemoryProfile) {
         info!(
             "   Peak usage: {:.2} MB",
             profile.peak_usage_bytes as f64 / 1_048_576.0
@@ -538,7 +551,12 @@ impl MemoryProfiler {
             "   Average usage: {:.2} MB",
             profile.average_usage_bytes as f64 / 1_048_576.0
         );
+    }
 
+    /// Log memory leak detection status
+    ///
+    /// Extracted from log_memory_analysis() for complexity reduction (Sprint 44 Ticket 6)
+    fn log_memory_leak_status(&self, profile: &MemoryProfile) {
         if profile.memory_leak_bytes > self.config.leak_detection_threshold_bytes {
             warn!(
                 "   ⚠️ Potential memory leak: {} bytes",
@@ -547,7 +565,12 @@ impl MemoryProfiler {
         } else {
             info!("   ✅ No significant memory leaks detected");
         }
+    }
 
+    /// Log efficiency metrics
+    ///
+    /// Extracted from log_memory_analysis() for complexity reduction (Sprint 44 Ticket 6)
+    fn log_efficiency_metrics(&self, profile: &MemoryProfile) {
         info!(
             "   Overhead: {:.1}%",
             profile.efficiency_metrics.overhead_percent
@@ -556,11 +579,21 @@ impl MemoryProfiler {
             "   System utilization: {:.2}%",
             profile.efficiency_metrics.utilization_percent
         );
+    }
 
+    /// Log swap activity status
+    ///
+    /// Extracted from log_memory_analysis() for complexity reduction (Sprint 44 Ticket 6)
+    fn log_swap_status(&self, profile: &MemoryProfile) {
         if profile.swap_usage.swap_activity_detected {
             warn!("   ⚠️ Swap activity detected - may impact performance");
         }
+    }
 
+    /// Log allocation statistics
+    ///
+    /// Extracted from log_memory_analysis() for complexity reduction (Sprint 44 Ticket 6)
+    fn log_allocation_stats(&self, profile: &MemoryProfile) {
         debug!(
             "   Allocation stats: {} total, fragmentation: {:.1}%",
             profile.allocation_stats.total_allocations,
