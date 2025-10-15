@@ -16,7 +16,7 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
-use tracing::{debug, info, warn};
+use tracing::{info, warn};
 
 mod binary_analyzer;
 mod isolation;
@@ -984,50 +984,58 @@ impl BenchmarkRunner {
 
     /// Analyze binary size for a language
     ///
-    /// Extracted from benchmark_single_language() for complexity reduction
+    /// Extracted from benchmark_single_language() for complexity reduction (Sprint 43 Ticket 4)
+    /// Refactored in Sprint 44 Ticket 8 for second-level complexity reduction
     async fn analyze_binary_size(&self, language: &str) -> Option<BinarySizeAnalysis> {
-        if let Some(binary_path) = self.get_language_binary_path(language) {
-            info!("📦 Analyzing binary size for {}", language);
-            match BinaryAnalyzer::new(&binary_path).analyze().await {
-                Ok(analysis) => {
-                    info!(
-                        "📦 {} binary analysis: total={:.2}MB, stripped={:.2}MB, debug={:.1}%",
-                        language,
-                        analysis.total_size_bytes as f64 / 1_048_576.0,
-                        analysis.stripped_size_bytes as f64 / 1_048_576.0,
-                        analysis.debug_percentage
-                    );
+        let binary_path = self.get_language_binary_path(language)?;
 
-                    // Generate binary analysis report if significant
-                    if analysis.total_size_bytes > 100_000 {
-                        // > 100KB
-                        let binary_report = BinaryAnalyzer::generate_report(&analysis);
-                        if let Err(e) = std::fs::write(
-                            format!("results/{}_binary_analysis.md", language),
-                            binary_report,
-                        ) {
-                            warn!(
-                                "Failed to write binary analysis report for {}: {}",
-                                language, e
-                            );
-                        } else {
-                            info!(
-                                "📊 Binary analysis report: results/{}_binary_analysis.md",
-                                language
-                            );
-                        }
-                    }
+        info!("📦 Analyzing binary size for {}", language);
 
-                    Some(analysis)
-                }
-                Err(e) => {
-                    warn!("Failed to analyze binary for {}: {}", language, e);
-                    None
-                }
+        match BinaryAnalyzer::new(&binary_path).analyze().await {
+            Ok(analysis) => {
+                self.log_binary_analysis_summary(language, &analysis);
+                self.write_binary_analysis_report(language, &analysis).await;
+                Some(analysis)
             }
-        } else {
-            debug!("No binary path available for {}", language);
-            None
+            Err(e) => {
+                warn!("Failed to analyze binary for {}: {}", language, e);
+                None
+            }
+        }
+    }
+
+    /// Log binary analysis summary
+    ///
+    /// Extracted from analyze_binary_size() for complexity reduction (Sprint 44 Ticket 8)
+    fn log_binary_analysis_summary(&self, language: &str, analysis: &BinarySizeAnalysis) {
+        info!(
+            "📦 {} binary analysis: total={:.2}MB, stripped={:.2}MB, debug={:.1}%",
+            language,
+            analysis.total_size_bytes as f64 / 1_048_576.0,
+            analysis.stripped_size_bytes as f64 / 1_048_576.0,
+            analysis.debug_percentage
+        );
+    }
+
+    /// Write binary analysis report to file if size is significant
+    ///
+    /// Extracted from analyze_binary_size() for complexity reduction (Sprint 44 Ticket 8)
+    async fn write_binary_analysis_report(&self, language: &str, analysis: &BinarySizeAnalysis) {
+        if analysis.total_size_bytes <= 100_000 {
+            // Skip report for small binaries (< 100KB)
+            return;
+        }
+
+        let binary_report = BinaryAnalyzer::generate_report(analysis);
+        let report_path = format!("results/{}_binary_analysis.md", language);
+
+        match std::fs::write(&report_path, binary_report) {
+            Ok(_) => {
+                info!("📊 Binary analysis report: {}", report_path);
+            }
+            Err(e) => {
+                warn!("Failed to write binary analysis report for {}: {}", language, e);
+            }
         }
     }
 }
