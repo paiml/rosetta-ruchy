@@ -831,6 +831,7 @@ impl BenchmarkRunner {
     /// Benchmark a single language implementation
     ///
     /// Extracted from run_benchmark() for complexity reduction (Sprint 43 Ticket 4)
+    /// Refactored in Sprint 44 Ticket 9 for second-level complexity reduction
     async fn benchmark_single_language(
         &self,
         language: &str,
@@ -840,66 +841,121 @@ impl BenchmarkRunner {
     ) -> Result<BenchmarkResult> {
         info!("📊 Benchmarking {} implementation", language);
 
-        // Start memory profiling for this language
-        let memory_profiler = if self.config.memory_profiling {
-            let mut profiler = MemoryProfiler::with_config(MemoryProfilerConfig {
-                sampling_interval_ms: 50, // Faster sampling for benchmarks
-                detailed_allocation_tracking: false,
-                max_duration_seconds: 300,
-                leak_detection_threshold_bytes: 512 * 1024, // 512KB threshold
-                monitor_swap: true,
-            });
+        // Start memory profiling
+        let memory_profiler = self.start_memory_profiling_if_enabled(language).await;
 
-            if profiler.start_profiling().await.is_ok() {
-                info!("🧠 Memory profiling started for {}", language);
-                Some(profiler)
-            } else {
-                warn!("Failed to start memory profiling for {}", language);
-                None
-            }
-        } else {
-            None
-        };
-
-        // Simulate realistic benchmark measurements
+        // Run benchmark and analyze
         let raw_measurements = self.simulate_benchmark_measurements(language)?;
-
-        // Perform statistical analysis
         let statistical_analysis = analyzer
             .analyze(&raw_measurements)
             .with_context(|| format!("Statistical analysis failed for {}", language))?;
 
+        self.log_statistics_summary(language, &statistical_analysis);
+
+        // Convert to legacy format
+        let time_stats = self.convert_to_time_statistics(&statistical_analysis);
+
+        // Collect profiles
+        let memory_profile = self.collect_memory_profile(memory_profiler, language).await;
+        let binary_analysis = self.analyze_binary_size(language).await;
+
+        // Build result
+        let result = self
+            .build_benchmark_result(
+                language,
+                example_path,
+                time_stats,
+                statistical_analysis,
+                isolation_result,
+                memory_profile,
+                binary_analysis,
+            )
+            .await?;
+
+        Ok(result)
+    }
+
+    /// Start memory profiling if enabled in config
+    ///
+    /// Extracted from benchmark_single_language() for complexity reduction (Sprint 44 Ticket 9)
+    async fn start_memory_profiling_if_enabled(&self, language: &str) -> Option<MemoryProfiler> {
+        if !self.config.memory_profiling {
+            return None;
+        }
+
+        let mut profiler = MemoryProfiler::with_config(MemoryProfilerConfig {
+            sampling_interval_ms: 50,
+            detailed_allocation_tracking: false,
+            max_duration_seconds: 300,
+            leak_detection_threshold_bytes: 512 * 1024,
+            monitor_swap: true,
+        });
+
+        match profiler.start_profiling().await {
+            Ok(_) => {
+                info!("🧠 Memory profiling started for {}", language);
+                Some(profiler)
+            }
+            Err(_) => {
+                warn!("Failed to start memory profiling for {}", language);
+                None
+            }
+        }
+    }
+
+    /// Log statistical analysis summary
+    ///
+    /// Extracted from benchmark_single_language() for complexity reduction (Sprint 44 Ticket 9)
+    fn log_statistics_summary(&self, language: &str, analysis: &StatisticalAnalysis) {
         info!(
             "📈 {} statistics: mean={:.2}ms, std_dev={:.2}ms, outliers={}",
             language,
-            statistical_analysis.sample_stats.mean / 1_000_000.0,
-            statistical_analysis.sample_stats.std_dev / 1_000_000.0,
-            statistical_analysis.outliers.outlier_count
+            analysis.sample_stats.mean / 1_000_000.0,
+            analysis.sample_stats.std_dev / 1_000_000.0,
+            analysis.outliers.outlier_count
         );
+    }
 
-        // Convert statistical analysis to legacy format for compatibility
-        let time_stats = TimeStatistics {
-            mean_ns: statistical_analysis.sample_stats.mean as u64,
-            median_ns: statistical_analysis.sample_stats.median as u64,
-            std_dev_ns: statistical_analysis.sample_stats.std_dev as u64,
-            min_ns: statistical_analysis.sample_stats.min as u64,
-            max_ns: statistical_analysis.sample_stats.max as u64,
-            p95_ns: statistical_analysis.distribution.percentiles.p95 as u64,
-            p99_ns: statistical_analysis.distribution.percentiles.p99 as u64,
+    /// Convert StatisticalAnalysis to legacy TimeStatistics format
+    ///
+    /// Extracted from benchmark_single_language() for complexity reduction (Sprint 44 Ticket 9)
+    fn convert_to_time_statistics(&self, analysis: &StatisticalAnalysis) -> TimeStatistics {
+        TimeStatistics {
+            mean_ns: analysis.sample_stats.mean as u64,
+            median_ns: analysis.sample_stats.median as u64,
+            std_dev_ns: analysis.sample_stats.std_dev as u64,
+            min_ns: analysis.sample_stats.min as u64,
+            max_ns: analysis.sample_stats.max as u64,
+            p95_ns: analysis.distribution.percentiles.p95 as u64,
+            p99_ns: analysis.distribution.percentiles.p99 as u64,
             confidence_interval: (
-                statistical_analysis.confidence_intervals.ci_95.0 as u64,
-                statistical_analysis.confidence_intervals.ci_95.1 as u64,
+                analysis.confidence_intervals.ci_95.0 as u64,
+                analysis.confidence_intervals.ci_95.1 as u64,
             ),
-            sample_count: statistical_analysis.sample_stats.count,
+            sample_count: analysis.sample_stats.count,
+        }
+    }
+
+    /// Build complete BenchmarkResult
+    ///
+    /// Extracted from benchmark_single_language() for complexity reduction (Sprint 44 Ticket 9)
+    async fn build_benchmark_result(
+        &self,
+        language: &str,
+        example_path: &Path,
+        time_stats: TimeStatistics,
+        statistical_analysis: StatisticalAnalysis,
+        isolation_result: &IsolationResult,
+        memory_profile: Option<MemoryProfile>,
+        binary_analysis: Option<BinarySizeAnalysis>,
+    ) -> Result<BenchmarkResult> {
+        let ruchy_analysis = if language == "ruchy" {
+            Some(self.perform_ruchy_analysis().await?)
+        } else {
+            None
         };
 
-        // Stop memory profiling and collect comprehensive profile
-        let memory_profile = self.collect_memory_profile(memory_profiler, language).await;
-
-        // Perform binary size analysis
-        let binary_analysis = self.analyze_binary_size(language).await;
-
-        let result = BenchmarkResult {
+        Ok(BenchmarkResult {
             language: language.to_string(),
             example: example_path.to_string_lossy().to_string(),
             metrics: PerformanceMetrics {
@@ -915,14 +971,8 @@ impl BenchmarkRunner {
             config: self.config.clone(),
             memory_profile,
             binary_analysis,
-            ruchy_analysis: if language == "ruchy" {
-                Some(self.perform_ruchy_analysis().await?)
-            } else {
-                None
-            },
-        };
-
-        Ok(result)
+            ruchy_analysis,
+        })
     }
 
     /// Collect memory profiling data for a language
