@@ -1,6 +1,6 @@
 # Benchmark Report
 
-Generated: 2025-10-15 08:18:47 UTC
+Generated: 2025-10-15 08:21:51 UTC
 Generator: Rosetta Ruchy Benchmark Harness
 Suite Version: 1.6.0
 
@@ -22,15 +22,15 @@ Suite Version: 1.6.0
 
 | Implementation | Mean (ns) | Std Dev (ns) | 95% CI | Outliers |
 |---|---|---|---|---|
-| python | 5020844 | 668074 | (4888284, 5153405) | 1.0% |
-| rust | 499730 | 22059 | (495353, 504107) | 0.0% |
+| python | 5061311 | 754861 | (5014469, 5108154) | 0.7% |
+| rust | 500801 | 24897 | (499256, 502346) | 0.5% |
 
 ## Performance Comparisons
 
 ### python vs rust
 
-- **Change**: 904.7%
-- **Significance**: Significantly slower by 904.7%
+- **Change**: 910.6%
+- **Significance**: Significantly slower by 910.6%
 
 ## Key Insights
 
@@ -48,7 +48,7 @@ Suite Version: 1.6.0
 
 ## Configuration
 
-- **Iterations**: 100
-- **Warmup Iterations**: 10
+- **Iterations**: 1000
+- **Warmup Iterations**: 100
 - **Confidence Level**: 95%
-- **Min Sample Size**: 30
+- **Min Sample Size**: 1000

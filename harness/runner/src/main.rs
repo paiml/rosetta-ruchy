@@ -288,179 +288,9 @@ impl BenchmarkRunner {
         let analyzer = self.create_statistical_analyzer();
 
         for language in languages {
-            info!("📊 Benchmarking {} implementation", language);
-
-            // Start memory profiling for this language
-            let memory_profiler = if self.config.memory_profiling {
-                let mut profiler = MemoryProfiler::with_config(MemoryProfilerConfig {
-                    sampling_interval_ms: 50, // Faster sampling for benchmarks
-                    detailed_allocation_tracking: false,
-                    max_duration_seconds: 300,
-                    leak_detection_threshold_bytes: 512 * 1024, // 512KB threshold
-                    monitor_swap: true,
-                });
-
-                if profiler.start_profiling().await.is_ok() {
-                    info!("🧠 Memory profiling started for {}", language);
-                    Some(profiler)
-                } else {
-                    warn!("Failed to start memory profiling for {}", language);
-                    None
-                }
-            } else {
-                None
-            };
-
-            // Simulate realistic benchmark measurements
-            let raw_measurements = self.simulate_benchmark_measurements(language)?;
-
-            // Perform statistical analysis
-            let statistical_analysis = analyzer
-                .analyze(&raw_measurements)
-                .with_context(|| format!("Statistical analysis failed for {}", language))?;
-
-            info!(
-                "📈 {} statistics: mean={:.2}ms, std_dev={:.2}ms, outliers={}",
-                language,
-                statistical_analysis.sample_stats.mean / 1_000_000.0,
-                statistical_analysis.sample_stats.std_dev / 1_000_000.0,
-                statistical_analysis.outliers.outlier_count
-            );
-
-            // Convert statistical analysis to legacy format for compatibility
-            let time_stats = TimeStatistics {
-                mean_ns: statistical_analysis.sample_stats.mean as u64,
-                median_ns: statistical_analysis.sample_stats.median as u64,
-                std_dev_ns: statistical_analysis.sample_stats.std_dev as u64,
-                min_ns: statistical_analysis.sample_stats.min as u64,
-                max_ns: statistical_analysis.sample_stats.max as u64,
-                p95_ns: statistical_analysis.distribution.percentiles.p95 as u64,
-                p99_ns: statistical_analysis.distribution.percentiles.p99 as u64,
-                confidence_interval: (
-                    statistical_analysis.confidence_intervals.ci_95.0 as u64,
-                    statistical_analysis.confidence_intervals.ci_95.1 as u64,
-                ),
-                sample_count: statistical_analysis.sample_stats.count,
-            };
-
-            // Stop memory profiling and collect comprehensive profile
-            let memory_profile = if let Some(mut profiler) = memory_profiler {
-                // Allow some time for memory sampling during simulation
-                tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-
-                match profiler.stop_profiling().await {
-                    Ok(profile) => {
-                        info!(
-                            "🧠 {} memory profile: peak={:.2}MB, avg={:.2}MB, leak={}KB",
-                            language,
-                            profile.peak_usage_bytes as f64 / 1_048_576.0,
-                            profile.average_usage_bytes as f64 / 1_048_576.0,
-                            profile.memory_leak_bytes / 1024
-                        );
-
-                        // Generate memory report if significant usage
-                        if profile.peak_usage_bytes > 10 * 1024 * 1024 {
-                            // > 10MB
-                            let memory_report = MemoryProfiler::generate_memory_report(&profile);
-                            if let Err(e) = std::fs::write(
-                                format!("results/{}_memory_profile.md", language),
-                                memory_report,
-                            ) {
-                                warn!(
-                                    "Failed to write memory profile report for {}: {}",
-                                    language, e
-                                );
-                            } else {
-                                info!(
-                                    "📊 Memory profile report: results/{}_memory_profile.md",
-                                    language
-                                );
-                            }
-                        }
-
-                        Some(profile)
-                    }
-                    Err(e) => {
-                        warn!(
-                            "Failed to complete memory profiling for {}: {}",
-                            language, e
-                        );
-                        None
-                    }
-                }
-            } else {
-                None
-            };
-
-            // Perform binary size analysis
-            let binary_analysis = if let Some(binary_path) = self.get_language_binary_path(language)
-            {
-                info!("📦 Analyzing binary size for {}", language);
-                match BinaryAnalyzer::new(&binary_path).analyze().await {
-                    Ok(analysis) => {
-                        info!(
-                            "📦 {} binary analysis: total={:.2}MB, stripped={:.2}MB, debug={:.1}%",
-                            language,
-                            analysis.total_size_bytes as f64 / 1_048_576.0,
-                            analysis.stripped_size_bytes as f64 / 1_048_576.0,
-                            analysis.debug_percentage
-                        );
-
-                        // Generate binary analysis report if significant
-                        if analysis.total_size_bytes > 100_000 {
-                            // > 100KB
-                            let binary_report = BinaryAnalyzer::generate_report(&analysis);
-                            if let Err(e) = std::fs::write(
-                                format!("results/{}_binary_analysis.md", language),
-                                binary_report,
-                            ) {
-                                warn!(
-                                    "Failed to write binary analysis report for {}: {}",
-                                    language, e
-                                );
-                            } else {
-                                info!(
-                                    "📊 Binary analysis report: results/{}_binary_analysis.md",
-                                    language
-                                );
-                            }
-                        }
-
-                        Some(analysis)
-                    }
-                    Err(e) => {
-                        warn!("Failed to analyze binary for {}: {}", language, e);
-                        None
-                    }
-                }
-            } else {
-                debug!("No binary path available for {}", language);
-                None
-            };
-
-            let result = BenchmarkResult {
-                language: language.clone(),
-                example: example_path.to_string_lossy().to_string(),
-                metrics: PerformanceMetrics {
-                    execution_time: time_stats,
-                    memory_usage: self.simulate_memory_metrics(language),
-                    binary_size: self.estimate_binary_size(language),
-                    lines_of_code: self.estimate_lines_of_code(language),
-                    complexity: self.estimate_complexity_metrics(language),
-                },
-                statistics: statistical_analysis,
-                isolation: isolation_result.clone(),
-                system_info: self.get_system_info()?,
-                config: self.config.clone(),
-                memory_profile,
-                binary_analysis,
-                ruchy_analysis: if language == "ruchy" {
-                    Some(self.perform_ruchy_analysis().await?)
-                } else {
-                    None
-                },
-            };
-
+            let result = self
+                .benchmark_single_language(language, &example_path, &analyzer, &isolation_result)
+                .await?;
             results.push(result);
         }
 
@@ -942,6 +772,209 @@ impl BenchmarkRunner {
         }
 
         Ok(())
+    }
+
+    /// Benchmark a single language implementation
+    ///
+    /// Extracted from run_benchmark() for complexity reduction (Sprint 43 Ticket 4)
+    async fn benchmark_single_language(
+        &self,
+        language: &str,
+        example_path: &Path,
+        analyzer: &StatisticalAnalyzer,
+        isolation_result: &IsolationResult,
+    ) -> Result<BenchmarkResult> {
+        info!("📊 Benchmarking {} implementation", language);
+
+        // Start memory profiling for this language
+        let memory_profiler = if self.config.memory_profiling {
+            let mut profiler = MemoryProfiler::with_config(MemoryProfilerConfig {
+                sampling_interval_ms: 50, // Faster sampling for benchmarks
+                detailed_allocation_tracking: false,
+                max_duration_seconds: 300,
+                leak_detection_threshold_bytes: 512 * 1024, // 512KB threshold
+                monitor_swap: true,
+            });
+
+            if profiler.start_profiling().await.is_ok() {
+                info!("🧠 Memory profiling started for {}", language);
+                Some(profiler)
+            } else {
+                warn!("Failed to start memory profiling for {}", language);
+                None
+            }
+        } else {
+            None
+        };
+
+        // Simulate realistic benchmark measurements
+        let raw_measurements = self.simulate_benchmark_measurements(language)?;
+
+        // Perform statistical analysis
+        let statistical_analysis = analyzer
+            .analyze(&raw_measurements)
+            .with_context(|| format!("Statistical analysis failed for {}", language))?;
+
+        info!(
+            "📈 {} statistics: mean={:.2}ms, std_dev={:.2}ms, outliers={}",
+            language,
+            statistical_analysis.sample_stats.mean / 1_000_000.0,
+            statistical_analysis.sample_stats.std_dev / 1_000_000.0,
+            statistical_analysis.outliers.outlier_count
+        );
+
+        // Convert statistical analysis to legacy format for compatibility
+        let time_stats = TimeStatistics {
+            mean_ns: statistical_analysis.sample_stats.mean as u64,
+            median_ns: statistical_analysis.sample_stats.median as u64,
+            std_dev_ns: statistical_analysis.sample_stats.std_dev as u64,
+            min_ns: statistical_analysis.sample_stats.min as u64,
+            max_ns: statistical_analysis.sample_stats.max as u64,
+            p95_ns: statistical_analysis.distribution.percentiles.p95 as u64,
+            p99_ns: statistical_analysis.distribution.percentiles.p99 as u64,
+            confidence_interval: (
+                statistical_analysis.confidence_intervals.ci_95.0 as u64,
+                statistical_analysis.confidence_intervals.ci_95.1 as u64,
+            ),
+            sample_count: statistical_analysis.sample_stats.count,
+        };
+
+        // Stop memory profiling and collect comprehensive profile
+        let memory_profile = self.collect_memory_profile(memory_profiler, language).await;
+
+        // Perform binary size analysis
+        let binary_analysis = self.analyze_binary_size(language).await;
+
+        let result = BenchmarkResult {
+            language: language.to_string(),
+            example: example_path.to_string_lossy().to_string(),
+            metrics: PerformanceMetrics {
+                execution_time: time_stats,
+                memory_usage: self.simulate_memory_metrics(language),
+                binary_size: self.estimate_binary_size(language),
+                lines_of_code: self.estimate_lines_of_code(language),
+                complexity: self.estimate_complexity_metrics(language),
+            },
+            statistics: statistical_analysis,
+            isolation: isolation_result.clone(),
+            system_info: self.get_system_info()?,
+            config: self.config.clone(),
+            memory_profile,
+            binary_analysis,
+            ruchy_analysis: if language == "ruchy" {
+                Some(self.perform_ruchy_analysis().await?)
+            } else {
+                None
+            },
+        };
+
+        Ok(result)
+    }
+
+    /// Collect memory profiling data for a language
+    ///
+    /// Extracted from benchmark_single_language() for complexity reduction
+    async fn collect_memory_profile(
+        &self,
+        memory_profiler: Option<MemoryProfiler>,
+        language: &str,
+    ) -> Option<MemoryProfile> {
+        if let Some(mut profiler) = memory_profiler {
+            // Allow some time for memory sampling during simulation
+            tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+
+            match profiler.stop_profiling().await {
+                Ok(profile) => {
+                    info!(
+                        "🧠 {} memory profile: peak={:.2}MB, avg={:.2}MB, leak={}KB",
+                        language,
+                        profile.peak_usage_bytes as f64 / 1_048_576.0,
+                        profile.average_usage_bytes as f64 / 1_048_576.0,
+                        profile.memory_leak_bytes / 1024
+                    );
+
+                    // Generate memory report if significant usage
+                    if profile.peak_usage_bytes > 10 * 1024 * 1024 {
+                        // > 10MB
+                        let memory_report = MemoryProfiler::generate_memory_report(&profile);
+                        if let Err(e) = std::fs::write(
+                            format!("results/{}_memory_profile.md", language),
+                            memory_report,
+                        ) {
+                            warn!(
+                                "Failed to write memory profile report for {}: {}",
+                                language, e
+                            );
+                        } else {
+                            info!(
+                                "📊 Memory profile report: results/{}_memory_profile.md",
+                                language
+                            );
+                        }
+                    }
+
+                    Some(profile)
+                }
+                Err(e) => {
+                    warn!(
+                        "Failed to complete memory profiling for {}: {}",
+                        language, e
+                    );
+                    None
+                }
+            }
+        } else {
+            None
+        }
+    }
+
+    /// Analyze binary size for a language
+    ///
+    /// Extracted from benchmark_single_language() for complexity reduction
+    async fn analyze_binary_size(&self, language: &str) -> Option<BinarySizeAnalysis> {
+        if let Some(binary_path) = self.get_language_binary_path(language) {
+            info!("📦 Analyzing binary size for {}", language);
+            match BinaryAnalyzer::new(&binary_path).analyze().await {
+                Ok(analysis) => {
+                    info!(
+                        "📦 {} binary analysis: total={:.2}MB, stripped={:.2}MB, debug={:.1}%",
+                        language,
+                        analysis.total_size_bytes as f64 / 1_048_576.0,
+                        analysis.stripped_size_bytes as f64 / 1_048_576.0,
+                        analysis.debug_percentage
+                    );
+
+                    // Generate binary analysis report if significant
+                    if analysis.total_size_bytes > 100_000 {
+                        // > 100KB
+                        let binary_report = BinaryAnalyzer::generate_report(&analysis);
+                        if let Err(e) = std::fs::write(
+                            format!("results/{}_binary_analysis.md", language),
+                            binary_report,
+                        ) {
+                            warn!(
+                                "Failed to write binary analysis report for {}: {}",
+                                language, e
+                            );
+                        } else {
+                            info!(
+                                "📊 Binary analysis report: results/{}_binary_analysis.md",
+                                language
+                            );
+                        }
+                    }
+
+                    Some(analysis)
+                }
+                Err(e) => {
+                    warn!("Failed to analyze binary for {}: {}", language, e);
+                    None
+                }
+            }
+        } else {
+            debug!("No binary path available for {}", language);
+            None
+        }
     }
 }
 
