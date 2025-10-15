@@ -617,9 +617,21 @@ impl BinaryAnalyzer {
         }
     }
 
-    /// Log analysis results
+    /// Log binary analysis results
+    ///
+    /// Refactored in Sprint 44 Ticket 7 for complexity reduction
     fn log_analysis(&self, analysis: &BinarySizeAnalysis) {
         info!("📦 Binary Size Analysis:");
+        self.log_binary_sizes(analysis);
+        self.log_main_sections(analysis);
+        self.log_symbol_bloat_warning(analysis);
+        self.log_optimization_count(analysis);
+    }
+
+    /// Log basic binary size statistics
+    ///
+    /// Extracted from log_analysis() for complexity reduction (Sprint 44 Ticket 7)
+    fn log_binary_sizes(&self, analysis: &BinarySizeAnalysis) {
         info!(
             "   Total size: {:.2} MB",
             analysis.total_size_bytes as f64 / 1_048_576.0
@@ -629,7 +641,12 @@ impl BinaryAnalyzer {
             analysis.stripped_size_bytes as f64 / 1_048_576.0
         );
         info!("   Debug symbols: {:.1}%", analysis.debug_percentage);
+    }
 
+    /// Log main binary sections
+    ///
+    /// Extracted from log_analysis() for complexity reduction (Sprint 44 Ticket 7)
+    fn log_main_sections(&self, analysis: &BinarySizeAnalysis) {
         if !analysis.sections.is_empty() {
             info!("   Main sections:");
             for section in analysis.sections.iter().take(3) {
@@ -641,14 +658,24 @@ impl BinaryAnalyzer {
                 );
             }
         }
+    }
 
+    /// Log symbol bloat warning if threshold exceeded
+    ///
+    /// Extracted from log_analysis() for complexity reduction (Sprint 44 Ticket 7)
+    fn log_symbol_bloat_warning(&self, analysis: &BinarySizeAnalysis) {
         if analysis.symbol_analysis.bloat_score > 70.0 {
             warn!(
                 "   ⚠️ High symbol bloat score: {:.1}",
                 analysis.symbol_analysis.bloat_score
             );
         }
+    }
 
+    /// Log count of optimization opportunities
+    ///
+    /// Extracted from log_analysis() for complexity reduction (Sprint 44 Ticket 7)
+    fn log_optimization_count(&self, analysis: &BinarySizeAnalysis) {
         info!(
             "   Optimization opportunities: {}",
             analysis.optimization_opportunities.len()
