@@ -1,0 +1,338 @@
+name: bashrs Transpiler Validation
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Daily at 6am UTC
+  push:
+    paths:
+      - 'examples/algorithms/*/implementations/bash/**'
+      - '.github/workflows/bashrs-validation.yml'
+  pull_request:
+    paths:
+      - 'examples/algorithms/*/implementations/bash/**'
+  workflow_dispatch:  # Manual trigger
+
+env:
+  RUST_BACKTRACE: 1
+  BASHRS_VERSION: '1.0.0-rc1'
+
+jobs:
+  validate-bashrs:
+    name: Validate ${{ matrix.algorithm }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        algorithm:
+          - 001-fibonacci
+          - 004-binary-search
+          - 022-selection-sort
+          - 021-counting-sort
+          - 002-quicksort
+          - 003-mergesort
+          - 018-heap-sort
+          - 019-radix-sort
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-bashrs-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install bashrs transpiler
+        run: |
+          cargo install bashrs --version ${{ env.BASHRS_VERSION }}
+          bashrs --version
+
+      - name: Install shells and validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bash dash zsh shellcheck
+          cargo install hyperfine || true
+
+      - name: Run original Bash tests (baseline)
+        id: bash-baseline
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/bash/
+          BASH_SCRIPT=$(ls *.sh | head -1)
+          bash "$BASH_SCRIPT" test 2>&1 | tee bash-test-output.txt
+          echo "status=$?" >> $GITHUB_OUTPUT
+
+      - name: Shellcheck original Bash
+        id: shellcheck-original
+        continue-on-error: true
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/bash/
+          BASH_SCRIPT=$(ls *.sh | head -1)
+          shellcheck "$BASH_SCRIPT" 2>&1 | tee shellcheck-original.txt
+          echo "status=$?" >> $GITHUB_OUTPUT
+
+      - name: Transpile Bash to Rust with bashrs
+        id: transpile
+        continue-on-error: true
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/bash/
+          BASH_SCRIPT=$(ls *.sh | head -1)
+
+          # Transpile Bash → Rust
+          bashrs "$BASH_SCRIPT" -o transpiled.rs 2>&1 | tee transpile-output.txt
+
+          if [ -f transpiled.rs ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Compile transpiled Rust
+        if: steps.transpile.outputs.status == 'success'
+        id: compile
+        continue-on-error: true
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/bash/
+          rustc -C opt-level=3 transpiled.rs -o transpiled_bin 2>&1 | tee compile-output.txt
+
+          if [ -f transpiled_bin ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run transpiled Rust tests
+        if: steps.compile.outputs.status == 'success'
+        id: test-rust
+        continue-on-error: true
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/bash/
+          ./transpiled_bin test 2>&1 | tee rust-test-output.txt
+          echo "status=$?" >> $GITHUB_OUTPUT
+
+      - name: Generate purified Bash (Rust → Bash)
+        if: steps.compile.outputs.status == 'success'
+        id: purify
+        continue-on-error: true
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/bash/
+
+          # Transpile Rust → Bash
+          bashrs --to-bash transpiled.rs -o purified.sh 2>&1 | tee purify-output.txt
+
+          if [ -f purified.sh ]; then
+            chmod +x purified.sh
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate POSIX compliance (purified)
+        if: steps.purify.outputs.status == 'success'
+        id: posix
+        continue-on-error: true
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/bash/
+          shellcheck purified.sh 2>&1 | tee shellcheck-purified.txt
+          echo "status=$?" >> $GITHUB_OUTPUT
+
+      - name: Test purified Bash
+        if: steps.purify.outputs.status == 'success'
+        id: test-purified
+        continue-on-error: true
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/bash/
+          bash purified.sh test 2>&1 | tee purified-test-output.txt
+          echo "status=$?" >> $GITHUB_OUTPUT
+
+      - name: Cross-shell testing
+        if: steps.purify.outputs.status == 'success'
+        id: cross-shell
+        continue-on-error: true
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/bash/
+
+          echo "Testing with bash..."
+          bash purified.sh test > bash-result.txt 2>&1
+          bash_status=$?
+
+          echo "Testing with dash..."
+          dash purified.sh test > dash-result.txt 2>&1 || true
+          dash_status=$?
+
+          echo "Testing with zsh..."
+          zsh purified.sh test > zsh-result.txt 2>&1 || true
+          zsh_status=$?
+
+          echo "bash_status=$bash_status" >> $GITHUB_OUTPUT
+          echo "dash_status=$dash_status" >> $GITHUB_OUTPUT
+          echo "zsh_status=$zsh_status" >> $GITHUB_OUTPUT
+
+      - name: Compare outputs (correctness)
+        if: steps.test-rust.outputs.status == '0' && steps.bash-baseline.outputs.status == '0'
+        id: correctness
+        continue-on-error: true
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/bash/
+          diff bash-test-output.txt rust-test-output.txt > correctness-diff.txt 2>&1 || true
+
+          if [ -s correctness-diff.txt ]; then
+            echo "status=different" >> $GITHUB_OUTPUT
+          else
+            echo "status=identical" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Performance benchmark
+        if: steps.test-rust.outputs.status == '0'
+        id: benchmark
+        continue-on-error: true
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/bash/
+          BASH_SCRIPT=$(ls *.sh | grep -v purified | head -1)
+
+          if command -v hyperfine &> /dev/null; then
+            hyperfine --warmup 3 --runs 10 \
+              --export-json benchmark-results.json \
+              "bash $BASH_SCRIPT" \
+              "./transpiled_bin" \
+              "bash purified.sh" || echo "Benchmark failed but continuing"
+          else
+            echo "hyperfine not available, skipping benchmark"
+          fi
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.algorithm }}-bashrs-validation
+          path: |
+            examples/algorithms/${{ matrix.algorithm }}/implementations/bash/transpiled.rs
+            examples/algorithms/${{ matrix.algorithm }}/implementations/bash/purified.sh
+            examples/algorithms/${{ matrix.algorithm }}/implementations/bash/*-output.txt
+            examples/algorithms/${{ matrix.algorithm }}/implementations/bash/*-result.txt
+            examples/algorithms/${{ matrix.algorithm }}/implementations/bash/benchmark-results.json
+            examples/algorithms/${{ matrix.algorithm }}/implementations/bash/correctness-diff.txt
+          if-no-files-found: ignore
+
+      - name: Generate validation report
+        if: always()
+        run: |
+          cd examples/algorithms/${{ matrix.algorithm }}/implementations/bash/
+          cat > validation-report.md << EOF
+          # bashrs Validation Report: ${{ matrix.algorithm }}
+
+          **Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Algorithm**: ${{ matrix.algorithm }}
+          **bashrs Version**: ${{ env.BASHRS_VERSION }}
+          **Workflow Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          ## Results Summary
+
+          | Stage | Status |
+          |-------|--------|
+          | Bash Baseline | ${{ steps.bash-baseline.outputs.status == '0' && 'success' || 'failed' }} |
+          | Shellcheck (Original) | ${{ steps.shellcheck-original.outputs.status == '0' && 'clean' || 'warnings' }} |
+          | Bash→Rust Transpilation | ${{ steps.transpile.outputs.status }} |
+          | Rust Compilation | ${{ steps.compile.outputs.status }} |
+          | Rust Testing | ${{ steps.test-rust.outputs.status == '0' && 'success' || 'failed' }} |
+          | Rust→Bash Purification | ${{ steps.purify.outputs.status }} |
+          | POSIX Compliance (Purified) | ${{ steps.posix.outputs.status == '0' && 'clean' || 'warnings' }} |
+          | Purified Testing | ${{ steps.test-purified.outputs.status == '0' && 'success' || 'failed' }} |
+          | Correctness | ${{ steps.correctness.outputs.status || 'not-tested' }} |
+
+          ## Cross-Shell Compatibility
+
+          | Shell | Status |
+          |-------|--------|
+          | bash | ${{ steps.cross-shell.outputs.bash_status == '0' && '✅ passed' || '❌ failed' }} |
+          | dash | ${{ steps.cross-shell.outputs.dash_status == '0' && '✅ passed' || '❌ failed' }} |
+          | zsh | ${{ steps.cross-shell.outputs.zsh_status == '0' && '✅ passed' || '❌ failed' }} |
+
+          ## Detailed Information
+
+          ### Original Bash Tests
+          \`\`\`
+          $(cat bash-test-output.txt 2>/dev/null || echo "Output not available")
+          \`\`\`
+
+          ### Transpilation Output (Bash → Rust)
+          \`\`\`
+          $(tail -20 transpile-output.txt 2>/dev/null || echo "Output not available")
+          \`\`\`
+
+          ### Purification Output (Rust → Bash)
+          \`\`\`
+          $(tail -20 purify-output.txt 2>/dev/null || echo "Output not available")
+          \`\`\`
+
+          ### Shellcheck Analysis
+
+          **Original Script:**
+          \`\`\`
+          $(cat shellcheck-original.txt 2>/dev/null || echo "Output not available")
+          \`\`\`
+
+          **Purified Script:**
+          \`\`\`
+          $(cat shellcheck-purified.txt 2>/dev/null || echo "Output not available")
+          \`\`\`
+
+          ## Performance
+
+          See benchmark-results.json for detailed performance comparison (if available).
+
+          ## Artifacts
+
+          - Transpiled Rust code: transpiled.rs
+          - Purified Bash script: purified.sh
+          - Test outputs: bash-test-output.txt, rust-test-output.txt, purified-test-output.txt
+          - Cross-shell results: bash-result.txt, dash-result.txt, zsh-result.txt
+          - Benchmark results: benchmark-results.json
+          - Correctness diff: correctness-diff.txt
+
+          ---
+
+          *Automated validation by rosetta-ruchy CI/CD*
+          EOF
+          cat validation-report.md
+
+  summary:
+    name: Validation Summary
+    needs: validate-bashrs
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Generate overall summary
+        run: |
+          echo "# bashrs Transpiler Validation Summary"
+          echo ""
+          echo "**Workflow Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "**Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "**bashrs Version**: ${{ env.BASHRS_VERSION }}"
+          echo ""
+          echo "## Validation Results"
+          echo ""
+          echo "Check individual algorithm results in the artifacts."
+          echo ""
+          echo "Total algorithms tested: 8"
+          echo "- 001-fibonacci"
+          echo "- 004-binary-search"
+          echo "- 022-selection-sort"
+          echo "- 021-counting-sort"
+          echo "- 002-quicksort"
+          echo "- 003-mergesort"
+          echo "- 018-heap-sort"
+          echo "- 019-radix-sort"
