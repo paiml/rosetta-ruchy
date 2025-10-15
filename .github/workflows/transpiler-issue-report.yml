@@ -1,0 +1,297 @@
+name: Transpiler Issue Reporter
+
+on:
+  workflow_run:
+    workflows: ["decy Transpiler Validation", "bashrs Transpiler Validation"]
+    types:
+      - completed
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  analyze-and-report:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          run_id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Analyze failures
+        id: analyze
+        run: |
+          echo "Analyzing validation failures..."
+
+          # Determine which transpiler failed
+          if [[ "${{ github.event.workflow_run.name }}" == *"decy"* ]]; then
+            TRANSPILER="decy"
+          else
+            TRANSPILER="bashrs"
+          fi
+
+          echo "transpiler=$TRANSPILER" >> $GITHUB_OUTPUT
+
+          # Find which algorithms failed by checking for missing artifacts or error outputs
+          FAILED_ALGORITHMS=""
+
+          # List all downloaded artifacts
+          if [ -d "." ]; then
+            for dir in *-validation 2>/dev/null; do
+              if [ -d "$dir" ]; then
+                ALGORITHM=$(echo "$dir" | sed "s/-${TRANSPILER}-validation//")
+
+                # Check if transpilation failed
+                if [ -f "$dir/transpile-output.txt" ]; then
+                  if grep -q "error\|Error\|ERROR\|failed\|Failed\|FAILED" "$dir/transpile-output.txt"; then
+                    FAILED_ALGORITHMS="$FAILED_ALGORITHMS $ALGORITHM"
+                  fi
+                fi
+
+                # Check if compilation failed
+                if [ -f "$dir/compile-output.txt" ]; then
+                  if grep -q "error\|Error\|ERROR" "$dir/compile-output.txt"; then
+                    FAILED_ALGORITHMS="$FAILED_ALGORITHMS $ALGORITHM"
+                  fi
+                fi
+              fi
+            done
+          fi
+
+          # Remove duplicates
+          FAILED_ALGORITHMS=$(echo "$FAILED_ALGORITHMS" | tr ' ' '\n' | sort -u | tr '\n' ' ')
+
+          echo "failed_algorithms=${FAILED_ALGORITHMS:-unknown}" >> $GITHUB_OUTPUT
+
+          # Count failures
+          FAILURE_COUNT=$(echo "$FAILED_ALGORITHMS" | wc -w)
+          echo "failure_count=$FAILURE_COUNT" >> $GITHUB_OUTPUT
+
+      - name: Check for existing issue
+        id: check-issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const transpiler = '${{ steps.analyze.outputs.transpiler }}';
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: `transpiler-validation,${transpiler},automated`,
+              state: 'open'
+            });
+
+            // Check if there's already an open issue for this transpiler
+            const existingIssue = issues.data.find(issue =>
+              issue.title.includes(`${transpiler} Validation Failure`)
+            );
+
+            if (existingIssue) {
+              core.setOutput('issue_exists', 'true');
+              core.setOutput('issue_number', existingIssue.number);
+            } else {
+              core.setOutput('issue_exists', 'false');
+            }
+
+      - name: Create or update GitHub issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const transpiler = '${{ steps.analyze.outputs.transpiler }}';
+            const failedAlgorithms = '${{ steps.analyze.outputs.failed_algorithms }}';
+            const failureCount = '${{ steps.analyze.outputs.failure_count }}';
+            const workflowUrl = '${{ github.event.workflow_run.html_url }}';
+            const runId = '${{ github.event.workflow_run.id }}';
+            const issueExists = '${{ steps.check-issue.outputs.issue_exists }}' === 'true';
+            const issueNumber = '${{ steps.check-issue.outputs.issue_number }}';
+
+            const transpilerUrls = {
+              'decy': 'https://github.com/paiml/decy',
+              'bashrs': 'https://github.com/paiml/bashrs'
+            };
+
+            const title = `${transpiler} Validation Failure (${failureCount} algorithm${failureCount > 1 ? 's' : ''})`;
+
+            const body = `## ${transpiler} Transpiler Validation Failure
+
+**Date**: ${new Date().toUTCString()}
+**Workflow Run**: [${runId}](${workflowUrl})
+**Failed Algorithms**: ${failedAlgorithms || 'unknown'}
+**Failure Count**: ${failureCount}
+
+### Summary
+
+The automated validation workflow for **${transpiler}** has detected failures in ${failureCount} algorithm${failureCount > 1 ? 's' : ''}:
+
+${failedAlgorithms.split(' ').map(algo => `- \`${algo}\``).join('\n')}
+
+### Validation Details
+
+This issue was automatically created because the ${transpiler} transpiler validation workflow failed. The failure may indicate:
+
+- Transpilation errors (source → Rust conversion)
+- Compilation errors (generated Rust code doesn't compile)
+- Test failures (transpiled code produces incorrect results)
+- Performance regressions (transpiled code significantly slower)
+
+### Reproduction Steps
+
+Download the artifacts from the failed workflow run to reproduce the issue:
+
+\`\`\`bash
+# Download artifacts from workflow run
+gh run download ${runId} --repo ${context.repo.owner}/${context.repo.repo}
+
+# For each failed algorithm, check the validation report
+cd <algorithm>-${transpiler}-validation/
+cat validation-report.md
+\`\`\`
+
+### Manual Reproduction
+
+For algorithm \`<algorithm>\`:
+
+\`\`\`bash
+cd rosetta-ruchy/examples/algorithms/<algorithm>/implementations/c/
+${transpiler === 'decy' ? 'decy *.c -o transpiled.rs' : 'bashrs *.sh -o transpiled.rs'}
+rustc -C opt-level=3 transpiled.rs -o transpiled_bin
+./transpiled_bin test
+\`\`\`
+
+### Expected Behavior
+
+- Transpilation should succeed without errors
+- Generated Rust code should compile without errors
+- All tests should pass
+- Output should match the reference implementation
+
+### Artifacts
+
+The following artifacts are available from the workflow run:
+
+- Transpiled Rust code
+- Compilation output
+- Test results
+- Validation reports
+
+[View workflow run and download artifacts](${workflowUrl})
+
+### Related Resources
+
+- **${transpiler} Repository**: ${transpilerUrls[transpiler]}
+- **Validation Corpus**: rosetta-ruchy Tier 0 implementations
+- **Integration Guide**: [docs/guides/${transpiler}-integration.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/docs/guides/${transpiler}-integration.md)
+
+### Next Steps
+
+1. **Review Artifacts**: Download and examine the validation artifacts
+2. **Reproduce Locally**: Follow the reproduction steps above
+3. **Identify Root Cause**: Determine if issue is in transpiler or test corpus
+4. **Report to ${transpiler}**: If confirmed transpiler bug, create issue in [${transpiler} repository](${transpilerUrls[transpiler]})
+5. **Fix and Validate**: After fix, re-run validation workflow
+
+### Automated Monitoring
+
+This issue will be automatically updated if:
+- Validation continues to fail (issue remains open)
+- Validation succeeds (issue will be closed automatically)
+- Additional algorithms fail (issue will be updated)
+
+---
+
+*This issue was automatically created by rosetta-ruchy transpiler validation CI/CD.*
+*Workflow: ${transpiler} Transpiler Validation*
+*Run ID: ${runId}*
+`;
+
+            if (issueExists) {
+              // Update existing issue with new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parseInt(issueNumber),
+                body: `## Update: Validation Still Failing
+
+**Date**: ${new Date().toUTCString()}
+**Workflow Run**: [${runId}](${workflowUrl})
+**Failed Algorithms**: ${failedAlgorithms || 'unknown'}
+
+The validation is still failing for ${failureCount} algorithm${failureCount > 1 ? 's' : ''}.
+
+[View latest workflow run](${workflowUrl})
+`
+              });
+
+              console.log(`Updated existing issue #${issueNumber}`);
+            } else {
+              // Create new issue
+              const issue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['transpiler-validation', transpiler, 'automated', 'bug']
+              });
+
+              console.log(`Created new issue #${issue.data.number}`);
+            }
+
+  auto-close-on-success:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Check for open validation issues
+        id: check-issues
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const transpiler = '${{ github.event.workflow_run.name }}'.includes('decy') ? 'decy' : 'bashrs';
+
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: `transpiler-validation,${transpiler},automated`,
+              state: 'open'
+            });
+
+            for (const issue of issues.data) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `## ✅ Validation Now Passing
+
+**Date**: ${new Date().toUTCString()}
+**Workflow Run**: [${{ github.event.workflow_run.id }}](${{ github.event.workflow_run.html_url }})
+
+The ${transpiler} transpiler validation workflow is now passing! All algorithms are successfully validated.
+
+Automatically closing this issue.
+
+---
+
+*Automated by rosetta-ruchy transpiler validation CI/CD*
+`
+              });
+
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed',
+                state_reason: 'completed'
+              });
+
+              console.log(`Closed issue #${issue.number}`);
+            }
