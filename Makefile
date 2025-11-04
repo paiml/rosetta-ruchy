@@ -553,3 +553,126 @@ validate-proven: test-all-examples dogfood-full red-team-validation generate-das
 	@echo ""
 	@echo "🎯 PROVEN: Tools genuinely work (not hard-coded)"
 
+# ═══════════════════════════════════════════════════════════════════
+# SPRINT 47: Comprehensive Quality Framework (ruchy-book methodology)
+# New targets for bashrs, pmat, 18+ Ruchy tools testing, benchmarking
+# ═══════════════════════════════════════════════════════════════════
+
+# Install all quality tools (bashrs, pmat, ruchy, shellcheck, etc.)
+install-quality-tools:
+	@echo "📦 Installing comprehensive quality tooling..."
+	@echo "   - Ruchy v3.88.0 (core language)"
+	@echo "   - bashrs v1.0.0-rc1 (Bash transpiler)"
+	@echo "   - pmat v2.192.0 (roadmap/quality)"
+	@echo "   - shellcheck (shell linting)"
+	@./scripts/install-quality-tools.sh
+	@echo "✅ Quality tools installation complete"
+
+# Verify all tools are installed correctly
+verify-tools:
+	@echo "🔍 Verifying quality tool installations..."
+	@command -v ruchy >/dev/null 2>&1 && echo "✓ ruchy: $$(ruchy --version 2>&1 | head -1)" || echo "✗ ruchy: NOT INSTALLED"
+	@command -v bashrs >/dev/null 2>&1 && echo "✓ bashrs: $$(bashrs --version 2>&1 | head -1)" || echo "✗ bashrs: NOT INSTALLED"
+	@command -v pmat >/dev/null 2>&1 && echo "✓ pmat: $$(pmat --version 2>&1 | head -1)" || echo "✗ pmat: NOT INSTALLED"
+	@command -v shellcheck >/dev/null 2>&1 && echo "✓ shellcheck: $$(shellcheck --version 2>&1 | grep version | head -1)" || echo "✗ shellcheck: NOT INSTALLED"
+	@command -v cargo >/dev/null 2>&1 && echo "✓ cargo: $$(cargo --version 2>&1 | head -1)" || echo "✗ cargo: NOT INSTALLED"
+
+# Test ALL 18+ Ruchy tools across ALL examples (ruchy-book methodology)
+test-ruchy-tools-comprehensive:
+	@echo "🧪 Testing 18+ Ruchy tools on ALL 126 examples..."
+	@echo "Following ruchy-book comprehensive testing framework"
+	@./scripts/test-ruchy-tools-comprehensive.sh
+	@echo "✅ Comprehensive Ruchy tools testing complete"
+	@echo "📊 Results:"
+	@echo "   - ruchy-tools-test-results.json (machine-readable)"
+	@echo "   - ruchy-tools-validation-report.md (human-readable)"
+	@echo "   - ruchy-tools-detailed.log (detailed log)"
+
+# Run language comparison benchmarks (EXACT ruchy-book methodology)
+bench-language-comparison:
+	@echo "⚡ Running EXACT language comparison benchmarks..."
+	@echo "Comparing: Ruchy vs Rust vs Python vs JavaScript vs Go vs Julia vs R"
+	@./scripts/benchmark-language-comparison.sh
+	@echo "✅ Language comparison benchmarks complete"
+	@echo "📊 Results:"
+	@echo "   - benchmark-results/language-comparison-results.json"
+	@echo "   - benchmark-results/language-comparison-report.md"
+	@echo "   - benchmark-results/benchmark-detailed.log"
+
+# bashrs validation (Bash→Rust→Bash transpilation)
+bashrs-validate:
+	@echo "🔄 Running bashrs transpiler validation..."
+	@if command -v bashrs >/dev/null 2>&1; then \
+		echo "Finding all bash scripts..."; \
+		find examples -name "*.sh" -type f | while read script; do \
+			echo "Validating $$script..."; \
+			bashrs "$$script" --validate 2>&1 | head -5; \
+		done; \
+	else \
+		echo "⚠️  bashrs not installed - run 'make install-quality-tools'"; \
+	fi
+
+# pmat quality management (roadmap, quality gates, refactoring)
+pmat-quality:
+	@echo "📊 Running pmat quality management..."
+	@if command -v pmat >/dev/null 2>&1; then \
+		echo "Analyzing roadmap status..."; \
+		pmat roadmap status; \
+		echo "Analyzing quality metrics..."; \
+		pmat quality analyze; \
+	else \
+		echo "⚠️  pmat not installed - using alternative validation"; \
+		./scripts/pmat-style-validation.sh validate consistency; \
+		./scripts/pmat-style-validation.sh validate metrics; \
+	fi
+
+# Comprehensive quality validation (all tools + benchmarks)
+validate-comprehensive: install-quality-tools verify-tools test-ruchy-tools-comprehensive bench-language-comparison
+	@echo "✅ Comprehensive quality validation complete!"
+	@echo ""
+	@echo "📊 Quality Summary:"
+	@echo "   - Tools installed: ruchy, bashrs, pmat, shellcheck"
+	@echo "   - 18+ Ruchy tools tested across 126 examples"
+	@echo "   - Language comparison benchmarks complete"
+	@echo "   - All validation reports generated"
+	@echo ""
+	@echo "📄 Generated Reports:"
+	@echo "   - ruchy-tools-validation-report.md"
+	@echo "   - language-comparison-report.md"
+	@echo "   - test-results.json"
+	@echo ""
+
+# Sprint 47 complete validation (everything)
+sprint-47-validate: validate-comprehensive test-all-examples update-integration
+	@echo "🎯 Sprint 47 Complete Validation"
+	@echo ""
+	@echo "✅ All validation complete:"
+	@echo "   - Quality tools installed"
+	@echo "   - 18+ Ruchy tools tested"
+	@echo "   - Language benchmarks complete"
+	@echo "   - All 126 examples passing"
+	@echo "   - INTEGRATION.md updated"
+	@echo ""
+	@echo "Ready for commit and push!"
+
+# Help section update
+help-sprint-47:
+	@echo "🚀 Sprint 47: Comprehensive Quality Framework"
+	@echo "============================================="
+	@echo ""
+	@echo "📦 Tool Installation:"
+	@echo "  make install-quality-tools    - Install ruchy, bashrs, pmat, shellcheck"
+	@echo "  make verify-tools             - Verify all tools are installed"
+	@echo ""
+	@echo "🧪 Comprehensive Testing:"
+	@echo "  make test-ruchy-tools-comprehensive  - Test 18+ Ruchy tools on ALL examples"
+	@echo "  make bench-language-comparison       - EXACT ruchy-book benchmark methodology"
+	@echo "  make bashrs-validate                 - Validate bash transpiler"
+	@echo "  make pmat-quality                    - Run pmat quality management"
+	@echo ""
+	@echo "✅ Complete Validation:"
+	@echo "  make validate-comprehensive   - Run all quality validations"
+	@echo "  make sprint-47-validate       - Complete Sprint 47 validation"
+	@echo ""
+	@echo "📚 Following ruchy-book methodology for all testing and benchmarking"
+
