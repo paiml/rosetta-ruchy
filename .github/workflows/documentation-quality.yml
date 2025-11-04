@@ -1,0 +1,224 @@
+name: Documentation Quality Gates
+
+on:
+  push:
+    branches: [ main, 'claude/**' ]
+    paths:
+      - 'README.md'
+      - 'CLAUDE.md'
+      - 'CONTRIBUTING.md'
+      - 'INTEGRATION.md'
+      - 'Makefile'
+      - 'docs/**/*.md'
+      - 'scripts/test-documentation.sh'
+      - 'scripts/pmat-style-validation.sh'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'README.md'
+      - 'CLAUDE.md'
+      - 'CONTRIBUTING.md'
+      - 'INTEGRATION.md'
+      - 'Makefile'
+      - 'docs/**/*.md'
+
+jobs:
+  documentation-validation:
+    name: Documentation Quality Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Make scripts executable
+        run: |
+          chmod +x scripts/test-documentation.sh
+          chmod +x scripts/pmat-style-validation.sh
+
+      - name: Run Documentation Test Suite
+        id: doc_tests
+        run: |
+          echo "Running documentation quality tests..."
+          ./scripts/test-documentation.sh || echo "TESTS_FAILED=true" >> $GITHUB_ENV
+        continue-on-error: true
+
+      - name: PMAT-Style Complexity Analysis
+        run: |
+          echo "Analyzing documentation complexity..."
+          ./scripts/pmat-style-validation.sh analyze complexity --max 20
+
+      - name: PMAT-Style SATD Detection
+        run: |
+          echo "Checking for SATD (TODO/FIXME/HACK)..."
+          ./scripts/pmat-style-validation.sh analyze satd --threshold 0
+
+      - name: PMAT-Style Version Consistency
+        run: |
+          echo "Validating version consistency..."
+          ./scripts/pmat-style-validation.sh validate consistency
+
+      - name: PMAT-Style Link Validation
+        run: |
+          echo "Validating internal links..."
+          ./scripts/pmat-style-validation.sh validate links
+        continue-on-error: true
+
+      - name: PMAT-Style Metrics Validation
+        if: hashFiles('test-results.json') != ''
+        run: |
+          echo "Validating metrics accuracy..."
+          ./scripts/pmat-style-validation.sh validate metrics
+        continue-on-error: true
+
+      - name: Generate Quality Report
+        if: always()
+        run: |
+          echo "# Documentation Quality Report" > doc-quality-report.md
+          echo "" >> doc-quality-report.md
+          echo "## Test Results" >> doc-quality-report.md
+          echo "" >> doc-quality-report.md
+
+          if [ "${{ env.TESTS_FAILED }}" = "true" ]; then
+            echo "❌ Some documentation tests failed" >> doc-quality-report.md
+          else
+            echo "✅ All documentation tests passed" >> doc-quality-report.md
+          fi
+
+          echo "" >> doc-quality-report.md
+          echo "## Files Validated" >> doc-quality-report.md
+          echo "- README.md" >> doc-quality-report.md
+          echo "- CLAUDE.md" >> doc-quality-report.md
+          echo "- CONTRIBUTING.md" >> doc-quality-report.md
+          echo "- INTEGRATION.md" >> doc-quality-report.md
+          echo "- Makefile" >> doc-quality-report.md
+          echo "" >> doc-quality-report.md
+
+          cat doc-quality-report.md
+
+      - name: Upload Quality Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-quality-report
+          path: doc-quality-report.md
+          retention-days: 30
+
+      - name: Comment on PR (if applicable)
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('doc-quality-report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
+
+  version-consistency-check:
+    name: Version Consistency Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check Version Consistency
+        run: |
+          echo "Checking Ruchy version consistency across all documentation..."
+
+          # Extract all version references
+          VERSIONS=$(grep -rho "3\.[0-9]\+\.[0-9]\+" README.md CLAUDE.md CONTRIBUTING.md Makefile | sort -u)
+          VERSION_COUNT=$(echo "$VERSIONS" | wc -l)
+
+          echo "Versions found:"
+          echo "$VERSIONS"
+          echo ""
+
+          if [ "$VERSION_COUNT" -eq 1 ]; then
+            echo "✅ PASS: Single consistent Ruchy version across all files"
+            exit 0
+          else
+            echo "❌ FAIL: Found $VERSION_COUNT different Ruchy versions"
+            echo "All documentation must reference the same version"
+            exit 1
+          fi
+
+  metrics-accuracy-check:
+    name: Metrics Accuracy Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check Metrics Match INTEGRATION.md
+        run: |
+          echo "Verifying documentation metrics match INTEGRATION.md..."
+
+          # Extract success rate from INTEGRATION.md
+          INTEGRATION_RATE=$(grep "Success Rate" INTEGRATION.md | grep -o "[0-9]\+\.[0-9]\+%" | head -1 || echo "unknown")
+          README_RATE=$(grep -o "[0-9]\+\.[0-9]\+%" README.md | head -1 || echo "unknown")
+
+          echo "INTEGRATION.md success rate: $INTEGRATION_RATE"
+          echo "README.md success rate: $README_RATE"
+          echo ""
+
+          if [ "$INTEGRATION_RATE" = "$README_RATE" ]; then
+            echo "✅ PASS: Metrics are consistent"
+            exit 0
+          else
+            echo "⚠️  WARNING: Metrics may be out of sync"
+            echo "Consider running: make update-integration"
+            # Don't fail - just warn
+            exit 0
+          fi
+
+  satd-detection:
+    name: SATD Detection (Zero Tolerance)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Detect Self-Admitted Technical Debt
+        run: |
+          echo "Scanning for TODO/FIXME/HACK comments..."
+
+          SATD_FOUND=0
+
+          for FILE in README.md CLAUDE.md CONTRIBUTING.md; do
+            if [ -f "$FILE" ]; then
+              # Look for SATD but exclude policy documentation
+              SATD=$(grep -n "TODO\|FIXME\|HACK" "$FILE" | grep -v "Zero tolerance\|SATD\|quality gate\|ROSETTA-XXX\|algorithm XXX" || true)
+
+              if [ -n "$SATD" ]; then
+                echo "Found SATD in $FILE:"
+                echo "$SATD"
+                SATD_FOUND=1
+              fi
+            fi
+          done
+
+          if [ $SATD_FOUND -eq 0 ]; then
+            echo "✅ PASS: Zero SATD comments found"
+            exit 0
+          else
+            echo "❌ FAIL: SATD comments detected"
+            echo "Policy: Zero tolerance for TODO/FIXME/HACK in production documentation"
+            exit 1
+          fi
