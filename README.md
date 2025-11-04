@@ -42,7 +42,8 @@ The project enforces **zero-tolerance quality standards** through:
 - **Genchi Genbutsu (現地現物)**: Measure actual performance, don't guess
 - **Jidoka (自働化)**: Automated quality gates that stop the line for defects
 
-#### Mandatory Quality Gates (8 Enforced)
+#### Mandatory Quality Gates (10 Enforced) - Sprint 47 Enhanced
+
 1. ✅ **Ruchy Version Check**: Ensures v3.88.0 installed
 2. ✅ **SATD Detection**: Zero TODO/FIXME/HACK comments allowed (ZERO tolerance)
 3. ✅ **Ruchy Syntax Validation**: Version-aware `ruchy check` on all .ruchy files
@@ -51,6 +52,13 @@ The project enforces **zero-tolerance quality standards** through:
 6. ✅ **Security Audit**: Zero critical vulnerabilities via `cargo audit`
 7. ✅ **Dogfood-quick Validation**: All 126 examples pass 3 core Ruchy tools (check, lint, score)
 8. ✅ **Stub Detection**: Zero `unimplemented!()`, `todo!()`, `unreachable!()` allowed
+9. ✅ **18+ Ruchy Tools Testing**: Comprehensive toolchain validation following ruchy-book methodology
+10. ✅ **Language Benchmarking**: EXACT performance comparison across Ruchy, Rust, Python, Go, Julia, R
+
+**New in Sprint 47**:
+- **Comprehensive Tool Testing**: All 18+ Ruchy tools (check, parse, provability, runtime, score, ast, optimize, prove, quality-gate, mcp, fmt, lint, doc, transpile, build, run, test, benchmark, profile, energy, complexity, verify, validate) tested on every example
+- **ruchy-book Methodology**: Following [ruchy-book](https://github.com/paiml/ruchy-book) testing and benchmarking framework
+- **Language Comparison**: Fair, statistical benchmarks comparing Ruchy against Rust (baseline), Python, JavaScript, Go, Julia, R
 
 **Enforcement**: All gates integrated in [pre-commit hook](scripts/pre-commit-hook.sh) and [CI/CD pipeline](.github/workflows/dogfood-quality-gates.yml).
 
@@ -154,6 +162,101 @@ ruchy quality-gate algorithm.ruchy  # Quality gate enforcement (100% success)
 | **Memory Usage** | ±10% of Rust baseline | ⏸️ Benchmarking infrastructure ready |
 | **Lines of Code** | 30-50% fewer than Rust | ✅ Demonstrated across 126 examples |
 | **Compilation Time** | <100ms incremental | 🚧 Not yet measured |
+
+## 🚀 Sprint 47: Comprehensive Quality Framework
+
+**NEW**: Following [ruchy-book](https://github.com/paiml/ruchy-book) methodology for testing and benchmarking
+
+### 📦 Quality Tool Installation
+
+Install all required quality tooling (Ruchy, bashrs, pmat, shellcheck):
+
+```bash
+# Install comprehensive quality tooling
+make install-quality-tools
+
+# Verify installations
+make verify-tools
+```
+
+**Tools Installed**:
+- **Ruchy v3.88.0** - Core language toolchain with 18+ commands
+- **bashrs v1.0.0-rc1** - Bash↔Rust transpiler for shell script validation
+- **pmat v2.192.0** - Roadmap and quality management (PAIML MCP Agent Toolkit)
+- **shellcheck** - Shell script linting and best practices
+
+### 🧪 18+ Ruchy Tools Comprehensive Testing
+
+Test ALL Ruchy tools across ALL 126 examples:
+
+```bash
+# Run comprehensive Ruchy tools testing (ruchy-book methodology)
+make test-ruchy-tools-comprehensive
+```
+
+**Tools Tested** (18+ commands):
+- **Core Validation**: check, parse, provability, runtime, score, ast
+- **Advanced Analysis**: optimize, prove, quality-gate, mcp
+- **Development Tools**: fmt, lint, doc
+- **Compilation Tools**: transpile, build, run, test
+- **Performance Tools**: benchmark, profile, energy
+- **Additional Tools**: complexity, verify, validate, analyze
+
+**Results Generated**:
+- `ruchy-tools-test-results.json` - Machine-readable results
+- `ruchy-tools-validation-report.md` - Human-readable report
+- `ruchy-tools-detailed.log` - Detailed execution log
+
+### ⚡ Language Comparison Benchmarks
+
+EXACT benchmark methodology from ruchy-book:
+
+```bash
+# Run comprehensive language comparison benchmarks
+make bench-language-comparison
+```
+
+**Languages Compared**:
+- **Tier 1**: Ruchy, Rust (baseline), Python, JavaScript, Go
+- **Tier 2**: Julia (scientific computing), R (statistical computing)
+
+**Benchmark Configuration**:
+- **Warmup Iterations**: 3 (JIT warmup)
+- **Benchmark Iterations**: 10 (statistical significance)
+- **Timeout**: 300 seconds per benchmark
+- **Baseline**: Rust performance (100% reference)
+
+**Metrics Collected**:
+- Execution time (milliseconds)
+- Memory usage
+- Compilation time
+- Performance vs Rust baseline (%)
+
+**Results Generated**:
+- `benchmark-results/language-comparison-results.json`
+- `benchmark-results/language-comparison-report.md`
+- `benchmark-results/benchmark-detailed.log`
+
+### 🔬 Scientific Reproducibility
+
+All Sprint 47 validations are reproducible:
+
+```bash
+# Complete Sprint 47 validation
+make sprint-47-validate
+
+# Individual components
+make test-ruchy-tools-comprehensive  # 18+ tools testing
+make bench-language-comparison       # Language benchmarks
+make bashrs-validate                 # Bash transpiler validation
+make pmat-quality                    # Quality management
+```
+
+**Quality Metrics**:
+- ✅ **Tool Coverage**: 18+ Ruchy tools tested on 126 examples
+- ✅ **Language Coverage**: 7 languages benchmarked
+- ✅ **Statistical Rigor**: Multiple iterations, warmup, baseline comparison
+- ✅ **ruchy-book Compatible**: Following proven methodology
 
 ## Quick Start
 
