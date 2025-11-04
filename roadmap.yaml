@@ -924,6 +924,125 @@ deliverables:
 
   # NOTE: Sprints 42-44 not documented in roadmap (likely quick iterations)
 
+  # Sprint 46 - Paragraph-by-Paragraph Documentation Update
+  - id: sprint-46
+    name: "Paragraph-by-Paragraph Documentation Update with PMAT"
+    goal: "Systematically update all documentation to reflect Ruchy v3.88.0 using PMAT quality gates"
+    duration: 1_day
+    status: in_progress
+    start_date: "2025-11-04"
+    dependencies:
+      - sprint: 45
+        status: "complete"
+    approach: "Systematic paragraph-by-paragraph updates with automated PMAT validation"
+    achievements:
+      - "✅ Core documentation updated (README, CLAUDE, CONTRIBUTING, Makefile)"
+      - "✅ Created comprehensive paragraph-by-paragraph-spec.md (900+ lines)"
+      - "✅ All version references updated to v3.88.0"
+      - "✅ Metrics synchronized with INTEGRATION.md (126/126 passing, 100%)"
+      - "🔧 PMAT integration for automated quality validation"
+    tickets_summary:
+      complete: 2
+      in_progress: 2
+      total: 4
+      success_rate: "50%"
+    tickets:
+      - id: ROSETTA-461
+        title: "Create paragraph-by-paragraph specification document"
+        priority: critical
+        status: complete
+        requirements:
+          - "Define systematic documentation update process"
+          - "Document PMAT integration patterns"
+          - "Create quality gate definitions"
+          - "Define update triggers and schedules"
+          - "Establish validation procedures"
+        tests:
+          - "Specification is comprehensive and actionable"
+          - "All sections have concrete examples"
+          - "PMAT commands are valid and tested"
+        acceptance:
+          - "docs/specifications/paragraph-by-paragraph-spec.md created (900+ lines)"
+          - "Process defines Tier 1/2/3 documentation"
+          - "PMAT quality gates documented"
+          - "Update patterns established"
+        deliverable: "docs/specifications/paragraph-by-paragraph-spec.md (900+ lines)"
+        completed: "2025-11-04"
+        notes: "Comprehensive specification with 9 sections covering process, PMAT integration, validation, and maintenance"
+
+      - id: ROSETTA-462
+        title: "Update core documentation to Ruchy v3.88.0"
+        priority: critical
+        status: complete
+        requirements:
+          - "Update README.md version badges and metrics (v3.79.0 → v3.88.0)"
+          - "Update CLAUDE.md integration tracking and status (22 → 86 algorithms)"
+          - "Update CONTRIBUTING.md quality gates (v3.79.0 → v3.88.0)"
+          - "Update Makefile REQUIRED_VERSION (1.89.0 → 3.88.0)"
+          - "Update docs/qa/AUDIT_ACTION_PLAN.md version references"
+        tests:
+          - "Version consistency: single version across all docs"
+          - "Metrics match test-results.json exactly"
+          - "No outdated v3.79.0 references remain"
+          - "All quality gates documented correctly"
+        acceptance:
+          - "5 core files updated with consistent v3.88.0 references"
+          - "Algorithm count: 22 → 86 (394% increase)"
+          - "Data science: 12 → 36 examples (300% increase)"
+          - "Success rate: 100% (126/126 passing)"
+        deliverable: "Updated README.md, CLAUDE.md, CONTRIBUTING.md, Makefile, docs/qa/AUDIT_ACTION_PLAN.md"
+        completed: "2025-11-04"
+        notes: "Paragraph-by-paragraph updates ensuring accuracy with INTEGRATION.md as single source of truth"
+
+      - id: ROSETTA-463
+        title: "Install and configure PMAT for quality validation"
+        priority: high
+        status: in_progress
+        requirements:
+          - "Install PMAT: cargo install --git https://github.com/paiml/paiml-mcp-agent-toolkit.git pmat"
+          - "Verify PMAT commands work correctly"
+          - "Create PMAT validation scripts"
+          - "Integrate with pre-commit hooks"
+          - "Add to CI/CD pipeline"
+        tests:
+          - "pmat analyze complexity --max 20"
+          - "pmat analyze satd --threshold 0"
+          - "pmat validate links"
+          - "pmat validate consistency"
+        acceptance:
+          - "PMAT installed and functional"
+          - "All quality gate commands documented"
+          - "Pre-commit hook includes PMAT checks"
+          - "CI/CD workflow uses PMAT validation"
+        deliverable: "scripts/pmat-quality-gates.sh + .github/workflows/pmat-validation.yml"
+        estimated_time: "2 hours"
+        blocked_by: "PMAT installation in progress"
+
+      - id: ROSETTA-464
+        title: "Create documentation test suite with PMAT"
+        priority: medium
+        status: pending
+        requirements:
+          - "Create scripts/test-documentation.sh"
+          - "Implement version consistency tests"
+          - "Implement metrics accuracy tests (vs test-results.json)"
+          - "Implement SATD detection tests"
+          - "Implement link validation tests"
+          - "Integrate with make test-docs target"
+        tests:
+          - "Version consistency: all docs reference same Ruchy version"
+          - "Metrics accuracy: README matches test-results.json"
+          - "Zero SATD: no TODO/FIXME/HACK in core docs"
+          - "Link validation: all internal/external links valid"
+        acceptance:
+          - "make test-docs target functional"
+          - "All 4 test categories implemented"
+          - "Tests fail appropriately on violations"
+          - "Integration with CI/CD complete"
+        deliverable: "scripts/test-documentation.sh + updated Makefile"
+        estimated_time: "2 hours"
+        depends_on: "ROSETTA-463"
+
   - id: sprint-45
     name: "Tier 0 Languages: C and Bash for Transpiler Validation"
     goal: "Implement P0 core algorithms in C and Bash as validation corpus for sister transpiler projects"

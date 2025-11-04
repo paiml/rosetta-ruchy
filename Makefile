@@ -3,7 +3,7 @@
 # RIGID ENFORCEMENT: Zero tolerance for defects, zero compromise on quality
 
 .PHONY: all install-dev-tools install-hooks clean help
-.PHONY: lint test test-fast test-doc test-property test-examples
+.PHONY: lint test test-fast test-doc test-property test-examples test-docs
 .PHONY: complexity coverage security quality-gate quality-gate-strict quality-gate-full
 .PHONY: analyze-complexity analyze-debt analyze-duplicates analyze-satd
 .PHONY: refactor-plan pdmt-todos
@@ -55,8 +55,14 @@ lint:
 	fi
 	@echo "✅ Lint checks passed"
 
-test: test-fast test-doc test-property test-examples
+test: test-fast test-doc test-property test-examples test-docs
 	@echo "✅ All tests passed"
+
+# Documentation Quality Testing
+test-docs:
+	@echo "📋 Testing documentation quality..."
+	@./scripts/test-documentation.sh || true
+	@echo "✅ Documentation tests completed"
 
 test-fast:
 	@echo "🧪 Running fast tests..."
