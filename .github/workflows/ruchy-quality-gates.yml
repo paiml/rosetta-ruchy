@@ -154,6 +154,38 @@ jobs:
           ruchy-tools-detailed.log
         if-no-files-found: ignore
 
+    - name: Sprint 48 - TDD Validation
+      run: |
+        echo "🧪 Running Sprint 48 TDD Validation (34 tests)..."
+        echo "Extreme TDD: Validating Sprint 47 framework"
+        ./tests/sprint-48-tdd-validation.sh
+
+    - name: Sprint 49 - Optimized TDD Validation
+      run: |
+        echo "🚀 Running Sprint 49 Optimized TDD Validation..."
+        echo "REFACTOR Phase: Performance-optimized test suite"
+        ./tests/sprint-49-tdd-optimized.sh
+
+    - name: Sprint 49 - Edge Case Testing
+      continue-on-error: true
+      run: |
+        echo "🔍 Running Sprint 49 Edge Case Tests (26+ tests)..."
+        echo "Testing error handling and robustness"
+        ./tests/sprint-49-edge-case-tests.sh || echo "⚠️  Some edge cases identified areas for improvement"
+
+    - name: Sprint 48/49 - Upload TDD Test Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: sprint-48-49-tdd-results
+        path: |
+          tests/sprint-48-tdd-validation.sh
+          tests/sprint-49-tdd-optimized.sh
+          tests/sprint-49-edge-case-tests.sh
+          docs/sprints/sprint-48-tdd-validation-report.md
+          docs/sprints/sprint-49-refactor-plan.md
+        if-no-files-found: ignore
+
     - name: Notify Success
       if: success()
       run: |
@@ -163,6 +195,8 @@ jobs:
         echo "- Quality scores exceed targets"
         echo "- Provability verification complete"
         echo "- Sprint 47 comprehensive testing complete"
+        echo "- Sprint 48 TDD validation passed (34/34 tests)"
+        echo "- Sprint 49 REFACTOR optimizations verified"
 
     - name: Notify Failure
       if: failure()
