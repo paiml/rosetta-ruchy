@@ -37,7 +37,7 @@ Rosetta Ruchy follows the **Toyota Way** principles:
 All contributions must pass the following automated quality gates:
 
 ### Gate 1: Ruchy Version Check
-- **Requirement**: Ruchy v3.79.0 must be installed
+- **Requirement**: Ruchy v3.88.0 must be installed
 - **Command**: `ruchy --version`
 
 ### Gate 2: SATD Detection (Zero Tolerance)
@@ -220,8 +220,8 @@ cd rosetta-ruchy
 ### 2. Install Development Tools
 
 ```bash
-# Install Ruchy v3.79.0
-cargo install ruchy --version 3.79.0 --locked
+# Install Ruchy v3.88.0
+cargo install ruchy --version 3.88.0 --locked
 
 # Install quality gate tools
 cargo install cargo-audit --locked
