@@ -78,6 +78,27 @@ All contributions must pass the following automated quality gates:
 - **Policy**: **Kaizen improvement only** - warnings can only decrease or stay the same
 - **Command**: `./scripts/count-lint-warnings.sh`
 
+### Gate 10: Comprehensive Ruchy Tools Testing (Sprint 47+)
+- **Requirement**: All 18+ Ruchy tools tested on new examples
+- **Policy**: Following ruchy-book comprehensive testing methodology
+- **Tools Tested**: check, parse, provability, runtime, score, ast, optimize, prove, quality-gate, mcp, fmt, lint, doc, transpile, build, run, test, benchmark, profile, energy, complexity, verify, validate
+- **Command**: `make test-ruchy-tools-comprehensive`
+- **Success Criteria**: Core tools (check, provability, runtime, score) must pass 100%
+
+### Gate 11: Language Benchmarking (Sprint 47+)
+- **Requirement**: Performance comparison against baseline languages
+- **Baseline**: Rust performance (100% reference)
+- **Languages**: Ruchy, Rust, Python, JavaScript, Go, Julia, R
+- **Methodology**: EXACT ruchy-book benchmarking (warmup + iterations)
+- **Command**: `make bench-language-comparison`
+- **Success Criteria**: Ruchy within target performance range (documented per algorithm)
+
+### Gate 12: Quality Tool Verification (Sprint 47+)
+- **Requirement**: All quality tools installed and verified
+- **Tools**: Ruchy v3.88.0, bashrs v1.0.0-rc1, pmat v2.192.0 (or fallback), shellcheck
+- **Command**: `make verify-tools`
+- **Fallback**: If pmat unavailable, use `scripts/pmat-style-validation.sh`
+
 ---
 
 ## Lint Warning Policy
@@ -219,6 +240,29 @@ cd rosetta-ruchy
 
 ### 2. Install Development Tools
 
+#### Option A: Sprint 47 Comprehensive Installation (Recommended)
+
+```bash
+# Install ALL quality tools (Ruchy, bashrs, pmat, shellcheck)
+make install-quality-tools
+
+# Verify installations
+make verify-tools
+
+# Install pre-commit hooks
+make install-hooks
+```
+
+**Tools Installed**:
+- **Ruchy v3.88.0** - Core language toolchain (18+ commands)
+- **bashrs v1.0.0-rc1** - Bash transpiler (optional)
+- **pmat v2.192.0** - Quality management (fallback: pmat-style-validation.sh)
+- **shellcheck** - Shell script linting (optional)
+- **cargo-audit** - Security auditing
+- **cargo-tarpaulin** - Code coverage
+
+#### Option B: Manual Installation
+
 ```bash
 # Install Ruchy v3.88.0
 cargo install ruchy --version 3.88.0 --locked
@@ -231,6 +275,8 @@ cargo install cargo-tarpaulin --locked
 cp scripts/pre-commit-hook.sh .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
+
+**Note**: Sprint 47+ contributions benefit from comprehensive tool installation for full quality validation.
 
 ### 3. Create a Branch
 
