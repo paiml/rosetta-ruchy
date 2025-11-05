@@ -55,21 +55,21 @@ validation_commands:
     blocking: true
 
 current_status:
-  ruchy_version: "3.88.0"
-  migration_status: "100% complete (v3.88.0 qualified)"
+  ruchy_version: "3.182.0"
+  migration_status: "99.2% complete (v3.182.0 qualified)"
   total_examples: 126
-  passing_examples: 126
-  success_rate: 1.000
-  last_updated: "2025-10-15T12:09:59Z"
+  passing_examples: 125
+  success_rate: 0.992
+  last_updated: "2025-11-05T16:35:43Z"
   categories:
     algorithms:
       passing: 86
       total: 86
       rate: 1.000
     data_science:
-      passing: 36
+      passing: 35
       total: 36
-      rate: 1.000
+      rate: 0.972
     advanced_ai:
       passing: 4
       total: 4
