@@ -1,0 +1,168 @@
+🧪 Testing ALL rosetta-ruchy examples...
+Running comprehensive test suite across algorithms, data-science, and advanced-ai
+[0;34m════════════════════════════════════════════[0m
+[0;34m  Rosetta Ruchy - Test All Examples[0m
+[0;34m════════════════════════════════════════════[0m
+Ruchy Version: [0;32m3.182.0[0m
+Timestamp: 2025-11-05T16:32:09Z
+
+[1;33m─────────────────────────────────────────────[0m
+[1;33mCategory: algorithms[0m
+[1;33m─────────────────────────────────────────────[0m
+Testing examples/algorithms/016-topological-sort/implementations/ruchy/topological_sort_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/016-topological-sort/topological_sort_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/demo_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/004-binary-search/test_ruchy.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/004-binary-search/implementations/ruchy/binary_search_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/004-binary-search/binary_search_coverage_simple_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/004-binary-search/simple_test.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/004-binary-search/test_simple.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/004-binary-search/binary_search_final_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/004-binary-search/working_test.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/004-binary-search/demo_self_hosting.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/004-binary-search/test_binary_search_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/017-binary-search-tree/implementations/ruchy/bst_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/017-binary-search-tree/implementations/ruchy/bst_v193.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/017-binary-search-tree/bst_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/021-counting-sort/implementations/ruchy/counting_sort.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/021-counting-sort/implementations/ruchy/counting_sort_v193.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/021-counting-sort/implementations/ruchy/counting_sort_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/021-counting-sort/counting_sort_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/022-selection-sort/implementations/ruchy/selection_sort_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/022-selection-sort/implementations/ruchy/selection_sort.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/022-selection-sort/selection_sort_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/012-coin-change/coin_change_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/012-coin-change/implementations/ruchy/coin_change_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/011-matrix-chain-multiplication/implementations/ruchy/matrix_chain_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/011-matrix-chain-multiplication/implementations/ruchy/matrix_chain_v190.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/011-matrix-chain-multiplication/matrix_chain_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/test_minimal_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/020-bucket-sort/implementations/ruchy/bucket_sort_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/020-bucket-sort/implementations/ruchy/bucket_sort_v193.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/020-bucket-sort/bucket_sort_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/008-longest-common-subsequence/implementations/ruchy/lcs_v187.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/008-longest-common-subsequence/implementations/ruchy/lcs_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/008-longest-common-subsequence/lcs_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci_v18.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/001-fibonacci/implementations/ruchy/debug.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci_basic.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/001-fibonacci/implementations/ruchy/test_iterative.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci_final.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/001-fibonacci/implementations/ruchy/test_mut.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/001-fibonacci/implementations/ruchy/test_each.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci_simple.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci_complete.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/001-fibonacci/build_simple.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/test_working_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/test_simple_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/test_sorting_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/009-knapsack-problem/knapsack_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/009-knapsack-problem/implementations/ruchy/knapsack_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/009-knapsack-problem/implementations/ruchy/knapsack_v188.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/010-edit-distance/implementations/ruchy/edit_distance_v190.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/010-edit-distance/implementations/ruchy/edit_distance_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/010-edit-distance/edit_distance_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/minimal_test.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/006-red-black-tree/implementations/ruchy/tree_structure_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/006-red-black-tree/red_black_tree_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/014-graph-coloring/implementations/ruchy/graph_coloring_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/014-graph-coloring/graph_coloring_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/007-dijkstra/implementations/ruchy/dijkstra_v362.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/013-rod-cutting/implementations/ruchy/rod_cutting_v191.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/013-rod-cutting/implementations/ruchy/rod_cutting_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/013-rod-cutting/rod_cutting_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/015-traveling-salesman/implementations/ruchy/tsp_v362.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/015-traveling-salesman/tsp_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/003-mergesort/implementations/ruchy/mergesort_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/002-quicksort/implementations/ruchy/quicksort_simple.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/002-quicksort/implementations/ruchy/quicksort_v18.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/002-quicksort/implementations/ruchy/quicksort_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/002-quicksort/implementations/ruchy/quicksort_fixed.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/002-quicksort/implementations/ruchy/examples/algorithms/004-binary-search/implementations/ruchy/binary_search_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/002-quicksort/implementations/ruchy/examples/algorithms/021-counting-sort/implementations/ruchy/counting_sort_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/002-quicksort/implementations/ruchy/examples/algorithms/022-selection-sort/implementations/ruchy/selection_sort_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/002-quicksort/implementations/ruchy/examples/algorithms/003-mergesort/implementations/ruchy/mergesort_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/018-heap-sort/implementations/ruchy/heap_sort_v193.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/018-heap-sort/implementations/ruchy/heap_sort_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/018-heap-sort/heap_sort_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/019-radix-sort/implementations/ruchy/radix_sort_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/019-radix-sort/implementations/ruchy/radix_sort_v193.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/019-radix-sort/radix_sort_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/005-hash-table/implementations/ruchy/hash_table_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/005-hash-table/implementations/ruchy/hash_table_v184.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/005-hash-table/hash_table_100_coverage_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/005-hash-table/hash_table_final_v1_27_10.ruchy ... [0;32m✓ PASS[0m
+Testing examples/algorithms/005-hash-table/hash_table_100_coverage_v1_27_10_original.ruchy ... [0;32m✓ PASS[0m
+
+Category Summary: [0;32m86[0m/86 passing (100.0%)
+
+[1;33m─────────────────────────────────────────────[0m
+[1;33mCategory: data-science[0m
+[1;33m─────────────────────────────────────────────[0m
+Testing examples/data-science/002-statistical-analysis/implementations/ruchy/statistical_simple_v193.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/002-statistical-analysis/implementations/ruchy/statistical_simple_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/002-statistical-analysis/implementations/ruchy/statistical_analysis_v193.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/009-graph-analytics/implementations/ruchy/test_graph_analytics.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/009-graph-analytics/implementations/ruchy/graph_analytics_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/009-graph-analytics/implementations/ruchy/graph_analytics.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/009-graph-analytics/implementations/ruchy/graph_analytics_v362.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/003-hypothesis-testing/implementations/ruchy/hypothesis_simple_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/003-hypothesis-testing/implementations/ruchy/hypothesis_testing_v193.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/003-hypothesis-testing/implementations/ruchy/hypothesis_simple_v193.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/007-stream-processing/implementations/ruchy/stream_processing_v362.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/007-stream-processing/implementations/ruchy/test_stream.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/007-stream-processing/implementations/ruchy/stream_processing_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/012-computer-vision-pipeline/implementations/ruchy/computer_vision_pipeline_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/012-computer-vision-pipeline/implementations/ruchy/computer_vision_pipeline.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/012-computer-vision-pipeline/implementations/ruchy/test_computer_vision_pipeline.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/011-machine-learning-pipeline/implementations/ruchy/machine_learning_pipeline_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/011-machine-learning-pipeline/implementations/ruchy/machine_learning_pipeline.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/011-machine-learning-pipeline/implementations/ruchy/test_machine_learning_pipeline.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/010-time-series-forecasting/implementations/ruchy/time_series_forecasting_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/010-time-series-forecasting/implementations/ruchy/time_series_forecasting.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/010-time-series-forecasting/implementations/ruchy/test_time_series_forecasting.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/008-distributed-computing/implementations/ruchy/distributed_computing_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/008-distributed-computing/implementations/ruchy/test_distributed.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/008-distributed-computing/implementations/ruchy/distributed_computing.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/006-concurrent-processing/implementations/ruchy/concurrent_processing.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/006-concurrent-processing/implementations/ruchy/test_concurrent.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/006-concurrent-processing/implementations/ruchy/concurrent_processing_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/005-io-memory/implementations/ruchy/io_memory_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/001-dataframe-ops/implementations/ruchy/dataframe_ops_v193.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/001-dataframe-ops/implementations/ruchy/dataframe_ops_v189_simple.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/001-dataframe-ops/implementations/ruchy/dataframe_ops_v189.ruchy ... [0;31m✗ FAIL[0m
+Testing examples/data-science/001-dataframe-ops/implementations/ruchy/test_minimal.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/001-dataframe-ops/implementations/ruchy/dataframe_simple_v189.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/001-dataframe-ops/implementations/ruchy/dataframe_simple_v193.ruchy ... [0;32m✓ PASS[0m
+Testing examples/data-science/004-dataframe-advanced/implementations/ruchy/dataframe_advanced_v189.ruchy ... [0;32m✓ PASS[0m
+
+Category Summary: [0;32m35[0m/36 passing (97.2%)
+
+[1;33m─────────────────────────────────────────────[0m
+[1;33mCategory: advanced-ai[0m
+[1;33m─────────────────────────────────────────────[0m
+Testing examples/advanced-ai/001-deep-learning/implementations/ruchy/test_deep_learning_enhanced.ruchy ... [0;32m✓ PASS[0m
+Testing examples/advanced-ai/001-deep-learning/implementations/ruchy/test_simple.ruchy ... [0;32m✓ PASS[0m
+Testing examples/advanced-ai/001-deep-learning/implementations/ruchy/benchmark.ruchy ... [0;32m✓ PASS[0m
+Testing examples/advanced-ai/001-deep-learning/implementations/ruchy/test_minimal.ruchy ... [0;32m✓ PASS[0m
+
+Category Summary: [0;32m4[0m/4 passing (100.0%)
+
+[0;34m════════════════════════════════════════════[0m
+[0;34m  Final Summary[0m
+[0;34m════════════════════════════════════════════[0m
+Total Examples: 126
+Passing: [0;32m125[0m
+Failing: [0;31m1[0m
+Success Rate: [0;32m0.992[0m (99.2%)
+
+[1;33mCategory Breakdown:[0m
+  data-science: 35/36 (0.972)
+  algorithms: 86/86 (1.000)
+  advanced-ai: 4/4 (1.000)
+
+[0;32m✓ Results saved to: /home/user/rosetta-ruchy/test-results.json[0m
+
+[0;32m✓ Success rate meets threshold (≥85%)[0m
