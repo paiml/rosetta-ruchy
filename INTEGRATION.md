@@ -1,7 +1,7 @@
 # Ruchy Integration Status
 
-**Current Version**: 3.182.0
-**Last Updated**: 2025-11-05 16:33:00 UTC
+**Current Version**: 3.213.0
+**Last Updated**: 2025-11-16 15:06:01 UTC
 **Test Results**: Auto-generated from `test-results.json`
 
 ## Overview
@@ -17,7 +17,7 @@ All data is auto-generated from `make test-all-examples` and updated via `make u
 
 ---
 
-## 📊 Current Test Results (2025-11-05 16:33:00 UTC)
+## 📊 Current Test Results (2025-11-16 15:06:01 UTC)
 
 ### Summary
 
@@ -27,7 +27,7 @@ All data is auto-generated from `make test-all-examples` and updated via `make u
 | **Passing** | ✅ 125 |
 | **Failing** | ❌ 1 |
 | **Success Rate** | 99.2% |
-| **Ruchy Version** | 3.182.0 |
+| **Ruchy Version** | 3.213.0 |
 
 ### By Category
 
@@ -48,8 +48,8 @@ All data is auto-generated from `make test-all-examples` and updated via `make u
 git clone https://github.com/paiml/rosetta-ruchy.git
 cd rosetta-ruchy
 
-# 2. Install Ruchy 3.182.0
-cargo install ruchy --version 3.182.0
+# 2. Install Ruchy 3.213.0
+cargo install ruchy --version 3.213.0
 
 # 3. Run comprehensive test suite
 make test-all-examples
@@ -106,16 +106,15 @@ ruchy runtime fibonacci.ruchy
 
 ## 🚀 Version Migration Status
 
-### Current Migration: v1.89.0 → v3.182.0
+### Current Migration: v1.89.0 → v3.213.0
 
-**Status**: ✅ EXCELLENT (99.2%)
+**Status**: ✅ ON TRACK (≥80%)
 
 ### Migration Progress
 
 - **v1.89.0 Baseline**: 100% success rate (12/12 data science examples)
-- **v3.88.0 Migration**: 100.0% success rate (126/126 examples)
-- **v3.182.0 Migration**: 99.2% success rate (125/126 examples) ✅ **CURRENT**
-- **Target**: 90% success rate for production readiness - **EXCEEDED**
+- **v3.62.12+ Migration**: 99.2% success rate (125/126 examples)
+- **Target**: 90% success rate for production readiness
 
 ### Known Breaking Changes
 
@@ -133,13 +132,6 @@ ruchy runtime fibonacci.ruchy
    - `let (mut x, mut y) = ...` fails
    - Workaround: `let (x, y) = ...; let mut x = x;`
 
-4. **Stricter Parser in v3.182.0** (NEW)
-   - File: `examples/data-science/001-dataframe-ops/implementations/ruchy/dataframe_ops_v189.ruchy`
-   - Error: Line 495: "Syntax error: Expected RightBrace, found Let"
-   - Impact: 1/126 examples (99.2% still pass)
-   - Status: Reported to Ruchy team for investigation
-   - Note: Other v189 variants work fine (dataframe_simple_v189.ruchy passes)
-
 See `docs/MIGRATION_PATTERNS_V3.md` for complete migration guide.
 
 ---
@@ -148,12 +140,9 @@ See `docs/MIGRATION_PATTERNS_V3.md` for complete migration guide.
 
 ### Failure Categories
 
-#### Parser Strictness (1 example)
-- **File**: `examples/data-science/001-dataframe-ops/implementations/ruchy/dataframe_ops_v189.ruchy`
-- **Error**: `Syntax error: Expected RightBrace, found Let (line 495)`
-- **Category**: data-science
-- **Severity**: Low - Other v189 variants pass, 99.2% overall success rate
-- **Action**: Reported to Ruchy team for parser investigation
+#### data-science (1 failing)
+
+- examples/data-science/001-dataframe-ops/implementations/ruchy/dataframe_ops_v189.ruchy
 
 
 ---
@@ -162,8 +151,8 @@ See `docs/MIGRATION_PATTERNS_V3.md` for complete migration guide.
 
 | Date | Version | Success Rate | Change |
 |------|---------|--------------|--------|
+| 2025-11-16 15:06:01 UTC | 3.213.0 | 99.2% | Upgraded from 3.182.0 - No new regressions |
 | 2025-11-05 16:33:00 UTC | 3.182.0 | 99.2% | Upgraded from 3.88.0 - 1 parser strictness issue |
-| 2025-10-15 12:09:59 UTC | 3.88.0 | 100.0% | Stable baseline - all tests passing |
 
 ---
 
