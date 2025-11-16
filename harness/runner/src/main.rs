@@ -40,7 +40,7 @@ use statistics::{PerformanceComparator, StatisticalAnalysis, StatisticalAnalyzer
     about = "Statistical benchmark runner for Rosetta Ruchy",
     long_about = "Toyota Way quality-focused benchmark orchestrator for polyglot language comparison"
 )]
-struct Cli {
+pub struct Cli {
     /// Enable verbose logging
     #[arg(short, long)]
     verbose: bool,
@@ -123,6 +123,17 @@ struct BenchmarkResult {
     binary_analysis: Option<BinarySizeAnalysis>,
     /// Ruchy-specific advanced analysis (only for Ruchy language)
     ruchy_analysis: Option<RuchyAnalysis>,
+}
+
+/// Parameters for building benchmark results
+struct BenchmarkResultParams<'a> {
+    language: &'a str,
+    example_path: &'a Path,
+    time_stats: TimeStatistics,
+    statistical_analysis: StatisticalAnalysis,
+    isolation_result: &'a IsolationResult,
+    memory_profile: Option<MemoryProfile>,
+    binary_analysis: Option<BinarySizeAnalysis>,
 }
 
 /// Ruchy advanced tooling analysis
@@ -289,7 +300,7 @@ impl BenchmarkRunner {
 
         for language in languages {
             let result = self
-                .benchmark_single_language(language, &example_path, &analyzer, &isolation_result)
+                .benchmark_single_language(language, example_path, &analyzer, &isolation_result)
                 .await?;
             results.push(result);
         }
@@ -301,7 +312,7 @@ impl BenchmarkRunner {
         self.generate_benchmark_reports(&results, &env_controller, &isolation_result).await;
 
         // Step 5: Perform regression detection (Toyota Way Jidoka)
-        self.perform_regression_analysis(&results, &example_path).await?;
+        self.perform_regression_analysis(&results, example_path).await?;
 
         info!("✅ Benchmark run completed for {} languages", results.len());
         Ok(results)
@@ -861,17 +872,16 @@ impl BenchmarkRunner {
         let binary_analysis = self.analyze_binary_size(language).await;
 
         // Build result
-        let result = self
-            .build_benchmark_result(
-                language,
-                example_path,
-                time_stats,
-                statistical_analysis,
-                isolation_result,
-                memory_profile,
-                binary_analysis,
-            )
-            .await?;
+        let params = BenchmarkResultParams {
+            language,
+            example_path,
+            time_stats,
+            statistical_analysis,
+            isolation_result,
+            memory_profile,
+            binary_analysis,
+        };
+        let result = self.build_benchmark_result(params).await?;
 
         Ok(result)
     }
@@ -942,36 +952,30 @@ impl BenchmarkRunner {
     /// Extracted from benchmark_single_language() for complexity reduction (Sprint 44 Ticket 9)
     async fn build_benchmark_result(
         &self,
-        language: &str,
-        example_path: &Path,
-        time_stats: TimeStatistics,
-        statistical_analysis: StatisticalAnalysis,
-        isolation_result: &IsolationResult,
-        memory_profile: Option<MemoryProfile>,
-        binary_analysis: Option<BinarySizeAnalysis>,
+        params: BenchmarkResultParams<'_>,
     ) -> Result<BenchmarkResult> {
-        let ruchy_analysis = if language == "ruchy" {
+        let ruchy_analysis = if params.language == "ruchy" {
             Some(self.perform_ruchy_analysis().await?)
         } else {
             None
         };
 
         Ok(BenchmarkResult {
-            language: language.to_string(),
-            example: example_path.to_string_lossy().to_string(),
+            language: params.language.to_string(),
+            example: params.example_path.to_string_lossy().to_string(),
             metrics: PerformanceMetrics {
-                execution_time: time_stats,
-                memory_usage: self.simulate_memory_metrics(language),
-                binary_size: self.estimate_binary_size(language),
-                lines_of_code: self.estimate_lines_of_code(language),
-                complexity: self.estimate_complexity_metrics(language),
+                execution_time: params.time_stats,
+                memory_usage: self.simulate_memory_metrics(params.language),
+                binary_size: self.estimate_binary_size(params.language),
+                lines_of_code: self.estimate_lines_of_code(params.language),
+                complexity: self.estimate_complexity_metrics(params.language),
             },
-            statistics: statistical_analysis,
-            isolation: isolation_result.clone(),
+            statistics: params.statistical_analysis,
+            isolation: params.isolation_result.clone(),
             system_info: self.get_system_info()?,
             config: self.config.clone(),
-            memory_profile,
-            binary_analysis,
+            memory_profile: params.memory_profile,
+            binary_analysis: params.binary_analysis,
             ruchy_analysis,
         })
     }
