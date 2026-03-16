@@ -111,4 +111,4 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git add test-results-baseline.json
           git commit -m "chore: Update regression baseline [skip ci]" || exit 0
-          git push
+          git push || echo "::warning::Push failed (likely blocked by branch protection)"
