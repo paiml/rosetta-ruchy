@@ -70,7 +70,7 @@ jobs:
           cd /tmp
           git clone https://github.com/paiml/decy.git
           cd decy
-          cargo install --path .
+          cargo install --path . -p decy
           decy --version
 
       - name: Install validation tools
