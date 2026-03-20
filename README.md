@@ -1,11 +1,45 @@
+<p align="center">
+
 # Rosetta Ruchy
 
-A polyglot benchmark suite demonstrating Ruchy's performance parity with Rust while maintaining Python-like ergonomics. **Features real Ruchy formal verification and complexity analysis tools** providing empirical evidence of zero-cost abstractions through systematic comparison across production workloads.
+**A polyglot benchmark suite demonstrating Ruchy's performance parity with Rust while maintaining Python-like ergonomics.**
 
-[![Dogfood Quality Gates](https://github.com/pragmatic-ai-labs/rosetta-ruchy/actions/workflows/dogfood-quality-gates.yml/badge.svg)](https://github.com/pragmatic-ai-labs/rosetta-ruchy/actions/workflows/dogfood-quality-gates.yml)
+[![CI](https://github.com/paiml/rosetta-ruchy/actions/workflows/regression-check.yml/badge.svg)](https://github.com/paiml/rosetta-ruchy/actions/workflows/regression-check.yml)
 [![Toyota Way](https://img.shields.io/badge/Toyota%20Way-Quality%20Built--in-green.svg)](https://lean.org/toyota-production-system/)
 [![Ruchy Version](https://img.shields.io/badge/Ruchy-v3.79.0-blue.svg)](https://github.com/paiml/ruchy)
 [![Test Success Rate](https://img.shields.io/badge/Tests-126%2F126%20(100%25)-brightgreen.svg)](INTEGRATION.md)
+
+</p>
+
+Features real Ruchy formal verification and complexity analysis tools providing empirical evidence of zero-cost abstractions through systematic comparison across production workloads.
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Usage](#quick-start)
+- [Project Architecture](#project-architecture)
+- [Ruchy Formal Verification Workflow](#-ruchy-formal-verification-workflow)
+- [Current Status](#-current-status)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+## Installation
+
+```bash
+# Install Ruchy compiler
+cargo install ruchy
+
+# Clone the repository
+git clone https://github.com/paiml/rosetta-ruchy.git
+cd rosetta-ruchy
+
+# Install development tools and quality gates
+make install-dev-tools
+make install-hooks
+
+# Validate environment
+make validate
+```
 
 ## Project Architecture
 
@@ -52,7 +86,7 @@ The project enforces **zero-tolerance quality standards** through:
 7. ✅ **Dogfood-quick Validation**: All 126 examples pass 3 core Ruchy tools (check, lint, score)
 8. ✅ **Stub Detection**: Zero `unimplemented!()`, `todo!()`, `unreachable!()` allowed
 
-**Enforcement**: All gates integrated in [pre-commit hook](scripts/pre-commit-hook.sh) and [CI/CD pipeline](.github/workflows/dogfood-quality-gates.yml).
+**Enforcement**: All gates integrated in [pre-commit hook](scripts/pre-commit-hook.sh) and [CI/CD pipeline](.github/workflows/regression-check.yml).
 
 ## 🔬 Ruchy Formal Verification Workflow
 
