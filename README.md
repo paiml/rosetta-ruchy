@@ -483,3 +483,11 @@ MIT License - see [LICENSE](LICENSE) for details.
 ---
 
 **🌸 Built with Toyota Way principles: Quality built-in, not bolted-on**
+
+## Contributing
+
+Contributions welcome. Run `make lint test` before submitting PRs.
+
+## License
+
+MIT
