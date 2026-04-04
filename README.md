@@ -488,6 +488,10 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 Contributions welcome. Run `make lint test` before submitting PRs.
 
+## Cookbook
+
+See [rosetta-ruchy-cookbook](https://github.com/paiml/rosetta-ruchy-cookbook) for examples and recipes.
+
 ## License
 
 MIT
