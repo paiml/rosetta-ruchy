@@ -66,9 +66,10 @@ jobs:
 
       - name: Install decy transpiler
         run: |
-          # Clone and install decy from source
+          # Clone provable-contracts first (decy has a path dep that resolves to ../../../provable-contracts/)
           cd /tmp
-          git clone https://github.com/paiml/decy.git
+          git clone --depth 1 https://github.com/paiml/provable-contracts.git
+          git clone --depth 1 https://github.com/paiml/decy.git
           cd decy
           cargo install --path crates/decy
           decy --version
