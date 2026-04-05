@@ -5,6 +5,7 @@
 **A polyglot benchmark suite demonstrating Ruchy's performance parity with Rust while maintaining Python-like ergonomics.**
 
 [![CI](https://github.com/paiml/rosetta-ruchy/actions/workflows/regression-check.yml/badge.svg)](https://github.com/paiml/rosetta-ruchy/actions/workflows/regression-check.yml)
+[![Documentation](https://docs.rs/rosetta-ruchy/badge.svg)](https://docs.rs/rosetta-ruchy)
 [![Toyota Way](https://img.shields.io/badge/Toyota%20Way-Quality%20Built--in-green.svg)](https://lean.org/toyota-production-system/)
 [![Ruchy Version](https://img.shields.io/badge/Ruchy-v3.79.0-blue.svg)](https://github.com/paiml/ruchy)
 [![Test Success Rate](https://img.shields.io/badge/Tests-126%2F126%20(100%25)-brightgreen.svg)](INTEGRATION.md)
