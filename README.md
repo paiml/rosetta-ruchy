@@ -1,3 +1,11 @@
+---
+schema_version: "1.0"
+kind: spec
+entrypoints: [examples, harness, Cargo.toml]
+contract_count: 1
+---
+<!-- CONTRACT_COUNT_START -->1<!-- CONTRACT_COUNT_END -->
+
 <p align="center">
 
 # Rosetta Ruchy
@@ -26,7 +34,7 @@ Features real Ruchy formal verification and complexity analysis tools providing 
 
 ## Installation
 
-```bash
+```text
 # Install Ruchy compiler
 cargo install ruchy
 
@@ -96,12 +104,12 @@ Every algorithm implementation demonstrates **real Ruchy toolchain capabilities*
 **📊 Current Status**: 126/126 examples passing (100.0% success rate) - See [INTEGRATION.md](INTEGRATION.md) for comprehensive validation results.
 
 ### 1. Syntax Validation
-```bash
+```text
 ruchy check algorithm.ruchy    # ✓ Syntax is valid
 ```
 
 ### 2. Runtime Complexity Analysis  
-```bash
+```text
 ruchy runtime algorithm.ruchy
 # ⚡ Basic Performance Metrics for algorithm.ruchy
 #   Total Functions: 1
@@ -112,7 +120,7 @@ ruchy runtime algorithm.ruchy
 ```
 
 ### 3. Formal Provability Analysis
-```bash
+```text
 ruchy provability algorithm.ruchy
 # 🔬 Basic Provability Analysis for algorithm.ruchy
 #   Total Functions: 1
@@ -124,7 +132,7 @@ ruchy provability algorithm.ruchy
 ```
 
 ### 4. Quality Scoring
-```bash
+```text
 ruchy score algorithm.ruchy
 # Quality Score Report
 # ==================================================
@@ -140,7 +148,7 @@ ruchy score algorithm.ruchy
 ```
 
 ### 5. Advanced Capabilities (Ruchy v3.79.0)
-```bash
+```text
 ruchy ast algorithm.ruchy           # Enhanced AST analysis (100% success)
 ruchy optimize algorithm.ruchy      # Hardware-aware optimization (stub)
 ruchy prove algorithm.ruchy         # Interactive theorem prover (specialized)
@@ -194,7 +202,7 @@ ruchy quality-gate algorithm.ruchy  # Quality gate enforcement (100% success)
 
 ### Prerequisites
 
-```bash
+```text
 # Install development tools
 make install-dev-tools
 
@@ -204,7 +212,7 @@ make install-hooks
 
 ### Running Benchmarks
 
-```bash
+```text
 # Validate environment setup
 make validate
 
@@ -217,7 +225,7 @@ make validate
 
 ### Development Workflow
 
-```bash
+```text
 # 1. Check current roadmap status
 cat docs/execution/roadmap.md
 
@@ -327,7 +335,7 @@ fun fib_iterative(n: i32) -> i32 {
 
 ### 🔧 Try It Yourself
 
-```bash
+```text
 # Run any language implementation
 cd examples/algorithms/001-fibonacci/implementations/
 
@@ -348,7 +356,7 @@ ruchy run ruchy/fibonacci.ruchy
 
 **Example: AST Analysis reveals optimization opportunities**
 
-```bash
+```text
 # Comprehensive AST inspection with metrics
 ruchy ast examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci.ruchy --metrics
 # → Complete syntax tree with complexity metrics
@@ -363,7 +371,7 @@ ruchy ast examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci.ruch
 
 **Example: Formal Verification proves correctness**
 
-```bash  
+```text
 # Basic provability analysis (v0.11.3)
 ruchy provability examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci.ruchy
 # → Function purity detection with side-effect analysis
@@ -379,7 +387,7 @@ ruchy provability examples/algorithms/001-fibonacci/implementations/ruchy/fibona
 
 **Example: Performance Analysis with BigO detection**
 
-```bash
+```text
 # Automatic BigO algorithmic complexity detection (v0.11.3)
 ruchy runtime examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci.ruchy --bigo
 # → Automatic BigO detection (O(1), O(n), O(n²), O(n³))
@@ -434,7 +442,7 @@ ruchy runtime examples/algorithms/001-fibonacci/implementations/ruchy/fibonacci.
 
 **Real-time code translation service with formal verification:**
 
-```bash
+```text
 # Install MCP server (from GitHub releases)
 curl -fsSL https://github.com/paiml/rosetta-ruchy/releases/download/v1.0.0/install.sh | sh
 
@@ -476,6 +484,40 @@ This project follows the **Toyota Way** methodology:
 4. **Stop the Line**: Any quality violation blocks progress
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
+## pv-readme Contract
+
+This README carries frontmatter (`schema_version`, `kind`, `entrypoints`,
+`contract_count`) and is graded by `contracts/readme-root.yaml` against the
+`pv-readme` SHACL shape (`readme:Readme`, #8).
+
+- **No claims resolve (`minCount: 0`, full divergence)**: this repo's only
+  merge-path workflow is `ci.yml` (push/pull_request to `[main, master]` +
+  `workflow_dispatch`). Its `gate` job runs `cargo clippy --all-targets -- -D
+  warnings` and `cargo test --all-features` as bare lines, then wraps
+  coverage and security scanning behind `cargo install ... || true` and
+  `continue-on-error: true`. None of the commands this README documents
+  (`cargo install ruchy`, the `make` targets, the `ruchy <verb>` invocations,
+  the per-language example runs, the MCP server curl examples) is a literal
+  bare `run:` line in that job, so every fence is `text`, not a claim (same
+  divergence shape as `paiml/ruchy-book#8`).
+- **A second finding**: `decy-validation.yml`, `bashrs-validation.yml` and
+  `regression-check.yml` look CI-shaped, and `regression-check.yml` even
+  contains a near-match (`cargo install ruchy --version 3.77.0 || cargo
+  install ruchy`), but all three run on `schedule` + `workflow_dispatch`
+  only — no `push`/`pull_request` trigger — so none is a merge-path workflow
+  and all three are correctly excluded from resolution regardless of their
+  command content.
+- **Entrypoints**: `examples`, `harness`, `Cargo.toml`.
+- **Contract count**: `1` (`contracts/census.json`; `readme-root.yaml` is the
+  only file in this repo's `contracts/` directory).
+- **Falsifier**: `tests/readme-shape-falsifier.sh`, 6 cases proving the check
+  can fail (an unrun claim, a dropped `kind:`, a missing entrypoint, a wrong
+  contract count) as well as pass.
+- **LAB, not GATE** (C324): `.github/workflows/readme-shape-lab.yml` runs
+  nightly plus `workflow_dispatch`, never on the PR path.
+
+Part of paiml/rosetta-ruchy#8.
 
 ## 📄 License
 

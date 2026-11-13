@@ -1,0 +1,58 @@
+roadmap_version: '1.0'
+github_enabled: true
+github_repo: paiml/rosetta-ruchy
+roadmap:
+- id: PMAT-009
+  github_issue: 9
+  item_type: task
+  title: contracts/readme-root.yaml SHACL shape + census
+  status: planned
+  priority: medium
+  assigned_to: null
+  created: 2026-11-13T15:00:06Z
+  updated: 2026-11-13T15:00:06Z
+  spec: null
+  acceptance_criteria: []
+  phases: []
+  subtasks: []
+  estimated_effort: null
+  labels:
+  - kind:docs
+  notes: null
+  epic: 8
+- id: PMAT-010
+  github_issue: 10
+  item_type: task
+  title: Relabel README.md claim fences, add frontmatter
+  status: planned
+  priority: medium
+  assigned_to: null
+  created: 2026-11-13T15:00:07Z
+  updated: 2026-11-13T15:00:07Z
+  spec: null
+  acceptance_criteria: []
+  phases: []
+  subtasks: []
+  estimated_effort: null
+  labels:
+  - kind:docs
+  notes: null
+  epic: 8
+- id: PMAT-011
+  github_issue: 11
+  item_type: task
+  title: tests/readme-shape-falsifier.sh + readme-shape-lab.yml (LAB)
+  status: planned
+  priority: medium
+  assigned_to: null
+  created: 2026-11-13T15:00:08Z
+  updated: 2026-11-13T15:00:08Z
+  spec: null
+  acceptance_criteria: []
+  phases: []
+  subtasks: []
+  estimated_effort: null
+  labels:
+  - kind:docs
+  notes: null
+  epic: 8
