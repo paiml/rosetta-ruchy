@@ -62,8 +62,7 @@ fn test_custom_host_argument() {
     // Check that it's not an argument parsing error
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(
-        !stderr.contains("error: unexpected argument") &&
-        !stderr.contains("error: invalid value"),
+        !stderr.contains("error: unexpected argument") && !stderr.contains("error: invalid value"),
         "Should not be an argument parsing error"
     );
 }
@@ -81,8 +80,7 @@ fn test_custom_port_argument() {
 
     // Should parse port argument correctly
     assert!(
-        !stderr.contains("error: unexpected argument") &&
-        !stderr.contains("error: invalid value"),
+        !stderr.contains("error: unexpected argument") && !stderr.contains("error: invalid value"),
         "Should accept valid port number"
     );
 }
@@ -120,9 +118,12 @@ fn test_custom_ruchy_path() {
 fn test_combined_arguments() {
     let mut cmd = Command::cargo_bin("rosetta-ruchy-mcp").unwrap();
     cmd.args([
-        "--host", "localhost",
-        "--port", "3000",
-        "--ruchy-path", "ruchy",
+        "--host",
+        "localhost",
+        "--port",
+        "3000",
+        "--ruchy-path",
+        "ruchy",
     ]);
 
     cmd.timeout(Duration::from_secs(2));
@@ -132,8 +133,7 @@ fn test_combined_arguments() {
 
     // Should accept all arguments
     assert!(
-        !stderr.contains("error: unexpected argument") &&
-        !stderr.contains("error: invalid value"),
+        !stderr.contains("error: unexpected argument") && !stderr.contains("error: invalid value"),
         "Should accept all combined arguments"
     );
 }

@@ -51,7 +51,11 @@ fn test_run_missing_example() {
     // Just verify it doesn't crash with argument parsing error (code 2)
     let result = cmd.output().unwrap();
     // Any exit code except argument parsing error is acceptable
-    assert_ne!(result.status.code(), Some(2), "Should not be argument parsing error");
+    assert_ne!(
+        result.status.code(),
+        Some(2),
+        "Should not be argument parsing error"
+    );
 }
 
 /// Test: Run command with valid arguments structure
@@ -153,11 +157,7 @@ fn test_config_file_argument() {
     fs::write(&config_path, "[config]").unwrap();
 
     let mut cmd = Command::cargo_bin("rosetta-runner").unwrap();
-    cmd.args([
-        "--config",
-        config_path.to_str().unwrap(),
-        "validate",
-    ]);
+    cmd.args(["--config", config_path.to_str().unwrap(), "validate"]);
 
     // Should accept config argument
     cmd.assert().code(predicate::ne(2));
@@ -225,17 +225,16 @@ fn test_run_iterations_argument() {
 #[test]
 fn test_run_languages_argument() {
     let mut cmd = Command::cargo_bin("rosetta-runner").unwrap();
-    cmd.args([
-        "run",
-        "examples/test",
-        "--languages",
-        "rust",
-    ]);
+    cmd.args(["run", "examples/test", "--languages", "rust"]);
 
     // May fail due to missing example, but should parse arguments
     // Exit code 2 is argument parsing error, we want to avoid that
     let result = cmd.output().unwrap();
-    assert_ne!(result.status.code(), Some(2), "Should not be argument parsing error");
+    assert_ne!(
+        result.status.code(),
+        Some(2),
+        "Should not be argument parsing error"
+    );
 }
 
 /// Test: Combined flags and arguments

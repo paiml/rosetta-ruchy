@@ -17,10 +17,10 @@ struct BucketSort {
 
 #[derive(Debug, Clone, PartialEq)]
 enum DistributionStrategy {
-    Linear,        // Linear mapping based on min/max range
-    Logarithmic,   // For exponentially distributed data
-    Quantile,      // Use data quantiles for balanced buckets
-    Hash,          // Custom hash function distribution
+    Linear,      // Linear mapping based on min/max range
+    Logarithmic, // For exponentially distributed data
+    Quantile,    // Use data quantiles for balanced buckets
+    Hash,        // Custom hash function distribution
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -32,7 +32,12 @@ enum SubroutineAlgorithm {
 }
 
 impl BucketSort {
-    fn new(bucket_count: usize, strategy: DistributionStrategy, subroutine: SubroutineAlgorithm, track_stats: bool) -> Self {
+    fn new(
+        bucket_count: usize,
+        strategy: DistributionStrategy,
+        subroutine: SubroutineAlgorithm,
+        track_stats: bool,
+    ) -> Self {
         Self {
             bucket_count,
             distribution_strategy: strategy,
@@ -47,7 +52,7 @@ impl BucketSort {
     // Main bucket sort algorithm
     fn sort(&mut self, arr: &mut [f64]) -> SortResult {
         let start = Instant::now();
-        
+
         if arr.len() <= 1 {
             return SortResult {
                 algorithm: format!("Bucket Sort ({:?})", self.subroutine_algorithm),
@@ -69,16 +74,16 @@ impl BucketSort {
 
         // Create buckets
         let mut buckets: Vec<Vec<f64>> = vec![Vec::new(); self.bucket_count];
-        
+
         // Phase 1: Distribute elements into buckets
         self.distribute_elements(arr, &mut buckets);
-        
+
         // Phase 2: Sort individual buckets
         self.sort_buckets(&mut buckets);
-        
+
         // Phase 3: Concatenate sorted buckets
         self.concatenate_buckets(&buckets, arr);
-        
+
         // Calculate statistics
         let bucket_sizes: Vec<usize> = buckets.iter().map(|b| b.len()).collect();
         let non_empty_buckets = bucket_sizes.iter().filter(|&&size| size > 0).count();
@@ -114,7 +119,7 @@ impl BucketSort {
     // Integer bucket sort variant
     fn sort_integers(&mut self, arr: &mut [i32]) -> SortResult {
         let start = Instant::now();
-        
+
         if arr.len() <= 1 {
             return SortResult {
                 algorithm: format!("Integer Bucket Sort ({:?})", self.subroutine_algorithm),
@@ -141,7 +146,7 @@ impl BucketSort {
 
         // Create buckets
         let mut buckets: Vec<Vec<i32>> = vec![Vec::new(); self.bucket_count];
-        
+
         // Phase 1: Distribute elements
         for &val in arr.iter() {
             let bucket_index = self.get_integer_bucket_index(val, min_val, range);
@@ -150,18 +155,19 @@ impl BucketSort {
                 self.bucket_assignments += 1;
             }
         }
-        
+
         // Phase 2: Sort individual buckets
         for bucket in buckets.iter_mut() {
             if !bucket.is_empty() {
                 self.sort_integer_bucket(bucket);
                 if self.track_stats {
                     self.subroutine_calls += 1;
-                    self.total_subroutine_operations += bucket.len() * bucket.len().ilog2() as usize; // Approximation
+                    self.total_subroutine_operations +=
+                        bucket.len() * bucket.len().ilog2() as usize; // Approximation
                 }
             }
         }
-        
+
         // Phase 3: Concatenate
         let mut index = 0;
         for bucket in buckets.iter() {
@@ -170,7 +176,7 @@ impl BucketSort {
                 index += 1;
             }
         }
-        
+
         // Calculate statistics
         let bucket_sizes: Vec<usize> = buckets.iter().map(|b| b.len()).collect();
         let non_empty_buckets = bucket_sizes.iter().filter(|&&size| size > 0).count();
@@ -238,7 +244,7 @@ impl BucketSort {
                     let log_min = (min_val + 1e-10).ln(); // Avoid log(0)
                     let log_max = (min_val + range + 1e-10).ln();
                     let log_range = log_max - log_min;
-                    
+
                     if log_range == 0.0 {
                         0
                     } else {
@@ -309,11 +315,12 @@ impl BucketSort {
             }
             SubroutineAlgorithm::RadixSort => {
                 // Convert to integers for radix sort (multiply by 1000 for precision)
-                let mut int_bucket: Vec<i32> = bucket.iter()
+                let mut int_bucket: Vec<i32> = bucket
+                    .iter()
                     .map(|&x| (x * 1000.0).round() as i32)
                     .collect();
                 self.radix_sort_integers(&mut int_bucket);
-                
+
                 // Convert back to floats
                 for (i, &val) in int_bucket.iter().enumerate() {
                     bucket[i] = val as f64 / 1000.0;
@@ -362,7 +369,7 @@ impl BucketSort {
             SubroutineAlgorithm::InsertionSort => n * n / 2, // O(n²)
             SubroutineAlgorithm::QuickSort => n * n.ilog2() as usize, // O(n log n)
             SubroutineAlgorithm::MergeSort => n * n.ilog2() as usize, // O(n log n)
-            SubroutineAlgorithm::RadixSort => n * 10, // O(d*n), assume d=10 for floats
+            SubroutineAlgorithm::RadixSort => n * 10,        // O(d*n), assume d=10 for floats
         }
     }
 
@@ -414,7 +421,7 @@ impl BucketSort {
     fn partition(&self, arr: &mut [f64], low: usize, high: usize) -> usize {
         let pivot = arr[high];
         let mut i = low;
-        
+
         for j in low..high {
             if arr[j] <= pivot {
                 arr.swap(i, j);
@@ -428,7 +435,7 @@ impl BucketSort {
     fn partition_integers(&self, arr: &mut [i32], low: usize, high: usize) -> usize {
         let pivot = arr[high];
         let mut i = low;
-        
+
         for j in low..high {
             if arr[j] <= pivot {
                 arr.swap(i, j);
@@ -490,7 +497,14 @@ impl BucketSort {
         }
     }
 
-    fn merge_integers(&self, arr: &mut [i32], temp: &mut [i32], left: usize, mid: usize, right: usize) {
+    fn merge_integers(
+        &self,
+        arr: &mut [i32],
+        temp: &mut [i32],
+        left: usize,
+        mid: usize,
+        right: usize,
+    ) {
         let mut i = left;
         let mut j = mid + 1;
         let mut k = left;
@@ -597,15 +611,42 @@ impl TestCases {
             ("Empty Array".to_string(), vec![]),
             ("Single Element".to_string(), vec![0.5]),
             ("Two Elements".to_string(), vec![0.3, 0.7]),
-            ("Uniform [0,1)".to_string(), Self::generate_uniform_float(100, 0.0, 1.0)),
-            ("Uniform [0,10)".to_string(), Self::generate_uniform_float(50, 0.0, 10.0)),
-            ("Normal Distribution".to_string(), Self::generate_normal_float(100, 5.0, 2.0)),
-            ("Exponential".to_string(), Self::generate_exponential_float(80, 2.0)),
-            ("Already Sorted".to_string(), Self::generate_sorted_float(30, 0.0, 5.0)),
-            ("Reverse Sorted".to_string(), Self::generate_reverse_sorted_float(30, 0.0, 5.0)),
-            ("Few Unique Values".to_string(), Self::generate_few_unique_float(100, 5)),
-            ("Skewed Distribution".to_string(), Self::generate_skewed_float(100)),
-            ("Large Uniform".to_string(), Self::generate_uniform_float(10000, 0.0, 100.0)),
+            (
+                "Uniform [0,1)".to_string(),
+                Self::generate_uniform_float(100, 0.0, 1.0),
+            ),
+            (
+                "Uniform [0,10)".to_string(),
+                Self::generate_uniform_float(50, 0.0, 10.0),
+            ),
+            (
+                "Normal Distribution".to_string(),
+                Self::generate_normal_float(100, 5.0, 2.0),
+            ),
+            (
+                "Exponential".to_string(),
+                Self::generate_exponential_float(80, 2.0),
+            ),
+            (
+                "Already Sorted".to_string(),
+                Self::generate_sorted_float(30, 0.0, 5.0),
+            ),
+            (
+                "Reverse Sorted".to_string(),
+                Self::generate_reverse_sorted_float(30, 0.0, 5.0),
+            ),
+            (
+                "Few Unique Values".to_string(),
+                Self::generate_few_unique_float(100, 5),
+            ),
+            (
+                "Skewed Distribution".to_string(),
+                Self::generate_skewed_float(100),
+            ),
+            (
+                "Large Uniform".to_string(),
+                Self::generate_uniform_float(10000, 0.0, 100.0),
+            ),
         ]
     }
 
@@ -614,13 +655,28 @@ impl TestCases {
             ("Empty Array".to_string(), vec![]),
             ("Single Element".to_string(), vec![42]),
             ("Small Range".to_string(), vec![3, 1, 4, 1, 5, 9, 2, 6]),
-            ("Large Range".to_string(), vec![100, 5, 999, 234, 567, 1, 789]),
-            ("Negative Numbers".to_string(), vec![-5, 3, -1, 8, 0, -10, 7]),
+            (
+                "Large Range".to_string(),
+                vec![100, 5, 999, 234, 567, 1, 789],
+            ),
+            (
+                "Negative Numbers".to_string(),
+                vec![-5, 3, -1, 8, 0, -10, 7],
+            ),
             ("Already Sorted".to_string(), (1..=50).collect()),
             ("Reverse Sorted".to_string(), (1..=50).rev().collect()),
-            ("Many Duplicates".to_string(), vec![1, 3, 1, 3, 1, 3, 2, 2, 2]),
-            ("Uniform Distribution".to_string(), Self::generate_uniform_int(100, 1, 1000)),
-            ("Large Dataset".to_string(), Self::generate_uniform_int(5000, 1, 10000)),
+            (
+                "Many Duplicates".to_string(),
+                vec![1, 3, 1, 3, 1, 3, 2, 2, 2],
+            ),
+            (
+                "Uniform Distribution".to_string(),
+                Self::generate_uniform_int(100, 1, 1000),
+            ),
+            (
+                "Large Dataset".to_string(),
+                Self::generate_uniform_int(5000, 1, 10000),
+            ),
         ]
     }
 
@@ -628,13 +684,13 @@ impl TestCases {
         let mut result = Vec::with_capacity(size);
         let mut seed = 42u64;
         let range = max - min;
-        
+
         for _ in 0..size {
             seed = seed.wrapping_mul(1103515245).wrapping_add(12345);
             let normalized = (seed as f64) / (u64::MAX as f64);
             result.push(min + normalized * range);
         }
-        
+
         result
     }
 
@@ -642,20 +698,20 @@ impl TestCases {
         let mut result = Vec::with_capacity(size);
         let mut seed = 42u64;
         let range = (max - min + 1) as u64;
-        
+
         for _ in 0..size {
             seed = seed.wrapping_mul(1103515245).wrapping_add(12345);
             let value = min + ((seed % range) as i32);
             result.push(value);
         }
-        
+
         result
     }
 
     fn generate_normal_float(size: usize, mean: f64, std_dev: f64) -> Vec<f64> {
         let mut result = Vec::with_capacity(size);
         let mut seed = 42u64;
-        
+
         for i in 0..size {
             // Box-Muller transform for normal distribution
             if i % 2 == 0 {
@@ -663,31 +719,31 @@ impl TestCases {
                 let u1 = (seed as f64) / (u64::MAX as f64);
                 seed = seed.wrapping_mul(1103515245).wrapping_add(12345);
                 let u2 = (seed as f64) / (u64::MAX as f64);
-                
+
                 let z0 = (-2.0 * u1.ln()).sqrt() * (2.0 * std::f64::consts::PI * u2).cos();
                 result.push(mean + std_dev * z0);
             }
         }
-        
+
         // Fill remaining if odd size
         while result.len() < size {
             result.push(mean);
         }
-        
+
         result
     }
 
     fn generate_exponential_float(size: usize, lambda: f64) -> Vec<f64> {
         let mut result = Vec::with_capacity(size);
         let mut seed = 42u64;
-        
+
         for _ in 0..size {
             seed = seed.wrapping_mul(1103515245).wrapping_add(12345);
             let u = (seed as f64) / (u64::MAX as f64);
             let value = -u.ln() / lambda;
             result.push(value);
         }
-        
+
         result
     }
 
@@ -707,29 +763,29 @@ impl TestCases {
         let unique_values: Vec<f64> = (0..unique_count).map(|i| i as f64).collect();
         let mut result = Vec::with_capacity(size);
         let mut seed = 42u64;
-        
+
         for _ in 0..size {
             seed = seed.wrapping_mul(1103515245).wrapping_add(12345);
             let index = (seed % unique_count as u64) as usize;
             result.push(unique_values[index]);
         }
-        
+
         result
     }
 
     fn generate_skewed_float(size: usize) -> Vec<f64> {
         let mut result = Vec::with_capacity(size);
-        
+
         // 80% of elements in first 20% of range
         for i in 0..(size * 4 / 5) {
             result.push((i as f64 / size as f64) * 0.2);
         }
-        
+
         // 20% of elements in remaining 80% of range
         for i in 0..(size / 5) {
             result.push(0.2 + (i as f64 / (size / 5) as f64) * 0.8);
         }
-        
+
         result
     }
 }
@@ -747,31 +803,34 @@ fn verify_sorting_correctness_float(original: &[f64], sorted: &[f64]) -> bool {
     if original.len() != sorted.len() {
         return false;
     }
-    
+
     if !is_sorted_float(sorted) {
         return false;
     }
-    
+
     // Verify it's a permutation (same elements, same counts)
     let mut orig_sorted = original.to_vec();
     orig_sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
-    
-    sorted.len() == orig_sorted.len() && 
-    sorted.iter().zip(orig_sorted.iter()).all(|(a, b)| (a - b).abs() < f64::EPSILON)
+
+    sorted.len() == orig_sorted.len()
+        && sorted
+            .iter()
+            .zip(orig_sorted.iter())
+            .all(|(a, b)| (a - b).abs() < f64::EPSILON)
 }
 
 fn verify_sorting_correctness_int(original: &[i32], sorted: &[i32]) -> bool {
     if original.len() != sorted.len() {
         return false;
     }
-    
+
     if !is_sorted_int(sorted) {
         return false;
     }
-    
+
     let mut orig_sorted = original.to_vec();
     orig_sorted.sort_unstable();
-    
+
     sorted == orig_sorted.as_slice()
 }
 
@@ -788,14 +847,12 @@ fn analyze_distribution(data: &[f64]) -> DistributionAnalysis {
     }
 
     let mean = data.iter().sum::<f64>() / data.len() as f64;
-    let variance = data.iter()
-        .map(|x| (x - mean).powi(2))
-        .sum::<f64>() / data.len() as f64;
-    
+    let variance = data.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / data.len() as f64;
+
     let min = data.iter().fold(f64::INFINITY, |a, &b| a.min(b));
     let max = data.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b));
     let range = max - min;
-    
+
     // Simple uniformity score based on variance (lower variance = more uniform)
     let uniformity_score = if range > 0.0 {
         1.0 - (variance.sqrt() / range).min(1.0)
@@ -830,30 +887,33 @@ fn analyze_performance(results: &[SortResult]) {
 
     println!("\nPerformance Analysis:");
     println!("{}", "=".repeat(70));
-    
+
     // Time analysis
     let total_time: f64 = results.iter().map(|r| r.time_ms).sum();
     let avg_time = total_time / results.len() as f64;
-    
+
     println!("Time Performance:");
     println!("  Average time: {:.3} ms", avg_time);
     println!("  Total time:   {:.3} ms", total_time);
-    
+
     // Bucket analysis
-    let avg_bucket_count: f64 = results.iter().map(|r| r.bucket_count as f64).sum::<f64>() / results.len() as f64;
-    let avg_load_factor: f64 = results.iter().map(|r| r.load_factor).sum::<f64>() / results.len() as f64;
-    let avg_empty_buckets: f64 = results.iter().map(|r| r.empty_buckets as f64).sum::<f64>() / results.len() as f64;
-    
+    let avg_bucket_count: f64 =
+        results.iter().map(|r| r.bucket_count as f64).sum::<f64>() / results.len() as f64;
+    let avg_load_factor: f64 =
+        results.iter().map(|r| r.load_factor).sum::<f64>() / results.len() as f64;
+    let avg_empty_buckets: f64 =
+        results.iter().map(|r| r.empty_buckets as f64).sum::<f64>() / results.len() as f64;
+
     println!("\nBucket Statistics:");
     println!("  Average bucket count: {:.1}", avg_bucket_count);
     println!("  Average load factor: {:.2}", avg_load_factor);
     println!("  Average empty buckets: {:.1}", avg_empty_buckets);
-    
+
     // Operations analysis
     let total_assignments: usize = results.iter().map(|r| r.bucket_assignments).sum();
     let total_subroutine_calls: usize = results.iter().map(|r| r.subroutine_calls).sum();
     let total_subroutine_ops: usize = results.iter().map(|r| r.total_subroutine_operations).sum();
-    
+
     println!("\nOperation Counts:");
     println!("  Total bucket assignments: {}", total_assignments);
     println!("  Total subroutine calls: {}", total_subroutine_calls);
@@ -864,55 +924,78 @@ fn run_float_test_case(name: &str, data: Vec<f64>) {
     println!("\n{}", "=".repeat(70));
     println!("Float Test Case: {}", name);
     println!("{}", "=".repeat(70));
-    
+
     let original = data.clone();
     println!("Input size: {}", data.len());
-    
+
     if data.len() <= 15 {
-        println!("Input:  {:?}", data.iter().map(|x| format!("{:.2}", x)).collect::<Vec<_>>());
+        println!(
+            "Input:  {:?}",
+            data.iter().map(|x| format!("{:.2}", x)).collect::<Vec<_>>()
+        );
     }
-    
+
     // Analyze data distribution
     if !data.is_empty() {
         let dist_analysis = analyze_distribution(&data);
-        println!("Distribution: mean={:.2}, variance={:.3}, range={:.2}, uniformity={:.2}", 
-                 dist_analysis.mean, dist_analysis.variance, dist_analysis.range, dist_analysis.uniformity_score);
-        
+        println!(
+            "Distribution: mean={:.2}, variance={:.3}, range={:.2}, uniformity={:.2}",
+            dist_analysis.mean,
+            dist_analysis.variance,
+            dist_analysis.range,
+            dist_analysis.uniformity_score
+        );
+
         // Choose bucket count based on data size (rule of thumb: sqrt(n))
         let bucket_count = (data.len() as f64).sqrt().ceil() as usize;
-        
+
         println!("\nResults:");
         println!("{}", "-".repeat(100));
-        println!("{:<25} | {:>8} | {:>10} | {:>8} | {:>8} | {:>8} | {:>8} | {:>8}",
-                 "Algorithm", "Correct", "Time(ms)", "Buckets", "LoadFac", "Empty", "Assign", "SubOps");
+        println!(
+            "{:<25} | {:>8} | {:>10} | {:>8} | {:>8} | {:>8} | {:>8} | {:>8}",
+            "Algorithm", "Correct", "Time(ms)", "Buckets", "LoadFac", "Empty", "Assign", "SubOps"
+        );
         println!("{}", "-".repeat(100));
-        
+
         // Test different subroutine algorithms
         let subroutines = [
             SubroutineAlgorithm::InsertionSort,
             SubroutineAlgorithm::QuickSort,
             SubroutineAlgorithm::MergeSort,
         ];
-        
+
         for subroutine in &subroutines {
             let mut data_copy = data.clone();
-            let mut bucket_sort = BucketSort::new(bucket_count, DistributionStrategy::Linear, subroutine.clone(), true);
-            
+            let mut bucket_sort = BucketSort::new(
+                bucket_count,
+                DistributionStrategy::Linear,
+                subroutine.clone(),
+                true,
+            );
+
             let result = bucket_sort.sort(&mut data_copy);
             let is_correct = verify_sorting_correctness_float(&original, &data_copy);
-            
-            println!("{:<25} | {:>8} | {:>10.3} | {:>8} | {:>8.2} | {:>8} | {:>8} | {:>8}",
-                     format!("{:?}", subroutine),
-                     if is_correct { "✓" } else { "✗" },
-                     result.time_ms,
-                     result.bucket_count,
-                     result.load_factor,
-                     result.empty_buckets,
-                     result.bucket_assignments,
-                     result.total_subroutine_operations);
-            
+
+            println!(
+                "{:<25} | {:>8} | {:>10.3} | {:>8} | {:>8.2} | {:>8} | {:>8} | {:>8}",
+                format!("{:?}", subroutine),
+                if is_correct { "✓" } else { "✗" },
+                result.time_ms,
+                result.bucket_count,
+                result.load_factor,
+                result.empty_buckets,
+                result.bucket_assignments,
+                result.total_subroutine_operations
+            );
+
             if data.len() <= 15 && subroutine == &SubroutineAlgorithm::QuickSort {
-                println!("Output: {:?}", data_copy.iter().map(|x| format!("{:.2}", x)).collect::<Vec<_>>());
+                println!(
+                    "Output: {:?}",
+                    data_copy
+                        .iter()
+                        .map(|x| format!("{:.2}", x))
+                        .collect::<Vec<_>>()
+                );
             }
         }
     }
@@ -922,46 +1005,55 @@ fn run_integer_test_case(name: &str, data: Vec<i32>) {
     println!("\n{}", "=".repeat(70));
     println!("Integer Test Case: {}", name);
     println!("{}", "=".repeat(70));
-    
+
     let original = data.clone();
     println!("Input size: {}", data.len());
-    
+
     if data.len() <= 20 {
         println!("Input:  {:?}", data);
     }
-    
+
     if !data.is_empty() {
         let bucket_count = (data.len() as f64).sqrt().ceil() as usize;
-        
+
         println!("\nResults:");
         println!("{}", "-".repeat(100));
-        println!("{:<25} | {:>8} | {:>10} | {:>8} | {:>8} | {:>8} | {:>8} | {:>8}",
-                 "Algorithm", "Correct", "Time(ms)", "Buckets", "LoadFac", "Empty", "Assign", "SubOps");
+        println!(
+            "{:<25} | {:>8} | {:>10} | {:>8} | {:>8} | {:>8} | {:>8} | {:>8}",
+            "Algorithm", "Correct", "Time(ms)", "Buckets", "LoadFac", "Empty", "Assign", "SubOps"
+        );
         println!("{}", "-".repeat(100));
-        
+
         let subroutines = [
             SubroutineAlgorithm::InsertionSort,
             SubroutineAlgorithm::QuickSort,
             SubroutineAlgorithm::RadixSort,
         ];
-        
+
         for subroutine in &subroutines {
             let mut data_copy = data.clone();
-            let mut bucket_sort = BucketSort::new(bucket_count, DistributionStrategy::Linear, subroutine.clone(), true);
-            
+            let mut bucket_sort = BucketSort::new(
+                bucket_count,
+                DistributionStrategy::Linear,
+                subroutine.clone(),
+                true,
+            );
+
             let result = bucket_sort.sort_integers(&mut data_copy);
             let is_correct = verify_sorting_correctness_int(&original, &data_copy);
-            
-            println!("{:<25} | {:>8} | {:>10.3} | {:>8} | {:>8.2} | {:>8} | {:>8} | {:>8}",
-                     format!("{:?}", subroutine),
-                     if is_correct { "✓" } else { "✗" },
-                     result.time_ms,
-                     result.bucket_count,
-                     result.load_factor,
-                     result.empty_buckets,
-                     result.bucket_assignments,
-                     result.total_subroutine_operations);
-            
+
+            println!(
+                "{:<25} | {:>8} | {:>10.3} | {:>8} | {:>8.2} | {:>8} | {:>8} | {:>8}",
+                format!("{:?}", subroutine),
+                if is_correct { "✓" } else { "✗" },
+                result.time_ms,
+                result.bucket_count,
+                result.load_factor,
+                result.empty_buckets,
+                result.bucket_assignments,
+                result.total_subroutine_operations
+            );
+
             if data.len() <= 20 && subroutine == &SubroutineAlgorithm::QuickSort {
                 println!("Output: {:?}", data_copy);
             }
@@ -972,48 +1064,58 @@ fn run_integer_test_case(name: &str, data: Vec<i32>) {
 fn main() {
     println!("Bucket Sort - Distribution-Based Linear Average-Case Sorting");
     println!("{}", "=".repeat(70));
-    
+
     let float_test_cases = TestCases::generate_float_test_cases();
     let integer_test_cases = TestCases::generate_integer_test_cases();
     let mut all_results = Vec::new();
-    
+
     // Run float test cases
     println!("\n🔢 FLOATING-POINT TEST CASES");
     println!("{}", "=".repeat(70));
-    
+
     for (name, data) in float_test_cases {
         run_float_test_case(&name, data.clone());
-        
+
         // Collect results for overall analysis
         if !data.is_empty() {
             let bucket_count = (data.len() as f64).sqrt().ceil() as usize;
-            let mut bucket_sort = BucketSort::new(bucket_count, DistributionStrategy::Linear, SubroutineAlgorithm::QuickSort, true);
+            let mut bucket_sort = BucketSort::new(
+                bucket_count,
+                DistributionStrategy::Linear,
+                SubroutineAlgorithm::QuickSort,
+                true,
+            );
             let mut data_copy = data.clone();
             let result = bucket_sort.sort(&mut data_copy);
             all_results.push(result);
         }
     }
-    
+
     // Run integer test cases
     println!("\n\n🔢 INTEGER TEST CASES");
     println!("{}", "=".repeat(70));
-    
+
     for (name, data) in integer_test_cases {
         run_integer_test_case(&name, data.clone());
-        
+
         // Collect results for overall analysis
         if !data.is_empty() {
             let bucket_count = (data.len() as f64).sqrt().ceil() as usize;
-            let mut bucket_sort = BucketSort::new(bucket_count, DistributionStrategy::Linear, SubroutineAlgorithm::QuickSort, true);
+            let mut bucket_sort = BucketSort::new(
+                bucket_count,
+                DistributionStrategy::Linear,
+                SubroutineAlgorithm::QuickSort,
+                true,
+            );
             let mut data_copy = data.clone();
             let result = bucket_sort.sort_integers(&mut data_copy);
             all_results.push(result);
         }
     }
-    
+
     // Overall performance analysis
     analyze_performance(&all_results);
-    
+
     // Algorithm summary
     println!("\n\nAlgorithm Summary:");
     println!("{}", "=".repeat(70));
@@ -1023,31 +1125,31 @@ fn main() {
     println!("• Stability:        Depends on subroutine (can be stable)");
     println!("• Method:           Distribution-based sorting");
     println!("• Best for:         Uniformly distributed data with known range");
-    
+
     println!("\nDistribution Strategies:");
     println!("• Linear:           Uniform distribution across range");
     println!("• Logarithmic:      For exponentially distributed data");
     println!("• Hash-based:       Custom distribution functions");
     println!("• Quantile-based:   Balanced buckets using data percentiles");
-    
+
     println!("\nSubroutine Algorithms:");
     println!("• Insertion Sort:   O(m²), optimal for small buckets (m < 10)");
     println!("• Quick Sort:       O(m log m), general purpose, fast");
     println!("• Merge Sort:       O(m log m), stable, predictable");
     println!("• Radix Sort:       O(d*m), linear for bounded integers");
-    
+
     println!("\nPerformance Factors:");
     println!("• Distribution uniformity is critical for good performance");
     println!("• Bucket count affects memory usage vs bucket sorting time");
     println!("• Subroutine choice matters for bucket sorting efficiency");
     println!("• Load balancing determines worst-case behavior");
-    
+
     println!("\nComparison with Other Algorithms:");
     println!("• vs Radix Sort: More flexible range handling, works with floats");
     println!("• vs Quick Sort: Linear time with uniform data, but less consistent");
     println!("• vs Counting Sort: Better for large ranges, uses less memory");
     println!("• vs Merge Sort: Can be faster, but distribution-dependent");
-    
+
     println!("\nPractical Applications:");
     println!("• Graphics: Color component sorting, pixel processing");
     println!("• Databases: Range partitioning, histogram construction");

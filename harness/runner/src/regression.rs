@@ -750,7 +750,10 @@ mod tests {
 
     #[test]
     fn test_performance_baseline_creation() {
-        use crate::statistics::{SampleStatistics, OutlierAnalysis, Quartiles, DistributionMetrics, ConfidenceIntervals, Percentiles};
+        use crate::statistics::{
+            ConfidenceIntervals, DistributionMetrics, OutlierAnalysis, Percentiles, Quartiles,
+            SampleStatistics,
+        };
 
         let baseline = PerformanceBaseline {
             implementation: "rust".to_string(),

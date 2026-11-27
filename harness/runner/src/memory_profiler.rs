@@ -365,11 +365,9 @@ impl MemoryProfiler {
             total_deallocations: estimated_deallocations,
             net_allocations: estimated_allocations as i64 - estimated_deallocations as i64,
             peak_allocated_objects: estimated_allocations / 10,
-            average_allocation_size: if estimated_allocations > 0 {
-                memory_growth / estimated_allocations
-            } else {
-                64
-            },
+            average_allocation_size: memory_growth
+                .checked_div(estimated_allocations)
+                .unwrap_or(64),
             largest_allocation_bytes: memory_growth.max(1024),
             fragmentation_score: self.estimate_fragmentation_score(),
         }
