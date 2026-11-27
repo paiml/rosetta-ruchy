@@ -25,7 +25,7 @@ impl HeapSort {
     // Main heap sort algorithm
     fn sort(&mut self, arr: &mut [i32]) -> SortResult {
         let start = Instant::now();
-        
+
         if arr.len() <= 1 {
             return SortResult {
                 algorithm: "Heap Sort".to_string(),
@@ -48,7 +48,7 @@ impl HeapSort {
         for i in (1..arr.len()).rev() {
             // Move current root to end
             self.swap(arr, 0, i);
-            
+
             // Reduce heap size and restore heap property
             self.heap_size = i;
             self.heapify_recursive(arr, 0);
@@ -69,7 +69,7 @@ impl HeapSort {
     fn build_max_heap(&mut self, arr: &mut [i32]) {
         // Start from last non-leaf node and heapify each node
         let last_non_leaf = (self.heap_size / 2).saturating_sub(1);
-        
+
         for i in (0..=last_non_leaf).rev() {
             self.heapify_recursive(arr, i);
         }
@@ -136,7 +136,7 @@ impl HeapSort {
     // Alternative sorting using iterative heapify
     fn sort_iterative(&mut self, arr: &mut [i32]) -> SortResult {
         let start = Instant::now();
-        
+
         if arr.len() <= 1 {
             return SortResult {
                 algorithm: "Heap Sort (Iterative)".to_string(),
@@ -245,7 +245,7 @@ impl HeapAnalyzer {
         while level <= height && level_start < arr.len() {
             let level_size = (1 << level).min(arr.len() - level_start);
             let spacing = " ".repeat((1 << (height - level)) - 1);
-            
+
             print!("{}", spacing);
             for i in 0..level_size {
                 if level_start + i < arr.len() {
@@ -256,7 +256,7 @@ impl HeapAnalyzer {
                 }
             }
             println!();
-            
+
             level_start += level_size;
             level += 1;
         }
@@ -277,7 +277,7 @@ impl HeapAnalyzer {
         let height = Self::heap_height(size);
         let mut levels = Vec::new();
         let mut remaining = size;
-        
+
         for level in 0..=height {
             let level_capacity = 1 << level;
             let level_size = level_capacity.min(remaining);
@@ -287,7 +287,7 @@ impl HeapAnalyzer {
                 break;
             }
         }
-        
+
         levels
     }
 }
@@ -327,35 +327,43 @@ impl TestCases {
             ("Reverse Sorted".to_string(), vec![8, 7, 6, 5, 4, 3, 2, 1]),
             ("Random Small".to_string(), vec![4, 2, 7, 1, 9, 3, 6, 5]),
             ("All Same".to_string(), vec![5, 5, 5, 5, 5, 5, 5]),
-            ("Duplicates Mixed".to_string(), vec![3, 1, 4, 1, 5, 9, 2, 6, 5, 3]),
-            ("Large Random".to_string(), Self::generate_random_array(1000, 1, 1000)),
-            ("Nearly Sorted".to_string(), Self::generate_nearly_sorted(100)),
+            (
+                "Duplicates Mixed".to_string(),
+                vec![3, 1, 4, 1, 5, 9, 2, 6, 5, 3],
+            ),
+            (
+                "Large Random".to_string(),
+                Self::generate_random_array(1000, 1, 1000),
+            ),
+            (
+                "Nearly Sorted".to_string(),
+                Self::generate_nearly_sorted(100),
+            ),
             ("Few Unique".to_string(), Self::generate_few_unique(50, 3)),
         ]
     }
 
     fn generate_random_array(size: usize, min: i32, max: i32) -> Vec<i32> {
-        
         let mut result = Vec::with_capacity(size);
         let mut seed = 42u64;
-        
+
         for _ in 0..size {
             // Simple LCG for deterministic "random" numbers
             seed = seed.wrapping_mul(1103515245).wrapping_add(12345);
             let value = min + ((seed % (max - min + 1) as u64) as i32);
             result.push(value);
         }
-        
+
         result
     }
 
     fn generate_nearly_sorted(size: usize) -> Vec<i32> {
         let mut arr: Vec<i32> = (1..=size as i32).collect();
-        
+
         // Swap a few random elements
         let swaps = size / 10;
         let mut seed = 42u64;
-        
+
         for _ in 0..swaps {
             seed = seed.wrapping_mul(1103515245).wrapping_add(12345);
             let i = (seed % size as u64) as usize;
@@ -363,20 +371,20 @@ impl TestCases {
             let j = (seed % size as u64) as usize;
             arr.swap(i, j);
         }
-        
+
         arr
     }
 
     fn generate_few_unique(size: usize, unique_count: usize) -> Vec<i32> {
         let mut result = Vec::with_capacity(size);
         let mut seed = 42u64;
-        
+
         for _ in 0..size {
             seed = seed.wrapping_mul(1103515245).wrapping_add(12345);
             let value = ((seed % unique_count as u64) + 1) as i32;
             result.push(value);
         }
-        
+
         result
     }
 }
@@ -390,24 +398,24 @@ fn verify_sorting_correctness(original: &[i32], sorted: &[i32]) -> bool {
     if original.len() != sorted.len() {
         return false;
     }
-    
+
     // Check if sorted array is actually sorted
     if !is_sorted(sorted) {
         return false;
     }
-    
+
     // Check if it's a permutation of original (same elements, same counts)
     let mut orig_counts = std::collections::HashMap::new();
     let mut sort_counts = std::collections::HashMap::new();
-    
+
     for &val in original {
         *orig_counts.entry(val).or_insert(0) += 1;
     }
-    
+
     for &val in sorted {
         *sort_counts.entry(val).or_insert(0) += 1;
     }
-    
+
     orig_counts == sort_counts
 }
 
@@ -419,40 +427,43 @@ fn analyze_performance(results: &[SortResult]) {
 
     println!("\nPerformance Analysis:");
     println!("{}", "=".repeat(50));
-    
+
     // Time analysis
     let total_time: f64 = results.iter().map(|r| r.time_ms).sum();
     let avg_time = total_time / results.len() as f64;
-    let min_time = results.iter().map(|r| r.time_ms).fold(f64::INFINITY, f64::min);
+    let min_time = results
+        .iter()
+        .map(|r| r.time_ms)
+        .fold(f64::INFINITY, f64::min);
     let max_time = results.iter().map(|r| r.time_ms).fold(0.0, f64::max);
-    
+
     println!("Time (ms):");
     println!("  Average: {:.3}", avg_time);
     println!("  Min:     {:.3}", min_time);
     println!("  Max:     {:.3}", max_time);
-    
+
     // Operations analysis
     let total_comparisons: usize = results.iter().map(|r| r.comparisons).sum();
     let total_swaps: usize = results.iter().map(|r| r.swaps).sum();
-    
+
     println!("\nOperations:");
     println!("  Total Comparisons: {}", total_comparisons);
     println!("  Total Swaps:       {}", total_swaps);
-    
+
     // Complexity analysis
     println!("\nComplexity Analysis:");
     if results.len() > 1 {
         // Find results with different sizes for complexity analysis
-        let size_time_pairs: Vec<_> = results.iter()
-            .map(|r| (r.size as f64, r.time_ms))
-            .collect();
-        
+        let size_time_pairs: Vec<_> = results.iter().map(|r| (r.size as f64, r.time_ms)).collect();
+
         println!("  Size vs Time (for complexity verification):");
         for (size, time) in &size_time_pairs {
             let theoretical_nlogn = size * size.log2();
             let ratio = time / theoretical_nlogn;
-            println!("    Size: {}, Time: {:.3}ms, Ratio: {:.6}", 
-                     *size as usize, time, ratio);
+            println!(
+                "    Size: {}, Time: {:.3}ms, Ratio: {:.6}",
+                *size as usize, time, ratio
+            );
         }
     }
 }
@@ -462,82 +473,98 @@ fn run_test_case(name: &str, data: Vec<i32>) {
     println!("\n{}", "=".repeat(70));
     println!("Test Case: {}", name);
     println!("{}", "=".repeat(70));
-    
+
     let original = data.clone();
     println!("Input size: {}", data.len());
-    
+
     if data.len() <= 20 {
         println!("Input:  {:?}", data);
-        
+
         // Show initial heap visualization if small enough
         if data.len() <= 15 && !data.is_empty() {
             println!("\nInitial array as heap structure:");
             HeapAnalyzer::visualize_heap(&data);
-            
+
             let props = HeapAnalyzer::analyze_heap(&data);
             println!("Initial heap properties: {:?}", props);
         }
     }
-    
+
     // Test recursive heap sort
     let mut heap_sort = HeapSort::new(true);
     let mut data_copy = data.clone();
     let result_recursive = heap_sort.sort(&mut data_copy);
-    
+
     // Verify correctness
     let is_correct = verify_sorting_correctness(&original, &data_copy);
-    
+
     if data.len() <= 20 {
         println!("Output: {:?}", data_copy);
     }
-    
+
     // Test iterative heap sort for comparison
     let mut heap_sort_iter = HeapSort::new(true);
     let mut data_copy2 = data.clone();
     let result_iterative = heap_sort_iter.sort_iterative(&mut data_copy2);
-    
+
     // Display results
     println!("\nResults:");
     println!("{}", "-".repeat(70));
-    println!("{:<20} | {:>8} | {:>10} | {:>8} | {:>8} | {:>8}",
-             "Algorithm", "Correct", "Time(ms)", "Compares", "Swaps", "Size");
+    println!(
+        "{:<20} | {:>8} | {:>10} | {:>8} | {:>8} | {:>8}",
+        "Algorithm", "Correct", "Time(ms)", "Compares", "Swaps", "Size"
+    );
     println!("{}", "-".repeat(70));
-    
-    println!("{:<20} | {:>8} | {:>10.3} | {:>8} | {:>8} | {:>8}",
-             result_recursive.algorithm,
-             if is_correct { "✓" } else { "✗" },
-             result_recursive.time_ms,
-             result_recursive.comparisons,
-             result_recursive.swaps,
-             result_recursive.size);
-             
-    println!("{:<20} | {:>8} | {:>10.3} | {:>8} | {:>8} | {:>8}",
-             result_iterative.algorithm,
-             if verify_sorting_correctness(&original, &data_copy2) { "✓" } else { "✗" },
-             result_iterative.time_ms,
-             result_iterative.comparisons,
-             result_iterative.swaps,
-             result_iterative.size);
-    
+
+    println!(
+        "{:<20} | {:>8} | {:>10.3} | {:>8} | {:>8} | {:>8}",
+        result_recursive.algorithm,
+        if is_correct { "✓" } else { "✗" },
+        result_recursive.time_ms,
+        result_recursive.comparisons,
+        result_recursive.swaps,
+        result_recursive.size
+    );
+
+    println!(
+        "{:<20} | {:>8} | {:>10.3} | {:>8} | {:>8} | {:>8}",
+        result_iterative.algorithm,
+        if verify_sorting_correctness(&original, &data_copy2) {
+            "✓"
+        } else {
+            "✗"
+        },
+        result_iterative.time_ms,
+        result_iterative.comparisons,
+        result_iterative.swaps,
+        result_iterative.size
+    );
+
     // Complexity analysis for this case
     if !data.is_empty() {
         let n = data.len() as f64;
         let theoretical_comparisons = n * n.log2(); // Approximate for heap sort
         let actual_comparisons = result_recursive.comparisons as f64;
-        
+
         println!("\nComplexity Analysis for this case:");
-        println!("  Theoretical O(n log n): {:.0} comparisons", theoretical_comparisons);
+        println!(
+            "  Theoretical O(n log n): {:.0} comparisons",
+            theoretical_comparisons
+        );
         println!("  Actual comparisons: {}", result_recursive.comparisons);
-        println!("  Efficiency ratio: {:.2}", actual_comparisons / theoretical_comparisons);
+        println!(
+            "  Efficiency ratio: {:.2}",
+            actual_comparisons / theoretical_comparisons
+        );
     }
-    
+
     // Show final heap properties if small enough
     if data.len() <= 15 && !data.is_empty() {
         println!("\nFinal sorted array:");
         if data.len() <= 10 {
             HeapAnalyzer::visualize_heap(&data_copy);
         }
-        
+
         let final_props = HeapAnalyzer::analyze_heap(&data_copy);
         println!("Final properties: {:?}", final_props);
     }
@@ -546,14 +573,14 @@ fn run_test_case(name: &str, data: Vec<i32>) {
 fn main() {
     println!("Heap Sort - Comprehensive Implementation and Analysis");
     println!("{}", "=".repeat(70));
-    
+
     let test_cases = TestCases::generate_test_cases();
     let mut all_results = Vec::new();
-    
+
     // Run all test cases
     for (name, data) in test_cases {
         run_test_case(&name, data.clone());
-        
+
         // Collect results for overall analysis
         if !data.is_empty() {
             let mut heap_sort = HeapSort::new(true);
@@ -562,10 +589,10 @@ fn main() {
             all_results.push(result);
         }
     }
-    
+
     // Overall performance analysis
     analyze_performance(&all_results);
-    
+
     // Algorithm summary
     println!("\n\nAlgorithm Summary:");
     println!("{}", "=".repeat(70));
@@ -575,20 +602,20 @@ fn main() {
     println!("• Stability:        Not stable");
     println!("• Method:           Comparison-based");
     println!("• Best for:         Guaranteed O(n log n), memory-constrained environments");
-    
+
     println!("\nHeap Operations:");
     println!("• Build Heap:       O(n) time");
     println!("• Heapify:          O(log n) time");
     println!("• Extract Max:      O(log n) time");
     println!("• Insert:           O(log n) time");
-    
+
     println!("\nPractical Considerations:");
     println!("• Poor cache performance due to non-sequential access");
     println!("• Good worst-case guarantee (unlike QuickSort)");
     println!("• Useful for priority queue implementations");
     println!("• Often used in hybrid sorting algorithms");
     println!("• Suitable for external sorting applications");
-    
+
     println!("\nImplementation Variants Demonstrated:");
     println!("• Recursive heapify (standard approach)");
     println!("• Iterative heapify (stack-efficient)");

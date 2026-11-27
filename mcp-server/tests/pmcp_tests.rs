@@ -97,7 +97,10 @@ fn test_verification_syntax_check_passed() {
     };
 
     assert_eq!(verification.step, 1);
-    assert!(matches!(verification.verification_type, VerificationType::SyntaxCheck));
+    assert!(matches!(
+        verification.verification_type,
+        VerificationType::SyntaxCheck
+    ));
     assert!(verification.passed);
 }
 
@@ -113,7 +116,10 @@ fn test_verification_type_check_failed() {
     };
 
     assert_eq!(verification.step, 2);
-    assert!(matches!(verification.verification_type, VerificationType::TypeCheck));
+    assert!(matches!(
+        verification.verification_type,
+        VerificationType::TypeCheck
+    ));
     assert!(!verification.passed);
     assert_eq!(verification.suggestions.len(), 1);
 }
@@ -129,7 +135,10 @@ fn test_verification_provability_check() {
         suggestions: vec![],
     };
 
-    assert!(matches!(verification.verification_type, VerificationType::ProvabilityCheck));
+    assert!(matches!(
+        verification.verification_type,
+        VerificationType::ProvabilityCheck
+    ));
     assert!(verification.passed);
 }
 
@@ -144,7 +153,10 @@ fn test_verification_performance_check() {
         suggestions: vec!["Could optimize to O(log n)".to_string()],
     };
 
-    assert!(matches!(verification.verification_type, VerificationType::PerformanceCheck));
+    assert!(matches!(
+        verification.verification_type,
+        VerificationType::PerformanceCheck
+    ));
     assert_eq!(verification.suggestions.len(), 1);
 }
 
@@ -159,7 +171,10 @@ fn test_verification_quality_check() {
         suggestions: vec![],
     };
 
-    assert!(matches!(verification.verification_type, VerificationType::QualityCheck));
+    assert!(matches!(
+        verification.verification_type,
+        VerificationType::QualityCheck
+    ));
     assert!(verification.passed);
 }
 
@@ -192,7 +207,10 @@ fn test_pmcp_request_statement_level() {
 
     assert_eq!(request.source_language, None);
     assert!(matches!(request.step_size, StepSize::Statement));
-    assert!(matches!(request.verification_level, VerificationLevel::Comprehensive));
+    assert!(matches!(
+        request.verification_level,
+        VerificationLevel::Comprehensive
+    ));
 }
 
 /// Test: PMCP translation request - expression level
@@ -207,7 +225,10 @@ fn test_pmcp_request_expression_level() {
     };
 
     assert!(matches!(request.step_size, StepSize::Expression));
-    assert!(matches!(request.verification_level, VerificationLevel::Basic));
+    assert!(matches!(
+        request.verification_level,
+        VerificationLevel::Basic
+    ));
 }
 
 /// Test: Interactive session with feedback and verification
@@ -286,7 +307,10 @@ fn test_feedback_type_serialization() {
     assert!(json.contains("suggestion"));
 
     let deserialized: UserFeedback = serde_json::from_str(&json).unwrap();
-    assert!(matches!(deserialized.feedback_type, FeedbackType::Suggestion));
+    assert!(matches!(
+        deserialized.feedback_type,
+        FeedbackType::Suggestion
+    ));
 }
 
 /// Test: Verification type serialization
@@ -304,5 +328,8 @@ fn test_verification_type_serialization() {
     assert!(json.contains("provability_check"));
 
     let deserialized: StepVerificationResult = serde_json::from_str(&json).unwrap();
-    assert!(matches!(deserialized.verification_type, VerificationType::ProvabilityCheck));
+    assert!(matches!(
+        deserialized.verification_type,
+        VerificationType::ProvabilityCheck
+    ));
 }

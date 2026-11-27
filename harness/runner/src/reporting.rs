@@ -807,7 +807,10 @@ mod tests {
 
     #[test]
     fn test_language_results_structure() {
-        use crate::statistics::{SampleStatistics, OutlierAnalysis, Quartiles, DistributionMetrics, ConfidenceIntervals, Percentiles};
+        use crate::statistics::{
+            ConfidenceIntervals, DistributionMetrics, OutlierAnalysis, Percentiles, Quartiles,
+            SampleStatistics,
+        };
 
         let results = LanguageResults {
             language: "rust".to_string(),
@@ -894,14 +897,12 @@ mod tests {
             most_memory_efficient: "rust".to_string(),
             smallest_binary: "rust".to_string(),
             fastest_compilation: "rust".to_string(),
-            performance_ranking: vec![
-                PerformanceRanking {
-                    rank: 1,
-                    implementation: "rust".to_string(),
-                    score: 500000.0,
-                    score_type: "execution_time_ns".to_string(),
-                }
-            ],
+            performance_ranking: vec![PerformanceRanking {
+                rank: 1,
+                implementation: "rust".to_string(),
+                score: 500000.0,
+                score_type: "execution_time_ns".to_string(),
+            }],
             insights: vec!["All implementations performed well".to_string()],
             recommendations: vec!["Consider memory optimization".to_string()],
         };

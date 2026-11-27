@@ -309,10 +309,12 @@ impl BenchmarkRunner {
         self.cleanup_environment(&mut env_controller).await;
 
         // Step 4: Generate comprehensive reports
-        self.generate_benchmark_reports(&results, &env_controller, &isolation_result).await;
+        self.generate_benchmark_reports(&results, &env_controller, &isolation_result)
+            .await;
 
         // Step 5: Perform regression detection (Toyota Way Jidoka)
-        self.perform_regression_analysis(&results, example_path).await?;
+        self.perform_regression_analysis(&results, example_path)
+            .await?;
 
         info!("✅ Benchmark run completed for {} languages", results.len());
         Ok(results)
@@ -707,7 +709,8 @@ impl BenchmarkRunner {
     ) -> Result<()> {
         let report_generator = self.create_report_generator();
         let report_results = self.convert_to_report_format(results)?;
-        let environment_report = self.create_environment_report(env_controller, isolation_result)?;
+        let environment_report =
+            self.create_environment_report(env_controller, isolation_result)?;
         let config = self.create_benchmark_config();
 
         report_generator
@@ -739,9 +742,15 @@ impl BenchmarkRunner {
             .await
         {
             Ok(analysis) => {
-                self.handle_regression_status(&analysis, results, example_path, &regression_detector)
-                    .await?;
-                self.write_regression_report(&regression_detector, &analysis).await;
+                self.handle_regression_status(
+                    &analysis,
+                    results,
+                    example_path,
+                    &regression_detector,
+                )
+                .await?;
+                self.write_regression_report(&regression_detector, &analysis)
+                    .await;
             }
             Err(e) => {
                 warn!("Failed to perform regression analysis: {}", e);
@@ -826,7 +835,10 @@ impl BenchmarkRunner {
         regression_detector: &RegressionDetector,
         analysis: &regression::RegressionAnalysis,
     ) {
-        match regression_detector.generate_regression_report(analysis).await {
+        match regression_detector
+            .generate_regression_report(analysis)
+            .await
+        {
             Ok(report) => {
                 if let Err(e) = std::fs::write("results/regression_report.md", report) {
                     warn!("Failed to write regression report: {}", e);
@@ -1033,7 +1045,10 @@ impl BenchmarkRunner {
 
         match std::fs::write(&report_path, memory_report) {
             Ok(_) => info!("📊 Memory profile report: {}", report_path),
-            Err(e) => warn!("Failed to write memory profile report for {}: {}", language, e),
+            Err(e) => warn!(
+                "Failed to write memory profile report for {}: {}",
+                language, e
+            ),
         }
     }
 
@@ -1089,7 +1104,10 @@ impl BenchmarkRunner {
                 info!("📊 Binary analysis report: {}", report_path);
             }
             Err(e) => {
-                warn!("Failed to write binary analysis report for {}: {}", language, e);
+                warn!(
+                    "Failed to write binary analysis report for {}: {}",
+                    language, e
+                );
             }
         }
     }
@@ -1153,7 +1171,7 @@ async fn handle_run_command(
     let config = BenchmarkConfig {
         iterations,
         warmup_iterations: iterations / 10, // 10% warmup
-        cpu_affinity: vec![0],              // Fixed CPU affinity (configuration not yet implemented)
+        cpu_affinity: vec![0], // Fixed CPU affinity (configuration not yet implemented)
         memory_profiling: true,
         cpu_profiling: false,
     };
@@ -1361,12 +1379,12 @@ fn print_recommendations(state: &isolation::EnvironmentState) -> Result<()> {
     }
 
     if !state.cpu_governors.iter().any(|g| g == "performance") {
-        println!("- 💡 Consider performance governor: `sudo cpupower frequency-set -g performance`");
+        println!(
+            "- 💡 Consider performance governor: `sudo cpupower frequency-set -g performance`"
+        );
     }
 
-    println!(
-        "- 💡 Run benchmarks with elevated privileges for full isolation control"
-    );
+    println!("- 💡 Run benchmarks with elevated privileges for full isolation control");
 
     Ok(())
 }

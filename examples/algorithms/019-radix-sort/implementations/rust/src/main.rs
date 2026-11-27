@@ -27,7 +27,7 @@ impl RadixSort {
     // LSD Radix Sort (Least Significant Digit first)
     fn sort_lsd(&mut self, arr: &mut [i32]) -> SortResult {
         let start = Instant::now();
-        
+
         if arr.len() <= 1 {
             return SortResult {
                 algorithm: "LSD Radix Sort".to_string(),
@@ -54,10 +54,10 @@ impl RadixSort {
             for val in &mut negatives {
                 *val = -*val;
             }
-            
+
             let passes = self.sort_lsd_positive(&mut negatives);
             total_passes += passes;
-            
+
             // Convert back to negative and reverse order
             for val in &mut negatives {
                 *val = -*val;
@@ -65,7 +65,7 @@ impl RadixSort {
             negatives.reverse();
         }
 
-        // Sort non-negative numbers normally  
+        // Sort non-negative numbers normally
         if !non_negatives.is_empty() {
             let passes = self.sort_lsd_positive(&mut non_negatives);
             total_passes += passes;
@@ -103,12 +103,16 @@ impl RadixSort {
 
         // Find maximum to determine number of digits
         let max_val = *arr.iter().max().unwrap();
-        let max_digits = if max_val == 0 { 1 } else { Self::count_digits(max_val, self.radix) };
+        let max_digits = if max_val == 0 {
+            1
+        } else {
+            Self::count_digits(max_val, self.radix)
+        };
 
         // Sort by each digit position
         let mut passes = 0;
         let mut exp = 1;
-        
+
         for _ in 0..max_digits {
             self.counting_sort_by_digit(arr, exp);
             passes += 1;
@@ -118,10 +122,10 @@ impl RadixSort {
         passes
     }
 
-    // MSD Radix Sort (Most Significant Digit first) 
+    // MSD Radix Sort (Most Significant Digit first)
     fn sort_msd(&mut self, arr: &mut [i32]) -> SortResult {
         let start = Instant::now();
-        
+
         if arr.len() <= 1 {
             return SortResult {
                 algorithm: "MSD Radix Sort".to_string(),
@@ -147,12 +151,16 @@ impl RadixSort {
             for val in &mut negatives {
                 *val = -*val;
             }
-            
+
             let max_val = *negatives.iter().max().unwrap();
-            let max_digits = if max_val == 0 { 1 } else { Self::count_digits(max_val, self.radix) };
+            let max_digits = if max_val == 0 {
+                1
+            } else {
+                Self::count_digits(max_val, self.radix)
+            };
             let passes = self.sort_msd_recursive(&mut negatives, max_digits);
             total_passes += passes;
-            
+
             for val in &mut negatives {
                 *val = -*val;
             }
@@ -162,7 +170,11 @@ impl RadixSort {
         // Sort non-negative numbers
         if !non_negatives.is_empty() {
             let max_val = *non_negatives.iter().max().unwrap();
-            let max_digits = if max_val == 0 { 1 } else { Self::count_digits(max_val, self.radix) };
+            let max_digits = if max_val == 0 {
+                1
+            } else {
+                Self::count_digits(max_val, self.radix)
+            };
             let passes = self.sort_msd_recursive(&mut non_negatives, max_digits);
             total_passes += passes;
         }
@@ -207,7 +219,7 @@ impl RadixSort {
         let mut start = 0;
         for digit in 0..self.radix {
             let mut end = start;
-            
+
             // Find range of elements with this digit value
             while end < arr.len() && self.get_digit(arr[end], exp) == digit as i32 {
                 end += 1;
@@ -229,7 +241,7 @@ impl RadixSort {
         let n = arr.len();
         let mut output = vec![0; n];
         let mut count = vec![0; self.radix];
-        
+
         if self.track_stats {
             self.memory_allocations += 2; // output and count arrays
         }
@@ -294,7 +306,7 @@ impl RadixSort {
         if num == 0 {
             return 1;
         }
-        
+
         let mut count = 0;
         while num > 0 {
             num /= radix as i32;
@@ -315,7 +327,7 @@ impl RadixSort {
     // Binary radix sort (base 2, bit-by-bit)
     fn sort_binary(&mut self, arr: &mut [i32]) -> SortResult {
         let start = Instant::now();
-        
+
         if arr.len() <= 1 {
             return SortResult {
                 algorithm: "Binary Radix Sort".to_string(),
@@ -343,10 +355,10 @@ impl RadixSort {
             for val in &mut negatives {
                 *val = -*val;
             }
-            
+
             let passes = self.sort_lsd_positive(&mut negatives);
             total_passes += passes;
-            
+
             for val in &mut negatives {
                 *val = -*val;
             }
@@ -388,7 +400,7 @@ impl RadixSort {
     // High-radix sort (base 256 for efficiency)
     fn sort_high_radix(&mut self, arr: &mut [i32]) -> SortResult {
         let start = Instant::now();
-        
+
         if arr.len() <= 1 {
             return SortResult {
                 algorithm: "High Radix Sort (256)".to_string(),
@@ -415,10 +427,10 @@ impl RadixSort {
             for val in &mut negatives {
                 *val = -*val;
             }
-            
+
             let passes = self.sort_lsd_positive(&mut negatives);
             total_passes += passes;
-            
+
             for val in &mut negatives {
                 *val = -*val;
             }
@@ -480,44 +492,68 @@ impl TestCases {
             ("Empty Array".to_string(), vec![]),
             ("Single Element".to_string(), vec![42]),
             ("Two Elements".to_string(), vec![2, 1]),
-            ("Small Positive".to_string(), vec![170, 45, 75, 90, 2, 802, 24, 66]),
+            (
+                "Small Positive".to_string(),
+                vec![170, 45, 75, 90, 2, 802, 24, 66],
+            ),
             ("Small Mixed".to_string(), vec![-5, 3, -1, 8, 0, -2, 7, 1]),
             ("All Negative".to_string(), vec![-10, -5, -15, -3, -7]),
             ("All Same".to_string(), vec![5, 5, 5, 5, 5]),
-            ("Already Sorted".to_string(), vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
-            ("Reverse Sorted".to_string(), vec![10, 9, 8, 7, 6, 5, 4, 3, 2, 1]),
-            ("Large Numbers".to_string(), vec![999999, 1, 888888, 777777, 555555]),
-            ("Many Duplicates".to_string(), vec![1, 3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5]),
-            ("Random Medium".to_string(), Self::generate_random(100, -1000, 1000)),
-            ("Random Large".to_string(), Self::generate_random(10000, -100000, 100000)),
+            (
+                "Already Sorted".to_string(),
+                vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            ),
+            (
+                "Reverse Sorted".to_string(),
+                vec![10, 9, 8, 7, 6, 5, 4, 3, 2, 1],
+            ),
+            (
+                "Large Numbers".to_string(),
+                vec![999999, 1, 888888, 777777, 555555],
+            ),
+            (
+                "Many Duplicates".to_string(),
+                vec![1, 3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5],
+            ),
+            (
+                "Random Medium".to_string(),
+                Self::generate_random(100, -1000, 1000),
+            ),
+            (
+                "Random Large".to_string(),
+                Self::generate_random(10000, -100000, 100000),
+            ),
             ("Few Unique".to_string(), Self::generate_few_unique(1000, 5)),
-            ("Power of 2 Values".to_string(), vec![1, 2, 4, 8, 16, 32, 64, 128, 256, 512]),
+            (
+                "Power of 2 Values".to_string(),
+                vec![1, 2, 4, 8, 16, 32, 64, 128, 256, 512],
+            ),
         ]
     }
 
     fn generate_random(size: usize, min: i32, max: i32) -> Vec<i32> {
         let mut result = Vec::with_capacity(size);
         let mut seed = 42u64;
-        
+
         for _ in 0..size {
             seed = seed.wrapping_mul(1103515245).wrapping_add(12345);
             let value = min + ((seed % (max - min + 1) as u64) as i32);
             result.push(value);
         }
-        
+
         result
     }
 
     fn generate_few_unique(size: usize, unique_count: i32) -> Vec<i32> {
         let mut result = Vec::with_capacity(size);
         let mut seed = 42u64;
-        
+
         for _ in 0..size {
             seed = seed.wrapping_mul(1103515245).wrapping_add(12345);
             let value = ((seed % unique_count as u64) + 1) as i32;
             result.push(value);
         }
-        
+
         result
     }
 }
@@ -531,15 +567,15 @@ fn verify_sorting_correctness(original: &[i32], sorted: &[i32]) -> bool {
     if original.len() != sorted.len() {
         return false;
     }
-    
+
     if !is_sorted(sorted) {
         return false;
     }
-    
+
     // Verify it's a permutation of the original
     let mut orig_sorted = original.to_vec();
     orig_sorted.sort_unstable();
-    
+
     sorted == orig_sorted.as_slice()
 }
 
@@ -550,37 +586,34 @@ fn analyze_performance(results: &[SortResult]) {
 
     println!("\nPerformance Analysis:");
     println!("{}", "=".repeat(70));
-    
+
     // Time analysis
     let total_time: f64 = results.iter().map(|r| r.time_ms).sum();
     let avg_time = total_time / results.len() as f64;
-    
+
     println!("Time Performance:");
     println!("  Average time: {:.3} ms", avg_time);
     println!("  Total time:   {:.3} ms", total_time);
-    
+
     // Operations analysis
     let total_extractions: usize = results.iter().map(|r| r.digit_extractions).sum();
     let total_counting: usize = results.iter().map(|r| r.counting_operations).sum();
     let total_passes: usize = results.iter().map(|r| r.passes).sum();
-    
+
     println!("\nOperation Counts:");
     println!("  Total digit extractions: {}", total_extractions);
     println!("  Total counting operations: {}", total_counting);
     println!("  Total passes: {}", total_passes);
-    
+
     // Radix analysis
     println!("\nRadix Analysis:");
     for radix in [2, 10, 16, 256] {
-        let radix_results: Vec<_> = results.iter()
-            .filter(|r| r.radix == radix)
-            .collect();
-        
+        let radix_results: Vec<_> = results.iter().filter(|r| r.radix == radix).collect();
+
         if !radix_results.is_empty() {
-            let avg_passes: f64 = radix_results.iter()
-                .map(|r| r.passes as f64)
-                .sum::<f64>() / radix_results.len() as f64;
-            
+            let avg_passes: f64 = radix_results.iter().map(|r| r.passes as f64).sum::<f64>()
+                / radix_results.len() as f64;
+
             println!("  Base {}: {:.1} average passes", radix, avg_passes);
         }
     }
@@ -590,17 +623,17 @@ fn run_test_case(name: &str, data: Vec<i32>) {
     println!("\n{}", "=".repeat(70));
     println!("Test Case: {}", name);
     println!("{}", "=".repeat(70));
-    
+
     let original = data.clone();
     println!("Input size: {}", data.len());
-    
+
     if data.len() <= 20 {
         println!("Input:  {:?}", data);
     }
-    
+
     // Test different radix sort variants
     let mut results: Vec<(&str, SortResult, bool, Vec<i32>)> = Vec::new();
-    
+
     // LSD Base 10
     {
         let mut data_copy = data.clone();
@@ -609,7 +642,7 @@ fn run_test_case(name: &str, data: Vec<i32>) {
         let is_correct = verify_sorting_correctness(&original, &data_copy);
         results.push(("LSD Base 10", result, is_correct, data_copy));
     }
-    
+
     // MSD Base 10
     {
         let mut data_copy = data.clone();
@@ -618,7 +651,7 @@ fn run_test_case(name: &str, data: Vec<i32>) {
         let is_correct = verify_sorting_correctness(&original, &data_copy);
         results.push(("MSD Base 10", result, is_correct, data_copy));
     }
-    
+
     // Binary
     {
         let mut data_copy = data.clone();
@@ -627,7 +660,7 @@ fn run_test_case(name: &str, data: Vec<i32>) {
         let is_correct = verify_sorting_correctness(&original, &data_copy);
         results.push(("Binary (Base 2)", result, is_correct, data_copy));
     }
-    
+
     // High Radix
     {
         let mut data_copy = data.clone();
@@ -636,49 +669,60 @@ fn run_test_case(name: &str, data: Vec<i32>) {
         let is_correct = verify_sorting_correctness(&original, &data_copy);
         results.push(("High Radix (Base 256)", result, is_correct, data_copy));
     }
-    
+
     println!("\nResults:");
     println!("{}", "-".repeat(90));
-    println!("{:<20} | {:>8} | {:>10} | {:>6} | {:>8} | {:>8} | {:>8}",
-             "Algorithm", "Correct", "Time(ms)", "Passes", "Digits", "Counts", "Memory");
+    println!(
+        "{:<20} | {:>8} | {:>10} | {:>6} | {:>8} | {:>8} | {:>8}",
+        "Algorithm", "Correct", "Time(ms)", "Passes", "Digits", "Counts", "Memory"
+    );
     println!("{}", "-".repeat(90));
-    
+
     let mut sort_results = Vec::new();
-    
+
     for (name_variant, result, is_correct, data_copy) in &results {
-        println!("{:<20} | {:>8} | {:>10.3} | {:>6} | {:>8} | {:>8} | {:>8}",
-                 name_variant,
-                 if *is_correct { "✓" } else { "✗" },
-                 result.time_ms,
-                 result.passes,
-                 result.digit_extractions,
-                 result.counting_operations,
-                 result.memory_allocations);
-        
+        println!(
+            "{:<20} | {:>8} | {:>10.3} | {:>6} | {:>8} | {:>8} | {:>8}",
+            name_variant,
+            if *is_correct { "✓" } else { "✗" },
+            result.time_ms,
+            result.passes,
+            result.digit_extractions,
+            result.counting_operations,
+            result.memory_allocations
+        );
+
         if data.len() <= 20 && *name_variant == "LSD Base 10" {
             println!("Output: {:?}", data_copy);
         }
-        
+
         sort_results.push(result.clone());
     }
-    
+
     // Complexity analysis for this case
     if !data.is_empty() {
         let n = data.len() as f64;
         let max_val = data.iter().map(|x| x.abs()).max().unwrap_or(0);
-        let digits = if max_val == 0 { 1 } else { (max_val as f64).log10().floor() as usize + 1 };
-        
+        let digits = if max_val == 0 {
+            1
+        } else {
+            (max_val as f64).log10().floor() as usize + 1
+        };
+
         println!("\nComplexity Analysis:");
         println!("  Array size (n): {}", data.len());
         println!("  Max digits (d): {}", digits);
         println!("  Theoretical O(d*n): {}", digits * data.len());
-        
+
         for result in &sort_results {
             let actual_ops = result.digit_extractions + result.counting_operations;
             let theoretical = digits * data.len() * 2; // Rough estimate
             if theoretical > 0 {
-                println!("  {} efficiency: {:.2}x theoretical", 
-                         result.algorithm, actual_ops as f64 / theoretical as f64);
+                println!(
+                    "  {} efficiency: {:.2}x theoretical",
+                    result.algorithm,
+                    actual_ops as f64 / theoretical as f64
+                );
             }
         }
     }
@@ -687,14 +731,14 @@ fn run_test_case(name: &str, data: Vec<i32>) {
 fn main() {
     println!("Radix Sort - Non-Comparison Linear Time Sorting");
     println!("{}", "=".repeat(70));
-    
+
     let test_cases = TestCases::generate_test_cases();
     let mut all_results = Vec::new();
-    
+
     // Run all test cases
     for (name, data) in test_cases {
         run_test_case(&name, data.clone());
-        
+
         // Collect results for overall analysis (using LSD base 10 as representative)
         if !data.is_empty() {
             let mut radix_sort = RadixSort::new(10, true);
@@ -703,10 +747,10 @@ fn main() {
             all_results.push(result);
         }
     }
-    
+
     // Overall performance analysis
     analyze_performance(&all_results);
-    
+
     // Algorithm summary
     println!("\n\nAlgorithm Summary:");
     println!("{}", "=".repeat(70));
@@ -716,24 +760,24 @@ fn main() {
     println!("• Stability:        Stable (preserves relative order)");
     println!("• Method:           Non-comparison based");
     println!("• Best for:         Integer sorting, linear time when d < log n");
-    
+
     println!("\nAlgorithm Variants:");
     println!("• LSD Radix Sort:   Processes digits right-to-left, simpler");
     println!("• MSD Radix Sort:   Processes digits left-to-right, can terminate early");
     println!("• Binary Radix:     Base 2, many passes but simple operations");
     println!("• High Radix:       Base 256, fewer passes but more memory");
-    
+
     println!("\nPerformance Characteristics:");
     println!("• Linear time complexity for bounded integers");
     println!("• Excellent cache locality (sequential access)");
     println!("• Stable sorting preserves input order");
     println!("• Memory usage scales with radix size");
-    
+
     println!("\nComparison with O(n log n) sorts:");
     println!("• Better when: d * (n + k) < n * log(n)");
     println!("• Worse when: integers have many digits");
     println!("• Trade-off: memory usage vs time complexity");
-    
+
     println!("\nPractical Applications:");
     println!("• Integer arrays with bounded range");
     println!("• String sorting (MSD variant)");
